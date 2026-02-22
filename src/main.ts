@@ -69,7 +69,9 @@ export default class BeancountPlugin extends Plugin {
 		);
 
 		// Register file extensions so Obsidian shows .beancount and .bean files in file explorer
+		// Note: Uses 'markdown' view type, so Beancount syntax will have some Markdown rendering
 		this.registerExtensions(['beancount', 'bean'], 'markdown');
+		
 		// Add Ribbon Icons
 		this.addRibbonIcon('plus-circle', 'Add Transaction', () => {
 			new UnifiedTransactionModal(this.app, this, null, this.getDashboardRefreshCallback()).open();
