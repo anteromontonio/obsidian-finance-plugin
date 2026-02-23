@@ -350,7 +350,7 @@
             }
         } else if (activeTab === 'balance') {
             if (!balanceAccount) errors.push('Account is required for balance assertion');
-            if (!balanceAmount) errors.push('Amount is required for balance assertion');
+            if (balanceAmount === '' || balanceAmount === null || balanceAmount === undefined) errors.push('Amount is required for balance assertion');
             if (!balanceCurrency) errors.push('Currency is required for balance assertion');
         } else if (activeTab === 'note') {
             if (!noteAccount) errors.push('Account is required for note');
@@ -975,6 +975,16 @@
         <!-- Balance Form -->
         {#if activeTab === 'balance'}
             <div class="form-grid">
+                <div class="form-group">
+                    <label for="balance-date">Date *</label>
+                    <input 
+                        type="date" 
+                        id="balance-date" 
+                        bind:value={date}
+                        required
+                    />
+                </div>
+                
                 <div class="form-group full-width">
                     <label for="balance-account">Account *</label>
                     <input 
@@ -1017,6 +1027,16 @@
         <!-- Note Form -->
         {#if activeTab === 'note'}
             <div class="form-grid">
+                <div class="form-group">
+                    <label for="note-date">Date *</label>
+                    <input 
+                        type="date" 
+                        id="note-date" 
+                        bind:value={date}
+                        required
+                    />
+                </div>
+                
                 <div class="form-group full-width">
                     <label for="note-account">Account *</label>
                     <input 
@@ -1082,7 +1102,7 @@
                 on:click={saveEntry}
                 disabled={saving}
             >
-                {saving ? 'Saving...' : (mode === 'edit' ? 'Save Changes' : `Add ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`)}
+                {saving ? 'Saving...' : (mode === 'edit' ? 'Save Changes' : 'Add ' + activeTab.charAt(0).toUpperCase() + activeTab.slice(1))}
             </button>
         </div>
     </div>
@@ -1894,4 +1914,3 @@
         }
     }
 </style>
-```
