@@ -8,6 +8,7 @@ import { existsSync, unlinkSync, renameSync } from 'fs';
 import { join, dirname, basename } from 'path';
 import { getTargetFile, getMainLedgerPath, ensureYearFile, type OperationType } from './structuredLayout';
 import { Logger } from './logger';
+import { SystemDetector } from './SystemDetector';
 
 // --- FILE PATH RESOLVER ---
 
@@ -47,50 +48,50 @@ export function runQuery(plugin: BeancountPlugin, query: string, filepath?: stri
 		const commandName = plugin.settings.beancountCommand;
 		if (!filePath) return reject(new Error('File path not set.'));
 		if (!commandName) return reject(new Error('Command not set.'));
-		
+
 		// Convert Windows path to WSL path if using WSL
 		let queryFilePath = filePath;
 		if (commandName.includes('wsl')) {
 			queryFilePath = convertWindowsPathToWsl(filePath);
 		}
-		
+
 		// Escape quotes in query for shell execution
 		// Replace " with \" to prevent shell parsing issues
 		const escapedQuery = query.replace(/"/g, '\\"');
-		
+
 		const command = `${commandName} -q -f csv "${queryFilePath}" "${escapedQuery}"`;
 		console.debug(`[runQuery] Executing command: ${command}`);
-		
+
 		// Increase maxBuffer to handle large query results (50MB limit)
 		exec(command, { maxBuffer: 50 * 1024 * 1024 }, (error: ExecException | null, stdout: string, stderr: string) => {
 			if (error) return reject(error);
 			if (stderr) return reject(new Error(stderr));
-			
+
 			// Clean the output to remove any potential query echoes
 			let cleanOutput = stdout;
 			const lines = stdout.split('\n');
-			
+
 			// Remove lines that look like query echoes
 			const filteredLines = lines.filter(line => {
 				const trimmed = line.trim();
 				// Skip empty lines
 				if (!trimmed) return false;
 				// Skip lines that contain query fragments
-				if (trimmed.includes('SELECT') || 
-					trimmed.includes('WHERE') || 
-					trimmed.includes('convert(') || 
+				if (trimmed.includes('SELECT') ||
+					trimmed.includes('WHERE') ||
+					trimmed.includes('convert(') ||
 					trimmed.includes('sum(') ||
 					trimmed === query.trim()) {
 					return false;
 				}
 				return true;
 			});
-			
+
 			// If we filtered out some lines, use the filtered result
 			if (filteredLines.length < lines.length && filteredLines.length > 0) {
 				cleanOutput = filteredLines.join('\n');
 			}
-			
+
 			resolve(cleanOutput);
 		});
 	});
@@ -105,21 +106,29 @@ export function runQuery(plugin: BeancountPlugin, query: string, filepath?: stri
  * @param {string} priceMetadata - The price source string (e.g., "yahoo/AAPL").
  * @returns {Promise<{success: boolean, output?: string, error?: string}>} Validation result.
  */
-export function validatePriceSource(plugin: BeancountPlugin, priceMetadata: string): Promise<{success: boolean, output?: string, error?: string}> {
+export async function validatePriceSource(plugin: BeancountPlugin, priceMetadata: string): Promise<{ success: boolean, output?: string, error?: string }> {
+	if (!priceMetadata || typeof priceMetadata !== 'string' || priceMetadata.trim() === '') {
+		return { success: false, error: 'Empty price metadata' };
+	}
+
+	// Get bean-price command from settings or detect it
+	let beanPriceCommand = plugin.settings.beanPriceCommand;
+	if (!beanPriceCommand) {
+		const detector = SystemDetector.getInstance();
+		const result = await detector.detectBeanPriceCommand();
+		if (!result.isValid || !result.command) {
+			return { success: false, error: 'bean-price command not found. Please install Beancount or run command detection in settings.' };
+		}
+		beanPriceCommand = result.command;
+	}
+
+	// Strip any existing quotes from the price metadata
+	const cleanPriceMetadata = priceMetadata.trim().replace(/^['"]|['"]$/g, '');
+
+	// Build command for validation: bean-price -e "source" (no file path needed)
+	const command = `${beanPriceCommand} -e "${cleanPriceMetadata}"`;
+
 	return new Promise((resolve) => {
-		if (!priceMetadata || typeof priceMetadata !== 'string' || priceMetadata.trim() === '') {
-			return resolve({ success: false, error: 'Empty price metadata' });
-		}
-
-		const commandName = plugin.settings.beancountCommand;
-		if (!commandName) {
-			return resolve({ success: false, error: 'Beancount command not set' });
-		}
-
-		// Replace bean-query with bean-price in the command
-		const beanPriceCommand = commandName.replace(/bean-query(\.exe)?$/, 'bean-price$1');
-		const command = `${beanPriceCommand} -e "${priceMetadata}"`;
-
 		exec(command, { timeout: 10000, maxBuffer: 1024 * 1024 }, (error: ExecException | null, stdout: string, stderr: string) => {
 			// Success if exit code 0 and stdout has content
 			if (!error && stdout && stdout.trim()) {
@@ -139,13 +148,13 @@ export function validatePriceSource(plugin: BeancountPlugin, priceMetadata: stri
  * @param {string} url - The URL to validate.
  * @returns {Promise<{success: boolean, contentType?: string, error?: string}>} Validation result.
  */
-export async function validateLogoUrl(url: string): Promise<{success: boolean, contentType?: string, error?: string}> {
+export async function validateLogoUrl(url: string): Promise<{ success: boolean, contentType?: string, error?: string }> {
 	try {
 		if (!url || typeof url !== 'string' || url.trim() === '') {
 			return { success: false, error: 'Empty URL' };
 		}
 
-		const response = await fetch(url, { 
+		const response = await fetch(url, {
 			method: 'HEAD',
 			headers: {
 				'User-Agent': 'Obsidian-Finance-Plugin/1.0'
@@ -154,7 +163,7 @@ export async function validateLogoUrl(url: string): Promise<{success: boolean, c
 		});
 
 		const contentType = response.headers.get('Content-Type') || '';
-		
+
 		if (contentType.startsWith('image/')) {
 			return { success: true, contentType };
 		} else {
@@ -177,7 +186,7 @@ export async function validateLogoUrl(url: string): Promise<{success: boolean, c
  * @param {string} symbol - The commodity symbol to verify.
  * @returns {Promise<{success: boolean, error?: string}>} Validation result.
  */
-export async function validateCommodityLocation(filename: string, lineno: number, symbol: string): Promise<{success: boolean, error?: string}> {
+export async function validateCommodityLocation(filename: string, lineno: number, symbol: string): Promise<{ success: boolean, error?: string }> {
 	try {
 		if (!filename || !lineno || !symbol) {
 			return { success: false, error: 'Missing filename, lineno, or symbol' };
@@ -233,16 +242,16 @@ export function parseSingleValue(csv: string): string {
 	try {
 		// First, try to clean and process the raw CSV data
 		const lines = csv.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-		
+
 		// If we have lines, try to find the data line (skip query echo if present)
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
-			
+
 			// Skip lines that look like query echoes (contain SELECT, WHERE, etc.)
 			if (line.includes('SELECT') || line.includes('WHERE') || line.includes('convert(') || line.includes('sum(')) {
 				continue;
 			}
-			
+
 			// If line starts with a quote and contains data, extract the content
 			if (line.startsWith('"') && line.length > 2) {
 				// Remove leading/trailing quotes and return the content
@@ -252,24 +261,24 @@ export function parseSingleValue(csv: string): string {
 				}
 				return content.trim();
 			}
-			
+
 			// If line doesn't start with quote but contains data, return as-is
 			if (line.length > 0 && !line.startsWith('"')) {
 				return line.trim();
 			}
 		}
-		
+
 		// Fallback: try traditional CSV parsing
 		const records: string[][] = parseCsv(csv, { columns: false, skip_empty_lines: true, relax_column_count: true });
 		if (records.length > 1 && records[1].length > 0 && records[1][0] && records[1][0].trim() !== '') {
 			return records[1][0].trim();
 		}
-		
+
 		console.warn("parseSingleValue: No valid data found, returning '0 USD'. CSV:", csv);
 		return '0 USD';
 	} catch (e) {
 		console.error("Error parsing single value CSV:", e, "CSV:", csv);
-		
+
 		// Emergency fallback: try to extract any quoted content manually
 		try {
 			const lines = csv.split('\n');
@@ -288,7 +297,7 @@ export function parseSingleValue(csv: string): string {
 		} catch (fallbackError) {
 			console.error("Fallback parsing also failed:", fallbackError);
 		}
-		
+
 		return '0 USD';
 	}
 }
@@ -335,7 +344,7 @@ export function convertWslPathToWindows(wslPath: string): string {
 async function atomicFileWrite(filePath: string, content: string): Promise<void> {
 	const tempPath = `${filePath}.tmp`;
 	await writeFile(tempPath, content, 'utf-8');
-	
+
 	try {
 		// On Windows, we need to delete the target file first before renaming
 		if (existsSync(filePath)) {
@@ -362,7 +371,7 @@ async function atomicFileWrite(filePath: string, content: string): Promise<void>
  */
 async function createBackupFile(filePath: string, createBackup: boolean, functionName: string): Promise<void> {
 	if (!createBackup) return;
-	
+
 	const backupPath = `${filePath}.bak`;
 	try {
 		await copyFile(filePath, backupPath);
@@ -436,7 +445,7 @@ export function getCurrentMonthRange(): { start: string, end: string } {
 	const now = new Date();
 	const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 	const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-	
+
 	// Format date without timezone conversion to avoid date shifting
 	const formatDate = (date: Date) => {
 		const year = date.getFullYear();
@@ -444,7 +453,7 @@ export function getCurrentMonthRange(): { start: string, end: string } {
 		const day = String(date.getDate()).padStart(2, '0');
 		return `${year}-${month}-${day}`;
 	};
-	
+
 	return { start: formatDate(startOfMonth), end: formatDate(endOfMonth) };
 }
 
@@ -508,12 +517,12 @@ export function extractNonReportingCurrencies(inventoryString: string, operating
 	const currencyRegex = /(-?[\d,]+\.?\d*)\s*([A-Z]{3,4})/g;
 	const matches = [];
 	let match;
-	
+
 	// Find all currency amounts
 	while ((match = currencyRegex.exec(inventoryString)) !== null) {
 		const amount = match[1];
 		const currency = match[2];
-		
+
 		// Skip the operating currency - we only want other currencies
 		if (currency !== operatingCurrency) {
 			// Only include non-zero amounts
@@ -523,7 +532,7 @@ export function extractNonReportingCurrencies(inventoryString: string, operating
 			}
 		}
 	}
-	
+
 	// Return newline-separated list of non-reporting currencies for better multi-line display
 	return matches.join('\n');
 }
@@ -541,10 +550,10 @@ export function formatCurrency(amount: number, currency: string): string {
 	if (isNaN(amount)) {
 		return `0.00 ${currency}`;
 	}
-	
-	return `${amount.toLocaleString(undefined, { 
-		minimumFractionDigits: 2, 
-		maximumFractionDigits: 4 
+
+	return `${amount.toLocaleString(undefined, {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 4
 	})} ${currency}`;
 }
 
@@ -563,12 +572,12 @@ export function parseMetadataString(metaStr: string): Record<string, any> {
 		if (!metaStr || metaStr.trim() === '{}' || metaStr.trim() === '') {
 			return {};
 		}
-		
+
 		// Convert BQL format {'key': 'value'} to JSON format {"key": "value"}
 		const jsonStr = metaStr
 			.replace(/'/g, '"')  // Replace single quotes with double quotes
 			.trim();
-		
+
 		return JSON.parse(jsonStr);
 	} catch (e) {
 		console.warn('Failed to parse metadata string:', metaStr, e);
@@ -588,18 +597,18 @@ export function parseCommoditiesListCSV(csv: string): string[] {
 		if (!cleanCsv) {
 			return [];
 		}
-		
-		const records: string[][] = parseCsv(cleanCsv, { 
-			columns: false, 
-			skip_empty_lines: true, 
-			relax_column_count: true 
+
+		const records: string[][] = parseCsv(cleanCsv, {
+			columns: false,
+			skip_empty_lines: true,
+			relax_column_count: true
 		});
-		
+
 		// Skip header row, extract first column
 		const symbols = records.slice(1)
 			.map(row => row[0]?.trim())
 			.filter(symbol => symbol && symbol.length > 0);
-		
+
 		return symbols;
 	} catch (e) {
 		console.error('Error parsing commodities list CSV:', e, 'CSV:', csv);
@@ -620,37 +629,37 @@ export function parseCommoditiesPriceDataCSV(csv: string): Map<string, {
 	isLatest: boolean;
 }> {
 	const priceDataMap = new Map();
-	
+
 	try {
 		const cleanCsv = csv.replace(/\r/g, "").trim();
 		if (!cleanCsv) {
 			return priceDataMap;
 		}
-		
-		const records: string[][] = parseCsv(cleanCsv, { 
-			columns: false, 
-			skip_empty_lines: true, 
-			relax_column_count: true 
+
+		const records: string[][] = parseCsv(cleanCsv, {
+			columns: false,
+			skip_empty_lines: true,
+			relax_column_count: true
 		});
-		
+
 		// Skip header row, parse data rows
 		// Format: [date_, currency_, price_, logo_, islatest_]
 		for (let i = 1; i < records.length; i++) {
 			const row = records[i];
 			if (row.length < 5) continue;
-			
+
 			const date = row[0]?.trim() || null;
 			const currency = row[1]?.trim() || null;
 			const price = row[2]?.trim() || null;
 			const logo = row[3]?.trim() || null;
 			const isLatestStr = row[4]?.trim().toLowerCase() || 'false';
 			const isLatest = isLatestStr === 'true' || isLatestStr === '1';
-			
+
 			if (currency) {
 				priceDataMap.set(currency, { price, logo, date, isLatest });
 			}
 		}
-		
+
 		return priceDataMap;
 	} catch (e) {
 		console.error('Error parsing commodities price data CSV:', e, 'CSV:', csv);
@@ -673,41 +682,41 @@ export function parseCommodityDetailsCSV(csv: string): {
 	lineno: number | null;
 } {
 	const defaultResult = { symbol: '', metadata: {}, logo: null, priceMetadata: null, filename: null, lineno: null };
-	
+
 	try {
 		const cleanCsv = csv.replace(/\r/g, "").trim();
 		if (!cleanCsv) {
 			return defaultResult;
 		}
-		
-		const records: string[][] = parseCsv(cleanCsv, { 
-			columns: false, 
-			skip_empty_lines: true, 
-			relax_column_count: true 
+
+		const records: string[][] = parseCsv(cleanCsv, {
+			columns: false,
+			skip_empty_lines: true,
+			relax_column_count: true
 		});
-		
+
 		// Should have 2 rows: header + data
 		if (records.length < 2) {
 			return defaultResult;
 		}
-		
+
 		const row = records[1];
 		// Format: [name_, meta_, logo_, pricemetadata_, filename_, lineno_]
 		if (row.length < 6) {
 			return defaultResult;
 		}
-		
+
 		const symbol = row[0]?.trim() || '';
 		const metaStr = row[1]?.trim() || '{}';
 		const logo = row[2]?.trim() || null;
 		const priceMetadata = row[3]?.trim() || null;
 		const filename = row[4]?.trim() || null;
 		const linenoStr = row[5]?.trim() || null;
-		
+
 		const metadata = parseMetadataString(metaStr);
 		const parsedLineno = linenoStr ? parseInt(linenoStr, 10) : Number.NaN;
 		const lineno = Number.isNaN(parsedLineno) ? null : parsedLineno;
-		
+
 		return { symbol, metadata, logo, priceMetadata, filename, lineno };
 	} catch (e) {
 		console.error('Error parsing commodity details CSV:', e, 'CSV:', csv);
@@ -737,7 +746,7 @@ export async function saveCommodityMetadata(
 		// Step 0: Convert WSL path to Windows path if needed
 		const normalizedPath = convertWslPathToWindows(filename);
 		console.debug(`[saveCommodityMetadata] Path conversion: ${filename} -> ${normalizedPath}`);
-		
+
 		// Step 1: Validate that the location points to the correct commodity
 		const locationValid = await validateCommodityLocation(normalizedPath, lineno, symbol);
 		if (!locationValid.success) {
@@ -758,7 +767,7 @@ export async function saveCommodityMetadata(
 		const commodityLine = lines[startIndex];
 		const dateMatch = commodityLine.match(/^(\d{4}-\d{2}-\d{2})\s+commodity/);
 		const datePrefix = dateMatch ? `${dateMatch[1]} ` : '';
-		
+
 		// Find end of commodity block (lines with indentation are metadata)
 		let endIndex = startIndex;
 		for (let i = startIndex + 1; i < lines.length; i++) {
@@ -803,9 +812,9 @@ export async function saveCommodityMetadata(
 
 	} catch (error) {
 		console.error('[saveCommodityMetadata] Error:', error);
-		return { 
-			success: false, 
-			error: error instanceof Error ? error.message : String(error) 
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : String(error)
 		};
 	}
 }
@@ -822,14 +831,14 @@ export async function getOpenAccounts(plugin: BeancountPlugin): Promise<string[]
 	try {
 		const query = `SELECT account FROM #accounts WHERE NOT bool(close)`;
 		const csv = await runQuery(plugin, query);
-		
+
 		// Parse CSV to extract account names
 		const records = parseCsv(csv, {
 			columns: true,
 			skip_empty_lines: true,
 			trim: true
 		});
-		
+
 		return records.map((row: any) => row.account).filter((acc: string) => acc);
 	} catch (error) {
 		console.error('[getOpenAccounts] Error:', error);
@@ -847,14 +856,14 @@ export async function getPayees(plugin: BeancountPlugin): Promise<string[]> {
 	try {
 		const query = `SELECT DISTINCT payee`;
 		const csv = await runQuery(plugin, query);
-		
+
 		// Parse CSV to extract payee names
 		const records = parseCsv(csv, {
 			columns: true,
 			skip_empty_lines: true,
 			trim: true
 		});
-		
+
 		return records
 			.map((row: any) => row.payee)
 			.filter((payee: string) => payee && payee.trim() !== '')
@@ -876,23 +885,23 @@ export async function getTags(plugin: BeancountPlugin): Promise<string[]> {
 	try {
 		const query = `SELECT DISTINCT joinstr(tags) FROM entries WHERE tags IS NOT NULL`;
 		const csv = await runQuery(plugin, query);
-		
+
 		// Parse CSV to extract tags
 		const records = parseCsv(csv, {
 			columns: true,
 			skip_empty_lines: true,
 			trim: true
 		});
-		
+
 		// The query returns unique sets of tags as comma-separated strings
 		// e.g., "trip,food", "groceries", "trip,flight"
 		// We need to split each set and flatten to get individual distinct tags
 		const allTags = new Set<string>();
-		
+
 		records.forEach((row: any) => {
 			// The column name from BQL is 'joinstr(tags)' or might be the first property
 			const tagSet = row['joinstr(tags)'] || row.tags || Object.values(row)[0];
-			
+
 			if (tagSet && typeof tagSet === 'string') {
 				// Split the comma-separated tags and clean each one
 				const tags = tagSet.split(',').map((t: string) => t.trim().replace(/^#/, ''));
@@ -901,7 +910,7 @@ export async function getTags(plugin: BeancountPlugin): Promise<string[]> {
 				});
 			}
 		});
-		
+
 		return Array.from(allTags).sort();
 	} catch (error) {
 		console.error('[getTags] Error:', error);
@@ -916,23 +925,23 @@ export async function getTags(plugin: BeancountPlugin): Promise<string[]> {
  * @param {BeancountPlugin} plugin - The plugin instance.
  * @returns {Promise<Array<{name: string}>>} Array of commodity objects with name property.
  */
-export async function getCommodities(plugin: BeancountPlugin): Promise<Array<{name: string}>> {
+export async function getCommodities(plugin: BeancountPlugin): Promise<Array<{ name: string }>> {
 	try {
 		const query = `SELECT name AS name_ FROM #commodities GROUP BY name`;
 		const csv = await runQuery(plugin, query);
-		
+
 		// Parse CSV to extract commodity names
 		const records = parseCsv(csv, {
 			columns: true,
 			skip_empty_lines: true,
 			trim: true
 		});
-		
+
 		// Map to the expected format: array of objects with 'name' property
 		return records
 			.map((row: any) => ({ name: row.name_ || row.name || Object.values(row)[0] as string }))
-			.filter((commodity: {name: string}) => commodity.name && commodity.name.trim() !== '')
-			.sort((a: {name: string}, b: {name: string}) => a.name.localeCompare(b.name));
+			.filter((commodity: { name: string }) => commodity.name && commodity.name.trim() !== '')
+			.sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
 	} catch (error) {
 		console.error('[getCommodities] Error:', error);
 		// Return empty array on error to maintain compatibility
@@ -983,7 +992,7 @@ export async function saveOpenDirective(
 
 		// Step 4: Read file and append directive
 		const content = await readFile(normalizedPath, 'utf-8');
-		const newContent = content.endsWith('\n') 
+		const newContent = content.endsWith('\n')
 			? `${content}${directiveText}\n`
 			: `${content}\n${directiveText}\n`;
 
@@ -1041,7 +1050,7 @@ export async function createBalanceAssertion(
 
 		// Step 4: Read file and append directive
 		const content = await readFile(normalizedPath, 'utf-8');
-		const newContent = content.endsWith('\n') 
+		const newContent = content.endsWith('\n')
 			? `${content}${directiveText}\n`
 			: `${content}\n${directiveText}\n`;
 
@@ -1090,7 +1099,7 @@ export async function createNote(
 		// Step 2: Generate directive text
 		// Format: YYYY-MM-DD note Account "Comment text" #tag1 #tag2 ^link1 ^link2
 		const parts = [date, 'note', account, `"${comment}"`];
-		
+
 		// Add tags (with # prefix)
 		if (tags && tags.length > 0) {
 			for (const tag of tags) {
@@ -1100,14 +1109,14 @@ export async function createNote(
 				}
 			}
 		}
-		
+
 		// Add links (with ^ prefix)
 		if (links && links.length > 0) {
 			for (const link of links) {
 				parts.push(`^${link}`);
 			}
 		}
-		
+
 		const directiveText = parts.join(' ');
 
 		// Step 3: Create backup if requested
@@ -1115,7 +1124,7 @@ export async function createNote(
 
 		// Step 4: Read file and append directive
 		const content = await readFile(normalizedPath, 'utf-8');
-		const newContent = content.endsWith('\n') 
+		const newContent = content.endsWith('\n')
 			? `${content}${directiveText}\n`
 			: `${content}\n${directiveText}\n`;
 
@@ -1169,7 +1178,7 @@ export async function createCommodity(
 		//   price: "value"
 		//   logo: "url"
 		let directiveText = `${date} commodity ${symbol.toUpperCase()}`;
-		
+
 		// Add metadata if provided
 		const metadataLines: string[] = [];
 		if (priceMetadata) {
@@ -1178,7 +1187,7 @@ export async function createCommodity(
 		if (logoUrl) {
 			metadataLines.push(`  logo: "${logoUrl}"`);
 		}
-		
+
 		if (metadataLines.length > 0) {
 			directiveText += '\n' + metadataLines.join('\n');
 		}
@@ -1188,7 +1197,7 @@ export async function createCommodity(
 
 		// Step 4: Read file and append directive
 		const content = await readFile(normalizedPath, 'utf-8');
-		const newContent = content.endsWith('\n') 
+		const newContent = content.endsWith('\n')
 			? `${content}${directiveText}\n`
 			: `${content}\n${directiveText}\n`;
 
@@ -1200,6 +1209,76 @@ export async function createCommodity(
 
 	} catch (error) {
 		Logger.error('[createCommodity] Error:', error);
+		return { success: false, error: error instanceof Error ? error.message : String(error) };
+	}
+}
+
+
+
+
+/**
+ * Creates a price directive in the Beancount file.
+ * 
+ * @param {BeancountPlugin} plugin - The plugin instance.
+ * @param {string} date - Date in YYYY-MM-DD format.
+ * @param {string} commodity - Commodity symbol.
+ * @param {number} amount - Price amount.
+ * @param {string} currency - Quote currency.
+ * @param {boolean} createBackup - Whether to create backup before writing.
+ * @returns {Promise<{success: boolean, filePath?: string, error?: string}>} Result object.
+ */
+export async function createPriceDirective(
+	plugin: BeancountPlugin,
+	date: string,
+	commodity: string,
+	amount: number,
+	currency: string,
+	createBackup: boolean = true
+): Promise<{ success: boolean; filePath?: string; error?: string }> {
+	try {
+		const filePath = resolveFilePath(plugin, 'price', date);
+		if (!filePath) {
+			return { success: false, error: 'Beancount file path not set' };
+		}
+
+		// Validate inputs
+		if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+			return { success: false, error: 'Invalid date format. Use YYYY-MM-DD.' };
+		}
+		if (!commodity || !/^[A-Z0-9._-]+$/i.test(commodity)) {
+			return { success: false, error: 'Invalid commodity symbol.' };
+		}
+		if (!amount || isNaN(amount)) {
+			return { success: false, error: 'Invalid amount.' };
+		}
+		if (!currency || !/^[A-Z]{3,}$/i.test(currency)) {
+			return { success: false, error: 'Invalid currency code.' };
+		}
+
+		// Step 1: Normalize path (handle WSL)
+		const normalizedPath = convertWslPathToWindows(filePath);
+
+		// Step 2: Generate directive text
+		// Format: YYYY-MM-DD price COMMODITY AMOUNT CURRENCY
+		const directiveText = `${date} price ${commodity.toUpperCase()} ${amount.toFixed(2)} ${currency.toUpperCase()}`;
+
+		// Step 3: Create backup if requested
+		await createBackupFile(normalizedPath, createBackup, 'createPriceDirective');
+
+		// Step 4: Read file and append directive
+		const content = await readFile(normalizedPath, 'utf-8');
+		const newContent = content.endsWith('\n')
+			? `${content}${directiveText}\n`
+			: `${content}\n${directiveText}\n`;
+
+		// Step 5: Atomic write (write to temp file, then rename)
+		await atomicFileWrite(normalizedPath, newContent);
+
+		Logger.log(`[createPriceDirective] Successfully created price directive for ${commodity}`);
+		return { success: true, filePath: normalizedPath };
+
+	} catch (error) {
+		Logger.error('[createPriceDirective] Error:', error);
 		return { success: false, error: error instanceof Error ? error.message : String(error) };
 	}
 }
@@ -1216,7 +1295,7 @@ export async function updateBalance(
 	plugin: BeancountPlugin,
 	balanceId: string,
 	balanceData: any
-): Promise<{success: boolean, error?: string}> {
+): Promise<{ success: boolean, error?: string }> {
 	try {
 		const beancountFilePath = plugin.settings.beancountFilePath;
 		if (!beancountFilePath) {
@@ -1236,7 +1315,7 @@ export async function updateBalance(
 		// Find the balance assertion using BQL query
 		const query = `SELECT filename, lineno FROM #entries WHERE type='balance' AND date=${date} AND '${account}' IN accounts`;
 		const csv = await runQuery(plugin, query);
-		
+
 		const parser = require('csv-parse/sync');
 		const records = parser.parse(csv, {
 			columns: true,
@@ -1251,7 +1330,7 @@ export async function updateBalance(
 		// Use the actual filename from the query result (important for structured layouts)
 		const actualFilePath = records[0]['filename'];
 		const lineno = parseInt(records[0]['lineno']);
-		
+
 		if (!actualFilePath) {
 			return { success: false, error: 'Filename not returned from query' };
 		}
@@ -1289,9 +1368,9 @@ export async function updateBalance(
 		const tempPath = normalizedPath + '.tmp';
 		await writeFile(tempPath, newContent, 'utf-8');
 		renameSync(tempPath, normalizedPath);
-		
+
 		console.debug(`[updateBalance] Successfully updated balance ${balanceId} in ${normalizedPath}`);
-		
+
 		return { success: true };
 	} catch (error) {
 		console.error('[updateBalance] Error:', error);
@@ -1312,7 +1391,7 @@ export async function updateBalance(
 export async function deleteBalance(
 	plugin: BeancountPlugin,
 	balanceId: string
-): Promise<{success: boolean, error?: string}> {
+): Promise<{ success: boolean, error?: string }> {
 	try {
 		const beancountFilePath = plugin.settings.beancountFilePath;
 		if (!beancountFilePath) {
@@ -1332,7 +1411,7 @@ export async function deleteBalance(
 		// Find the balance assertion using BQL query
 		const query = `SELECT filename, lineno FROM #entries WHERE type='balance' AND date=${date} AND '${account}' IN accounts`;
 		const csv = await runQuery(plugin, query);
-		
+
 		const parser = require('csv-parse/sync');
 		const records = parser.parse(csv, {
 			columns: true,
@@ -1347,7 +1426,7 @@ export async function deleteBalance(
 		// Use the actual filename from the query result (important for structured layouts)
 		const actualFilePath = records[0]['filename'];
 		const lineno = parseInt(records[0]['lineno']);
-		
+
 		if (!actualFilePath) {
 			return { success: false, error: 'Filename not returned from query' };
 		}
@@ -1387,9 +1466,9 @@ export async function deleteBalance(
 		const tempPath = normalizedPath + '.tmp';
 		await writeFile(tempPath, newContent, 'utf-8');
 		renameSync(tempPath, normalizedPath);
-		
+
 		console.debug(`[deleteBalance] Successfully deleted balance ${balanceId} from ${normalizedPath}`);
-		
+
 		return { success: true };
 	} catch (error) {
 		console.error('[deleteBalance] Error:', error);
@@ -1412,7 +1491,7 @@ export async function updateNote(
 	plugin: BeancountPlugin,
 	noteId: string,
 	noteData: any
-): Promise<{success: boolean, error?: string}> {
+): Promise<{ success: boolean, error?: string }> {
 	try {
 		const beancountFilePath = plugin.settings.beancountFilePath;
 		if (!beancountFilePath) {
@@ -1432,7 +1511,7 @@ export async function updateNote(
 		// Find the note using BQL query
 		const query = `SELECT filename, lineno FROM #entries WHERE type='note' AND date=${date} AND '${account}' IN accounts`;
 		const csv = await runQuery(plugin, query);
-		
+
 		const parser = require('csv-parse/sync');
 		const records = parser.parse(csv, {
 			columns: true,
@@ -1447,7 +1526,7 @@ export async function updateNote(
 		// Use the actual filename from the query result (important for structured layouts)
 		const actualFilePath = records[0]['filename'];
 		const lineno = parseInt(records[0]['lineno']);
-		
+
 		if (!actualFilePath) {
 			return { success: false, error: 'Filename not returned from query' };
 		}
@@ -1473,7 +1552,7 @@ export async function updateNote(
 
 		// Generate new note text
 		const noteParts = [noteData.date, 'note', noteData.account, `"${noteData.comment}"`];
-		
+
 		// Add tags (with # prefix)
 		if (noteData.tags && noteData.tags.length > 0) {
 			for (const tag of noteData.tags) {
@@ -1483,14 +1562,14 @@ export async function updateNote(
 				}
 			}
 		}
-		
+
 		// Add links (with ^ prefix)
 		if (noteData.links && noteData.links.length > 0) {
 			for (const link of noteData.links) {
 				noteParts.push(`^${link}`);
 			}
 		}
-		
+
 		const newNoteText = noteParts.join(' ');
 
 		// Replace the note line
@@ -1501,9 +1580,9 @@ export async function updateNote(
 		const tempPath = normalizedPath + '.tmp';
 		await writeFile(tempPath, newContent, 'utf-8');
 		renameSync(tempPath, normalizedPath);
-		
+
 		console.debug(`[updateNote] Successfully updated note ${noteId} in ${normalizedPath}`);
-		
+
 		return { success: true };
 	} catch (error) {
 		console.error('[updateNote] Error:', error);
@@ -1524,7 +1603,7 @@ export async function updateNote(
 export async function deleteNote(
 	plugin: BeancountPlugin,
 	noteId: string
-): Promise<{success: boolean, error?: string}> {
+): Promise<{ success: boolean, error?: string }> {
 	try {
 		const beancountFilePath = plugin.settings.beancountFilePath;
 		if (!beancountFilePath) {
@@ -1544,7 +1623,7 @@ export async function deleteNote(
 		// Find the note using BQL query
 		const query = `SELECT filename, lineno FROM #entries WHERE type='note' AND date=${date} AND '${account}' IN accounts`;
 		const csv = await runQuery(plugin, query);
-		
+
 		const parser = require('csv-parse/sync');
 		const records = parser.parse(csv, {
 			columns: true,
@@ -1559,7 +1638,7 @@ export async function deleteNote(
 		// Use the actual filename from the query result (important for structured layouts)
 		const actualFilePath = records[0]['filename'];
 		const lineno = parseInt(records[0]['lineno']);
-		
+
 		if (!actualFilePath) {
 			return { success: false, error: 'Filename not returned from query' };
 		}
@@ -1599,9 +1678,9 @@ export async function deleteNote(
 		const tempPath = normalizedPath + '.tmp';
 		await writeFile(tempPath, newContent, 'utf-8');
 		renameSync(tempPath, normalizedPath);
-		
+
 		console.debug(`[deleteNote] Successfully deleted note ${noteId} from ${normalizedPath}`);
-		
+
 		return { success: true };
 	} catch (error) {
 		console.error('[deleteNote] Error:', error);
@@ -1632,7 +1711,7 @@ export async function getBalanceEntries(
 
 		// Build BQL query with filters
 		let whereConditions: string[] = [];
-		
+
 		if (filters.startDate) {
 			whereConditions.push(`date >= ${filters.startDate}`);
 		}
@@ -1644,7 +1723,7 @@ export async function getBalanceEntries(
 		}
 
 		const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
-		
+
 		// Query to get all balance assertions
 		const query = `SELECT date, account, amount, tolerance, discrepancy FROM #balances ${whereClause} ORDER BY date DESC, account`;
 
@@ -1669,7 +1748,7 @@ export async function getBalanceEntries(
 			const amountStr = row['amount'] || '';
 			let amount = '';
 			let currency = '';
-			
+
 			if (amountStr && amountStr.trim()) {
 				const amountParts = amountStr.trim().split(/\s+/);
 				if (amountParts.length >= 2) {
@@ -1755,7 +1834,7 @@ export async function getNoteEntries(
 
 		// Build BQL query with filters
 		let whereConditions: string[] = [];
-		
+
 		if (filters.startDate) {
 			whereConditions.push(`date >= ${filters.startDate}`);
 		}
@@ -1767,7 +1846,7 @@ export async function getNoteEntries(
 		}
 
 		const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
-		
+
 		// Query to get all notes
 		const query = `SELECT date, account, comment, tags, links, meta FROM #notes ${whereClause} ORDER BY date DESC, account`;
 
@@ -1867,7 +1946,7 @@ export function generateTransactionText(transactionData: any): string {
 	const narration = transactionData.narration || '';
 	const tags = transactionData.tags || [];
 	const links = transactionData.links || [];
-	
+
 	// Format payee and narration
 	let payeeNarration = '';
 	if (payee && narration) {
@@ -1879,10 +1958,10 @@ export function generateTransactionText(transactionData: any): string {
 	} else {
 		payeeNarration = '""';
 	}
-	
+
 	// Build the transaction header with tags and links
 	const headerParts = [date, flag, payeeNarration];
-	
+
 	// Add tags (with # prefix, strip any existing # to avoid double prefixes)
 	if (tags && tags.length > 0) {
 		for (const tag of tags) {
@@ -1892,17 +1971,17 @@ export function generateTransactionText(transactionData: any): string {
 			}
 		}
 	}
-	
+
 	// Add links (with ^ prefix)
 	if (links && links.length > 0) {
 		for (const link of links) {
 			headerParts.push(`^${link}`);
 		}
 	}
-	
+
 	// Start with the transaction line
 	const lines = [headerParts.join(' ')];
-	
+
 	// Add transaction-level metadata if present
 	const txnMetadata = transactionData.metadata || {};
 	for (const [key, value] of Object.entries(txnMetadata)) {
@@ -1910,7 +1989,7 @@ export function generateTransactionText(transactionData: any): string {
 			lines.push(`  ${key}: "${value}"`);
 		}
 	}
-	
+
 	// Add postings
 	const postings = transactionData.postings || [];
 	for (const posting of postings) {
@@ -1922,17 +2001,17 @@ export function generateTransactionText(transactionData: any): string {
 		const postingFlag = posting.flag;
 		const postingComment = posting.comment;
 		const postingMetadata = posting.metadata || {};
-		
+
 		// Start posting line with optional flag
 		let postingLine = '  ';
 		if (postingFlag) {
 			postingLine += `${postingFlag} `;
 		}
 		postingLine += account;
-		
+
 		if (amount && currency) {
 			postingLine += `  ${amount} ${currency}`;
-			
+
 			// Add cost if present (e.g., {100.00 USD} or {{100.00 USD}} for total cost)
 			if (cost) {
 				const costNumber = cost.number;
@@ -1940,21 +2019,21 @@ export function generateTransactionText(transactionData: any): string {
 				const costDate = cost.date;
 				const costLabel = cost.label;
 				const isTotal = cost.isTotal || false;
-				
+
 				if (costNumber && costCurrency) {
 					const openBrace = isTotal ? '{{' : '{';
 					const closeBrace = isTotal ? '}}' : '}';
-					
+
 					postingLine += ` ${openBrace}${costNumber} ${costCurrency}`;
-					
+
 					if (costDate) {
 						postingLine += `, ${costDate}`;
 					}
-					
+
 					if (costLabel) {
 						postingLine += `, "${costLabel}"`;
 					}
-					
+
 					postingLine += closeBrace;
 				} else if (costDate) {
 					postingLine += ` {${costDate}}`;
@@ -1962,27 +2041,27 @@ export function generateTransactionText(transactionData: any): string {
 					postingLine += ` {"${costLabel}"}`;
 				}
 			}
-			
+
 			// Add price if present (e.g., @ 100.00 USD or @@ 1000.00 USD for total price)
 			if (price && price.amount && price.currency) {
 				const priceSymbol = price.isTotal ? '@@' : '@';
 				postingLine += ` ${priceSymbol} ${price.amount} ${price.currency}`;
 			}
 		}
-		
+
 		// Add inline comment if present
 		if (postingComment) {
 			postingLine += `  ; ${postingComment}`;
 		}
-		
+
 		lines.push(postingLine);
-		
+
 		// Add posting-level metadata if present (indented 4 spaces total)
 		for (const [key, value] of Object.entries(postingMetadata)) {
 			lines.push(`    ${key}: "${value}"`);
 		}
 	}
-	
+
 	return lines.join('\n');
 }
 
@@ -1996,16 +2075,16 @@ export function generateTransactionText(transactionData: any): string {
 export async function createTransaction(
 	plugin: BeancountPlugin,
 	transactionData: any
-): Promise<{success: boolean, error?: string}> {
+): Promise<{ success: boolean, error?: string }> {
 	try {
 		// Extract date from transaction data
 		const transactionDate = transactionData.date || new Date().toISOString().split('T')[0];
-		
+
 		// Ensure year file exists for structured layout
 		const year = new Date(transactionDate).getFullYear();
 		const folderName = plugin.settings.structuredFolderName || 'Finances';
 		await ensureYearFile(plugin, folderName, year);
-		
+
 		// Get target file path
 		const beancountFilePath = resolveFilePath(plugin, 'transaction', transactionDate);
 		if (!beancountFilePath) {
@@ -2022,20 +2101,20 @@ export async function createTransaction(
 
 		// Generate transaction text
 		const transactionText = generateTransactionText(transactionData);
-		
+
 		// Read current file content
 		const currentContent = await readFile(normalizedPath, 'utf-8');
-		
+
 		// Append transaction with proper newlines
 		const newContent = currentContent + '\n' + transactionText + '\n';
-		
+
 		// Write to temp file then rename (atomic operation)
 		const tempPath = normalizedPath + '.tmp';
 		await writeFile(tempPath, newContent, 'utf-8');
 		renameSync(tempPath, normalizedPath);
-		
+
 		console.debug(`[createTransaction] Successfully created transaction in ${normalizedPath}`);
-		
+
 		return { success: true };
 	} catch (error) {
 		console.error('[createTransaction] Error:', error);
@@ -2059,7 +2138,7 @@ export async function updateTransaction(
 	plugin: BeancountPlugin,
 	transactionId: string,
 	transactionData: any
-): Promise<{success: boolean, error?: string}> {
+): Promise<{ success: boolean, error?: string }> {
 	try {
 		const beancountFilePath = plugin.settings.beancountFilePath;
 		if (!beancountFilePath) {
@@ -2070,7 +2149,7 @@ export async function updateTransaction(
 		// runQuery() handles quote escaping automatically
 		const query = `SELECT filename, lineno FROM postings WHERE id = "${transactionId}" LIMIT 1`;
 		const csv = await runQuery(plugin, query);
-		
+
 		const parser = require('csv-parse/sync');
 		const records = parser.parse(csv, {
 			columns: true,
@@ -2085,7 +2164,7 @@ export async function updateTransaction(
 		// Use the actual filename from the query result (important for structured layouts)
 		const actualFilePath = records[0]['filename'];
 		const lineno = parseInt(records[0]['lineno']);
-		
+
 		if (!actualFilePath) {
 			return { success: false, error: 'Filename not returned from query' };
 		}
@@ -2112,7 +2191,7 @@ export async function updateTransaction(
 		// Find the start and end of the transaction block
 		// Note: BQL returns a posting line, not the transaction header, so we need to scan backward first
 		let startIndex = lineIndex;
-		
+
 		// Scan backward to find the transaction header (first non-indented, non-empty line)
 		for (let i = lineIndex - 1; i >= 0; i--) {
 			const line = lines[i];
@@ -2126,13 +2205,13 @@ export async function updateTransaction(
 			}
 			// Otherwise it's an indented line (metadata, other posting), keep scanning backward
 		}
-		
+
 		let endIndex = lineIndex;
 
 		// Scan forward to find the end of the transaction (next non-indented line or blank line followed by non-indented)
 		for (let i = lineIndex + 1; i < lines.length; i++) {
 			const line = lines[i];
-			
+
 			// Empty line
 			if (line.trim() === '') {
 				// Check if next non-empty line is indented or not
@@ -2200,9 +2279,9 @@ export async function updateTransaction(
 		const tempPath = normalizedPath + '.tmp';
 		await writeFile(tempPath, newContent, 'utf-8');
 		renameSync(tempPath, normalizedPath);
-		
+
 		console.debug(`[updateTransaction] Successfully updated transaction ${transactionId} in ${normalizedPath}`);
-		
+
 		return { success: true };
 	} catch (error) {
 		console.error('[updateTransaction] Error:', error);
@@ -2223,7 +2302,7 @@ export async function updateTransaction(
 export async function deleteTransaction(
 	plugin: BeancountPlugin,
 	transactionId: string
-): Promise<{success: boolean, error?: string}> {
+): Promise<{ success: boolean, error?: string }> {
 	try {
 		const beancountFilePath = plugin.settings.beancountFilePath;
 		if (!beancountFilePath) {
@@ -2234,7 +2313,7 @@ export async function deleteTransaction(
 		// runQuery() handles quote escaping automatically
 		const query = `SELECT filename, lineno FROM postings WHERE id = "${transactionId}" LIMIT 1`;
 		const csv = await runQuery(plugin, query);
-		
+
 		const parser = require('csv-parse/sync');
 		const records = parser.parse(csv, {
 			columns: true,
@@ -2249,7 +2328,7 @@ export async function deleteTransaction(
 		// Use the actual filename from the query result (important for structured layouts)
 		const actualFilePath = records[0]['filename'];
 		const lineno = parseInt(records[0]['lineno']);
-		
+
 		if (!actualFilePath) {
 			return { success: false, error: 'Filename not returned from query' };
 		}
@@ -2276,7 +2355,7 @@ export async function deleteTransaction(
 		// Find the start and end of the transaction block
 		// Note: BQL returns a posting line, not the transaction header, so we need to scan backward first
 		let startIndex = lineIndex;
-		
+
 		// Scan backward to find the transaction header (first non-indented, non-empty line)
 		for (let i = lineIndex - 1; i >= 0; i--) {
 			const line = lines[i];
@@ -2290,13 +2369,13 @@ export async function deleteTransaction(
 			}
 			// Otherwise it's an indented line (metadata, other posting), keep scanning backward
 		}
-		
+
 		let endIndex = lineIndex;
 
 		// Scan forward to find the end of the transaction (next non-indented line or blank line followed by non-indented)
 		for (let i = lineIndex + 1; i < lines.length; i++) {
 			const line = lines[i];
-			
+
 			// Empty line
 			if (line.trim() === '') {
 				// Check if next non-empty line is indented or not
@@ -2365,9 +2444,9 @@ export async function deleteTransaction(
 		const tempPath = normalizedPath + '.tmp';
 		await writeFile(tempPath, newContent, 'utf-8');
 		renameSync(tempPath, normalizedPath);
-		
+
 		console.debug(`[deleteTransaction] Successfully deleted transaction ${transactionId} from ${normalizedPath}`);
-		
+
 		return { success: true };
 	} catch (error) {
 		console.error('[deleteTransaction] Error:', error);
@@ -2410,7 +2489,7 @@ export async function saveCloseDirective(
 
 		// Step 4: Read file and append directive
 		const content = await readFile(normalizedPath, 'utf-8');
-		const newContent = content.endsWith('\n') 
+		const newContent = content.endsWith('\n')
 			? `${content}${directiveText}\n`
 			: `${content}\n${directiveText}\n`;
 
@@ -2451,7 +2530,7 @@ export async function getTransactionEntries(
 		// NOTE: Account filter is applied in-memory after grouping to ensure we get all postings
 		// for transactions that match the account filter
 		let whereConditions: string[] = [];
-		
+
 		if (filters.startDate) {
 			whereConditions.push(`date >= ${filters.startDate}`);
 		}
@@ -2471,7 +2550,7 @@ export async function getTransactionEntries(
 		}
 
 		const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
-		
+
 		// Query to get all postings with transaction-level data
 		// Note: Single line to avoid shell escaping issues with newlines
 		const query = `SELECT id, date, flag, payee, narration, tags, links, filename, lineno, account, number, currency, cost_number, cost_currency, cost_date, price, entry.meta as entry_meta FROM postings ${whereClause} ORDER BY date DESC, id, account`;
@@ -2494,12 +2573,12 @@ export async function getTransactionEntries(
 
 		for (const row of records) {
 			const txnId = row['id'];
-			
+
 			if (!transactionsMap.has(txnId)) {
 				// Create new transaction object
 				const tagsStr = row['tags'] || '';
 				const linksStr = row['links'] || '';
-				
+
 				// Parse tags - comes as quoted CSV like "Test,Work"
 				let tags: string[] = [];
 				if (tagsStr && tagsStr.trim()) {
@@ -2613,7 +2692,7 @@ export async function getTransactionEntries(
 			transactions = transactions.filter((txn: any) => {
 				const narrationMatch = txn.narration?.toLowerCase().includes(searchLower);
 				const payeeMatch = txn.payee?.toLowerCase().includes(searchLower);
-				const accountMatch = txn.postings.some((p: any) => 
+				const accountMatch = txn.postings.some((p: any) =>
 					p.account?.toLowerCase().includes(searchLower)
 				);
 				return narrationMatch || payeeMatch || accountMatch;
