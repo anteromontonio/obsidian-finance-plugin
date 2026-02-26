@@ -4,14 +4,16 @@ import { writable, type Writable, get } from 'svelte/store';
 import type BeancountPlugin from '../main';
 import * as queries from '../queries/index';
 import { Logger } from '../utils/logger';
-import { 
-    parseCommoditiesListCSV, 
-    parseCommoditiesPriceDataCSV, 
+import {
+    parseCommoditiesListCSV,
+    parseCommoditiesPriceDataCSV,
     parseCommodityDetailsCSV,
     validatePriceSource,
     validateLogoUrl,
     saveCommodityMetadata
 } from '../utils/index';
+import { PriceService } from '../services/price.service';
+import { Notice } from 'obsidian';
 
 /**
  * Interface representing metadata and state of a single commodity.
@@ -19,10 +21,14 @@ import {
 export interface CommodityInfo {
     /** The commodity symbol (e.g. "USD", "AAPL"). */
     symbol: string;
+    /** Alias for symbol (for compatibility with services). */
+    name?: string;
     /** Whether explicit price metadata exists for this commodity. */
     hasPriceMetadata: boolean;
     /** The price metadata string (e.g. "yahoo/AAPL") if exists. */
     priceMetadata?: string;
+    /** Alias for priceMetadata (for compatibility). */
+    pricemetadata?: string;
     /** Complete metadata dictionary from Beancount. */
     fullMetadata: Record<string, any>;
     /** Latest price information if available. */
@@ -33,6 +39,8 @@ export interface CommodityInfo {
     logoUrl?: string | null;
     /** Whether the price is latest (updated within last day). */
     isPriceLatest?: boolean;
+    /** The date of the last price record. */
+    priceDate?: string | null;
 }
 
 /**
@@ -64,7 +72,8 @@ export interface CommoditiesState {
  */
 export class CommoditiesController {
     private plugin: BeancountPlugin;
-    
+    private priceService: PriceService;
+
     // Reactive stores
     /** Store for the full list of commodities. */
     public commodities: Writable<CommodityInfo[]> = writable([]);
@@ -85,12 +94,19 @@ export class CommoditiesController {
     /** Store containing commodities filtered by the search term. */
     public filteredCommodities: Writable<CommodityInfo[]> = writable([]);
 
+    // Price fetching stores
+    /** Store for price fetching state. */
+    public fetchingPrices: Writable<boolean> = writable(false);
+    /** Store for last price fetch information. */
+    public lastPriceFetch: Writable<{ date: Date, summary: string } | null> = writable(null);
+
     /**
      * Creates an instance of CommoditiesController.
      * @param {BeancountPlugin} plugin - The main plugin instance.
      */
     constructor(plugin: BeancountPlugin) {
         this.plugin = plugin;
+        this.priceService = new PriceService(plugin);
         this.setupReactivity();
         console.debug('[CommoditiesController] initialized');
     }
@@ -143,25 +159,25 @@ export class CommoditiesController {
         try {
             // Get operating currency from settings
             const operatingCurrency = this.plugin.settings.operatingCurrency || 'USD';
-            
+
             // Execute both queries in parallel
             const [commoditiesCSV, priceDataCSV] = await Promise.all([
                 this.plugin.runQuery(queries.getAllCommoditiesQuery()),
                 this.plugin.runQuery(queries.getCommoditiesPriceDataQuery(operatingCurrency))
             ]);
-            
+
             console.debug('[CommoditiesController] loadData: received CSV data');
-            
+
             // Parse CSV results
             const allSymbols = parseCommoditiesListCSV(commoditiesCSV);
             const priceDataMap = parseCommoditiesPriceDataCSV(priceDataCSV);
-            
+
             console.debug('[CommoditiesController] parsed', allSymbols.length, 'commodities and', priceDataMap.size, 'price entries');
-            
+
             // Merge data: iterate all commodities and enrich with price data
             const commodities: CommodityInfo[] = allSymbols.map(symbol => {
                 const priceData = priceDataMap.get(symbol);
-                
+
                 return {
                     symbol,
                     hasPriceMetadata: !!(priceData?.logo || priceData?.price),
@@ -174,6 +190,7 @@ export class CommoditiesController {
                     },
                     currentPrice: priceData?.price ? `${priceData.price} ${operatingCurrency}` : undefined,
                     logoUrl: priceData?.logo || null,
+                    priceDate: priceData?.date || null,
                     isPriceLatest: priceData?.isLatest || false
                 } as CommodityInfo;
             });
@@ -181,7 +198,7 @@ export class CommoditiesController {
             commodities.sort((a, b) => a.symbol.localeCompare(b.symbol));
             this.commodities.set(commodities);
             this.lastUpdated.set(new Date());
-            
+
             // Update hasCommodityData flag based on loaded commodities
             this.hasCommodityData.set(commodities.length > 0);
 
@@ -204,9 +221,9 @@ export class CommoditiesController {
         try {
             const detailsCSV = await this.plugin.runQuery(queries.getCommodityDetailsQuery(symbol));
             const details = parseCommodityDetailsCSV(detailsCSV);
-            
+
             console.debug('[CommoditiesController] loadCommodityDetails: parsed ->', details);
-            
+
             this.selectedCommodity.set({
                 symbol: details.symbol || symbol,
                 hasPriceMetadata: !!details.priceMetadata,
@@ -234,12 +251,12 @@ export class CommoditiesController {
         this.error.set(null);
         try {
             console.debug('[CommoditiesController] saveMetadata:', { symbol, metadata });
-            
+
             // Get file location from selected commodity
             const current = get(this.selectedCommodity);
             const filename = (current as any)?.filename;
             const lineno = (current as any)?.lineno;
-            
+
             if (!filename || !lineno) {
                 throw new Error('Commodity location not available. Please reload the commodity details.');
             }
@@ -374,11 +391,11 @@ export class CommoditiesController {
     ): Promise<{ success: boolean; error?: string }> {
         this.loading.set(true);
         this.error.set(null);
-        
+
         try {
             // Import the createCommodity utility function
             const { createCommodity } = await import('../utils/index');
-            
+
             const createBackup = this.plugin.settings.createBackups ?? true;
             const result = await createCommodity(
                 this.plugin,
@@ -396,7 +413,7 @@ export class CommoditiesController {
 
             // Refresh the commodity list to show the new commodity
             await this.loadData();
-            
+
             Logger.log(`[CommoditiesController] Successfully created commodity ${symbol}`);
             return { success: true };
 
@@ -415,5 +432,56 @@ export class CommoditiesController {
      */
     public async refresh(): Promise<void> {
         await this.loadData();
+    }
+
+
+    /**
+     * Fetches current prices for all commodities by running bean-price on
+     * the main ledger file. Appends new price directives to prices.beancount.
+     */
+    public async fetchPrices(): Promise<void> {
+        // Prevent concurrent fetches
+        if (get(this.fetchingPrices)) {
+            Logger.log('[CommoditiesController] Price fetch already in progress');
+            new Notice('Price fetch already in progress');
+            return;
+        }
+
+        this.fetchingPrices.set(true);
+        this.error.set(null);
+
+        try {
+            new Notice('Fetching prices via bean-price...');
+
+            const result = await this.priceService.fetchAndSavePrices();
+
+            const summary = `Fetched ${result.fetchedCount}, saved ${result.savedCount}`;
+            this.lastPriceFetch.set({ date: new Date(), summary });
+
+            if (result.fetchedCount === 0) {
+                new Notice('⚠ bean-price returned no price directives. Check your commodity price metadata.');
+            } else if (result.savedCount === 0) {
+                new Notice(`ℹ All ${result.fetchedCount} fetched price(s) were already up to date.`);
+            } else {
+                new Notice(`✓ Saved ${result.savedCount} new price(s) to prices.beancount`);
+            }
+
+            if (result.failed.length > 0) {
+                const msg = result.failed[0].error;
+                this.error.set(msg);
+                new Notice(`Error: ${msg}`);
+            }
+
+            // Refresh cards to show updated prices
+            await this.loadData();
+
+        } catch (error) {
+            Logger.error('[CommoditiesController] fetchPrices error:', error);
+            const errorMsg = error instanceof Error ? error.message : 'Failed to fetch prices';
+            this.error.set(errorMsg);
+            new Notice(`Error fetching prices: ${errorMsg}`);
+        } finally {
+            this.fetchingPrices.set(false);
+        }
     }
 }

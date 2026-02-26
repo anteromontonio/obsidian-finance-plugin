@@ -1,128 +1,417 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
-  export let symbol: string;
-  export let commodity: any = { symbol: '', metadata: {}, logo_url: null, price_meta: null, latest_price: null };
+	import { createEventDispatcher, onMount } from "svelte";
+	export let symbol: string;
+	export let commodity: any = {
+		symbol: "",
+		metadata: {},
+		logo_url: null,
+		price_meta: null,
+		latest_price: null,
+	};
 
-  const dispatch = createEventDispatcher();
+	const dispatch = createEventDispatcher();
 
-  // Allow simultaneous editing
-  let editingLogo = false;
-  let editingPrice = false;
-  let logoInput = '';
-  let priceInput = '';
+	let editingLogo = false;
+	let editingPrice = false;
+	let logoInput = "";
+	let priceInput = "";
 
-  onMount(() => {
-    console.debug('[CommodityDetailModal.svelte] Mounted');
-    logoInput = commodity?.metadata?.logo || commodity?.logo_url || '';
-    priceInput = commodity?.metadata?.price || commodity?.price_meta || '';
-    console.debug('[CommodityDetailModal.svelte] onMount', { symbol, logoInput, priceInput, commodity });
-  });
+	onMount(() => {
+		logoInput = commodity?.metadata?.logo || commodity?.logo_url || "";
+		priceInput = commodity?.metadata?.price || commodity?.price_meta || "";
+	});
 
-  function toggleEditLogo() {
-    editingLogo = !editingLogo;
-  }
-  function toggleEditPrice() {
-    editingPrice = !editingPrice;
-  }
+	function toggleEditLogo() {
+		editingLogo = !editingLogo;
+	}
+	function toggleEditPrice() {
+		editingPrice = !editingPrice;
+	}
 
-  function saveMetadata() {
-    const newMeta = { ...(commodity?.metadata || {}) };
-    if (logoInput && logoInput.trim() !== '') newMeta.logo = logoInput.trim();
-    else delete newMeta.logo;
-    if (priceInput && priceInput.trim() !== '') newMeta.price = priceInput.trim();
-    else delete newMeta.price;
+	function saveMetadata() {
+		const newMeta = { ...(commodity?.metadata || {}) };
+		if (logoInput?.trim()) newMeta.logo = logoInput.trim();
+		else delete newMeta.logo;
+		if (priceInput?.trim()) newMeta.price = priceInput.trim();
+		else delete newMeta.price;
+		dispatch("save-metadata", { symbol, metadata: newMeta });
+		editingLogo = false;
+		editingPrice = false;
+	}
 
-    console.debug('[CommodityDetailModal.svelte] dispatch save-metadata', { symbol, newMeta });
-    dispatch('save-metadata', { symbol, metadata: newMeta });
-    editingLogo = false;
-    editingPrice = false;
-  }
+	function testPrice() {
+		dispatch("test-price", { symbol });
+	}
+	function testLogo() {
+		dispatch("test-logo", { symbol, url: logoInput });
+	}
+	function close() {
+		dispatch("close");
+	}
 
-  function testPrice() {
-    console.debug('[CommodityDetailModal.svelte] dispatch test-price', { symbol, priceInput });
-    dispatch('test-price', { symbol });
-  }
+	$: hasLogo = !!(commodity?.metadata?.logo || commodity?.logo_url);
+	$: logoUrl = commodity?.metadata?.logo || commodity?.logo_url;
+	$: priceSource = commodity?.metadata?.price || commodity?.price_meta;
+	$: currentPrice = commodity?.currentPrice;
+	$: otherMeta = Object.entries(commodity?.metadata || {}).filter(
+		([k]) => k !== "logo" && k !== "price",
+	);
 
-  function testLogo() {
-    console.debug('[CommodityDetailModal.svelte] dispatch test-logo', { symbol, url: logoInput });
-    dispatch('test-logo', { symbol, url: logoInput });
-  }
-  
-  function close() {
-    dispatch('close');
-  }
+	// Generate initials + color for fallback avatar
+	function getInitials(sym: string) {
+		return sym ? sym.slice(0, 2).toUpperCase() : "??";
+	}
 </script>
 
-<style>
-  .header { display:flex; align-items:center; gap:12px }
-  .placeholder { width:48px; height:48px; display:flex; align-items:center; justify-content:center; background:#eee; border-radius:6px; font-weight:700 }
-  .metadata-table { width:100%; border-collapse: collapse; margin-top:8px }
-  .metadata-table .row { display:flex; gap:12px; padding:6px 0; border-bottom:1px solid #eee }
-  .actions { margin-top:8px; display:flex; gap:8px }
-  .muted { color:#666 }
-</style>
+<div class="modal-body">
+	<!-- Identity -->
+	<div class="identity">
+		<div class="logo-wrap">
+			{#if hasLogo}
+				<img
+					src={logoUrl}
+					alt="{symbol} logo"
+					on:error={(e) => {
+						e.currentTarget.style.display = "none";
+					}}
+				/>
+			{:else}
+				<span class="logo-initials">{getInitials(symbol)}</span>
+			{/if}
+		</div>
+		<div class="identity-info">
+			<div class="symbol-name">{symbol}</div>
+			{#if currentPrice}
+				<div class="current-price">
+					Current price: <strong>{currentPrice}</strong>
+				</div>
+			{:else}
+				<div class="current-price">No price data available</div>
+			{/if}
+		</div>
+	</div>
 
-<div>
-  <div class="header">
-    {#if commodity?.metadata?.logo || commodity?.logo_url}
-      <img src={commodity?.metadata?.logo || commodity?.logo_url} alt="logo" width="48" height="48" on:error={() => { /* ignore broken images */ }} />
-    {:else}
-      <div class="placeholder">¤</div>
-    {/if}
-    <div>
-      <div><strong>{symbol}</strong></div>
-    </div>
-  </div>
+	<!-- Price Source -->
+	<div class="section">
+		<p class="section-title">Price Source</p>
+		<div class="section-card">
+			{#if !editingPrice}
+				<div class="kv-row">
+					<span class="kv-key">Source</span>
+					<span class="kv-value">{priceSource || "—"}</span>
+					<div class="kv-actions">
+						<button
+							class="btn btn-ghost"
+							on:click={testPrice}
+							title="Test this price source">Test</button
+						>
+						<button class="btn" on:click={toggleEditPrice}
+							>{priceSource ? "Edit" : "Add"}</button
+						>
+					</div>
+				</div>
+			{:else}
+				<div class="edit-area">
+					<input
+						type="text"
+						bind:value={priceInput}
+						placeholder="e.g. yahoo/BTC-USD or crypto:coingecko/bitcoin"
+						autofocus
+					/>
+					<span class="edit-hint"
+						>Format: provider/symbol — e.g. <code>yahoo/AAPL</code>
+						or <code>crypto:coingecko/bitcoin</code></span
+					>
+					<div class="edit-buttons">
+						<button class="btn btn-primary" on:click={saveMetadata}
+							>Save</button
+						>
+						<button class="btn btn-ghost" on:click={testPrice}
+							>Test</button
+						>
+						<button class="btn btn-ghost" on:click={toggleEditPrice}
+							>Cancel</button
+						>
+					</div>
+				</div>
+			{/if}
+		</div>
+	</div>
 
-  <h4>All Metadata</h4>
-  {#if commodity?.metadata && Object.keys(commodity.metadata).length > 0}
-    <div class="metadata-table">
-      {#each Object.entries(commodity.metadata) as [key, value]}
-        <div class="row">
-          <div style="width:30%;"><strong>{key}</strong></div>
-          <div style="flex:1">{typeof value === 'string' ? value : JSON.stringify(value)}</div>
-        </div>
-      {/each}
-    </div>
-  {:else}
-    <div class="muted">No metadata present</div>
-  {/if}
+	<!-- Logo -->
+	<div class="section">
+		<p class="section-title">Logo</p>
+		<div class="section-card">
+			{#if !editingLogo}
+				<div class="kv-row">
+					<span class="kv-key">URL</span>
+					<span class="kv-value">{logoUrl || "—"}</span>
+					<div class="kv-actions">
+						{#if logoUrl}
+							<button
+								class="btn btn-ghost"
+								on:click={testLogo}
+								title="Verify logo URL">Test</button
+							>
+						{/if}
+						<button class="btn" on:click={toggleEditLogo}
+							>{logoUrl ? "Edit" : "Add"}</button
+						>
+					</div>
+				</div>
+			{:else}
+				<div class="edit-area">
+					<input
+						type="text"
+						bind:value={logoInput}
+						placeholder="https://example.com/logo.png"
+						autofocus
+					/>
+					<span class="edit-hint"
+						>Direct image URL (PNG, SVG, or JPG)</span
+					>
+					<div class="edit-buttons">
+						<button class="btn btn-primary" on:click={saveMetadata}
+							>Save</button
+						>
+						<button class="btn btn-ghost" on:click={testLogo}
+							>Test URL</button
+						>
+						<button class="btn btn-ghost" on:click={toggleEditLogo}
+							>Cancel</button
+						>
+					</div>
+				</div>
+			{/if}
+		</div>
+	</div>
 
-  <h4 style="margin-top:12px">Logo</h4>
-  {#if !editingLogo}
-    <div class="muted">{commodity?.metadata?.logo || 'No logo set'}</div>
-    <div class="actions">
-      <button on:click={toggleEditLogo}>{commodity?.metadata?.logo ? 'Edit Logo' : 'Add Logo'}</button>
-      <button on:click={testLogo}>Test Logo</button>
-    </div>
-  {:else}
-    <input type="text" bind:value={logoInput} placeholder="Enter logo URL" style="width:100%" />
-    <div class="actions">
-      <button on:click={testLogo}>Test Logo</button>
-      <button on:click={saveMetadata}>Save</button>
-      <button on:click={toggleEditLogo}>Cancel</button>
-    </div>
-    <div class="muted">One-line: Enter a direct image URL (e.g. https://site.com/logo.png)</div>
-  {/if}
+	<!-- Other Metadata -->
+	{#if otherMeta.length > 0}
+		<div class="section">
+			<p class="section-title">Other Metadata</p>
+			<div class="section-card">
+				{#each otherMeta as [key, value]}
+					<div class="kv-row">
+						<span class="kv-key">{key}</span>
+						<span class="kv-value"
+							>{typeof value === "string"
+								? value
+								: JSON.stringify(value)}</span
+						>
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
 
-  <h4 style="margin-top:12px">Price</h4>
-  {#if !editingPrice}
-    <div class="muted">{commodity?.metadata?.price || commodity?.price_meta || 'No price metadata'}</div>
-    <div class="actions">
-      <button on:click={toggleEditPrice}>{commodity?.metadata?.price ? 'Edit Price' : 'Add Price'}</button>
-      <button on:click={testPrice}>Test Price Source</button>
-    </div>
-  {:else}
-    <input type="text" bind:value={priceInput} placeholder="Enter price metadata like 'USD:yahoo/AAPL'" style="width:100%" />
-    <div class="actions">
-      <button on:click={testPrice}>Test Price Source</button>
-      <button on:click={saveMetadata}>Save</button>
-      <button on:click={toggleEditPrice}>Cancel</button>
-    </div>
-    <div class="muted">One-line: Enter price source (e.g. USD:yahoo/AAPL)</div>
-  {/if}
-
-  <div style="margin-top:16px; display:flex; gap:8px; justify-content:flex-end">
-    <button on:click={close}>Close</button>
-  </div>
+	<!-- Footer -->
+	<div class="footer">
+		<button class="btn btn-primary" on:click={close}>Done</button>
+	</div>
 </div>
+
+<style>
+	.modal-body {
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+		padding: 4px 0;
+	}
+
+	/* ── Identity row ─────────────────────────────────── */
+	.identity {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		padding-bottom: 16px;
+		border-bottom: 1px solid var(--background-modifier-border);
+	}
+
+	.logo-wrap {
+		width: 56px;
+		height: 56px;
+		border-radius: 10px;
+		overflow: hidden;
+		background: var(--background-secondary);
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 1px solid var(--background-modifier-border);
+	}
+
+	.logo-wrap img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+
+	.logo-initials {
+		font-weight: 800;
+		font-size: 16px;
+		color: var(--text-muted);
+	}
+
+	.identity-info {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.symbol-name {
+		font-size: 22px;
+		font-weight: 700;
+		color: var(--text-normal);
+		line-height: 1.1;
+	}
+
+	.current-price {
+		margin-top: 4px;
+		font-size: 14px;
+		color: var(--text-muted);
+	}
+
+	.current-price strong {
+		color: var(--text-normal);
+		font-size: 16px;
+	}
+
+	/* ── Section ──────────────────────────────────────── */
+	.section {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.section-title {
+		font-size: 11px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: var(--text-muted);
+		margin: 0;
+	}
+
+	.section-card {
+		background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px;
+		overflow: hidden;
+	}
+
+	/* ── Key-value rows ───────────────────────────────── */
+	.kv-row {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 9px 14px;
+		border-bottom: 1px solid var(--background-modifier-border);
+		font-size: 13px;
+	}
+
+	.kv-row:last-child {
+		border-bottom: none;
+	}
+
+	.kv-key {
+		width: 100px;
+		flex-shrink: 0;
+		color: var(--text-muted);
+		font-size: 12px;
+	}
+
+	.kv-value {
+		flex: 1;
+		color: var(--text-normal);
+		word-break: break-all;
+		font-family: var(--font-monospace);
+		font-size: 12px;
+	}
+
+	.kv-actions {
+		display: flex;
+		gap: 6px;
+		flex-shrink: 0;
+	}
+
+	/* ── Inline edit ──────────────────────────────────── */
+	.edit-area {
+		padding: 10px 14px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.edit-area input {
+		width: 100%;
+		padding: 7px 10px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		background: var(--background-primary);
+		color: var(--text-normal);
+		font-size: 13px;
+		font-family: var(--font-monospace);
+		box-sizing: border-box;
+	}
+
+	.edit-area input:focus {
+		outline: none;
+		border-color: var(--interactive-accent);
+	}
+
+	.edit-hint {
+		font-size: 11px;
+		color: var(--text-faint);
+	}
+
+	.edit-buttons {
+		display: flex;
+		gap: 6px;
+	}
+
+	/* ── Buttons ──────────────────────────────────────── */
+	.btn {
+		padding: 5px 12px;
+		border-radius: 5px;
+		border: 1px solid var(--background-modifier-border);
+		background: var(--background-primary);
+		color: var(--text-normal);
+		font-size: 12px;
+		cursor: pointer;
+		transition: background 0.15s ease;
+		white-space: nowrap;
+	}
+
+	.btn:hover {
+		background: var(--background-secondary-alt);
+	}
+
+	.btn-primary {
+		background: var(--interactive-accent);
+		color: var(--text-on-accent);
+		border-color: transparent;
+	}
+
+	.btn-primary:hover {
+		background: var(--interactive-accent-hover);
+	}
+
+	.btn-ghost {
+		background: transparent;
+		border-color: transparent;
+		color: var(--text-muted);
+	}
+
+	.btn-ghost:hover {
+		color: var(--text-normal);
+		background: var(--background-secondary);
+	}
+
+	/* ── Footer ───────────────────────────────────────── */
+	.footer {
+		display: flex;
+		justify-content: flex-end;
+		padding-top: 4px;
+		border-top: 1px solid var(--background-modifier-border);
+	}
+</style>

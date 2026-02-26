@@ -38,6 +38,15 @@ export interface BeancountPluginSettings {
     structuredFolderName: string;
     /** Computed absolute path to the structured folder (set automatically). */
     structuredFolderPath: string;
+    // Price Fetching Settings
+    /** Whether to enable automatic price fetching on a schedule. */
+    autoPriceFetch: boolean;
+    /** Interval in hours for automatic price fetching. */
+    priceFetchIntervalHours: number;
+    /** Timestamp of last automatic price fetch. */
+    lastAutoPriceFetch: number;
+    /** Bean-price command path (detected automatically). */
+    beanPriceCommand: string;
 }
 
 /**
@@ -60,7 +69,12 @@ export const DEFAULT_SETTINGS: BeancountPluginSettings = {
     maxBackupFiles: 10,
     // Structured Layout Settings
     structuredFolderName: 'Finances',
-    structuredFolderPath: ''
+    structuredFolderPath: '',
+    // Price Fetching Settings
+    autoPriceFetch: false,
+    priceFetchIntervalHours: 24,
+    lastAutoPriceFetch: 0,
+    beanPriceCommand: ''
 }
 
 /**
@@ -180,6 +194,67 @@ export class BeancountSettingTab extends PluginSettingTab {
                     this.plugin.settings.debugMode = value;
                     await this.plugin.saveSettings();
                 }));
+
+        // Price Fetching Settings Section
+        containerEl.createEl('h3', { text: 'Automatic Price Fetching' });
+
+        new Setting(containerEl)
+            .setName('Enable automatic price fetching')
+            .setDesc('Automatically fetch commodity prices at scheduled intervals using bean-price.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.autoPriceFetch)
+                .onChange(async (value) => {
+                    this.plugin.settings.autoPriceFetch = value;
+                    await this.plugin.saveSettings();
+                    // Trigger re-render to show/hide interval setting
+                    this.display();
+                }));
+
+        if (this.plugin.settings.autoPriceFetch) {
+            new Setting(containerEl)
+                .setName('Fetch interval (hours)')
+                .setDesc('How often to automatically fetch prices for all commodities with configured price sources.')
+                .addText(text => text
+                    .setPlaceholder('24')
+                    .setValue(String(this.plugin.settings.priceFetchIntervalHours))
+                    .onChange(async (value) => {
+                        const hours = parseInt(value);
+                        if (!isNaN(hours) && hours > 0) {
+                            this.plugin.settings.priceFetchIntervalHours = hours;
+                            await this.plugin.saveSettings();
+                        }
+                    }));
+
+            // Display last fetch time if available
+            if (this.plugin.settings.lastAutoPriceFetch > 0) {
+                const lastFetchDate = new Date(this.plugin.settings.lastAutoPriceFetch);
+                const timeSince = this.formatTimeSince(lastFetchDate);
+                
+                const infoEl = containerEl.createDiv({ cls: 'setting-item-description' });
+                infoEl.style.marginTop = '8px';
+                infoEl.style.fontSize = '0.9em';
+                infoEl.style.opacity = '0.7';
+                infoEl.textContent = `Last automatic fetch: ${timeSince} (${lastFetchDate.toLocaleString()})`;
+            }
+        }
+    }
+
+    /**
+     * Formats a time duration as a human-readable string.
+     */
+    private formatTimeSince(date: Date): string {
+        const now = new Date().getTime();
+        const past = date.getTime();
+        const diffMs = now - past;
+        
+        const minutes = Math.floor(diffMs / 60000);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+        
+        if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+        if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        return 'just now';
     }
 
     private renderConnectionTab(containerEl: HTMLElement): void {

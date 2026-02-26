@@ -11,6 +11,7 @@ import { InlineBQLProcessor } from './ui/markdown/InlineBQLProcessor';
 import { OnboardingModal } from './ui/modals/OnboardingModal';
 
 import { JournalService } from './services/journal.service';
+import { PriceService } from './services/price.service';
 import { createJournalStore } from './stores/journal.store';
 import { Logger } from './utils/logger';
 
@@ -27,7 +28,9 @@ export default class BeancountPlugin extends Plugin {
 
 	// Services
 	public journalService: JournalService;
+	public priceService: PriceService;
 	public journalStore: ReturnType<typeof createJournalStore>;
+	private pricesFetchIntervalId: number | null = null;
 
 	/**
 	 * Called when the plugin is loaded by Obsidian.
@@ -42,6 +45,7 @@ export default class BeancountPlugin extends Plugin {
 
         // Initialize Core Services
         this.journalService = new JournalService(this);
+        this.priceService = new PriceService(this);
         this.journalStore = createJournalStore(this.journalService);
 
         // Check for onboarding
@@ -103,8 +107,72 @@ export default class BeancountPlugin extends Plugin {
 			callback: () => { new OnboardingModal(this.app, this).open(); }
 		});
 
+		// Add Fetch Commodity Prices command
+		this.addCommand({
+			id: 'fetch-commodity-prices',
+			name: 'Fetch Commodity Prices',
+			callback: async () => {
+				// Find the unified dashboard view and call fetchPrices on commodities controller
+				const leaves = this.app.workspace.getLeavesOfType(UNIFIED_DASHBOARD_VIEW_TYPE);
+				for (const leaf of leaves) {
+					if (leaf.view instanceof UnifiedDashboardView) {
+						await (leaf.view as any).commoditiesController?.fetchPrices();
+						return;
+					}
+				}
+				// If dashboard not open, just run the service directly
+				Logger.log('[Main] Fetching prices via command (dashboard not open)');
+				const result = await this.priceService.fetchAndSavePrices();
+				if (result.savedCount > 0) {
+					// @ts-ignore - Notice exists in Obsidian
+					new this.app.Notice(`✓ Fetched and saved ${result.savedCount} price(s)`);
+				} else {
+					// @ts-ignore
+					new this.app.Notice('No prices fetched. Check commodity price sources.');
+				}
+			}
+		});
+
+		// Setup automatic price fetching if enabled
+		if (this.settings.autoPriceFetch) {
+			this.setupAutomaticPriceFetching();
+		}
+
 
 		this.addSettingTab(new BeancountSettingTab(this.app, this));
+	}
+
+	/**
+	 * Sets up automatic price fetching on an interval.
+	 */
+	private setupAutomaticPriceFetching(): void {
+		const intervalMs = this.settings.priceFetchIntervalHours * 60 * 60 * 1000;
+		Logger.log(`[Main] Setting up automatic price fetching every ${this.settings.priceFetchIntervalHours} hours`);
+
+		// Register interval with Obsidian's lifecycle management
+		this.registerInterval(
+			window.setInterval(async () => {
+				Logger.log('[Main] Running automatic price fetch');
+				try {
+					const result = await this.priceService.fetchAndSavePrices();
+					
+					// Update last fetch timestamp
+					this.settings.lastAutoPriceFetch = Date.now();
+					await this.saveSettings();
+
+					// Only show notice on errors (don't spam on success)
+					if (result.failed.length > 0) {
+						const failedSymbols = result.failed.map(f => f.commodity).join(', ');
+						// @ts-ignore
+						new this.app.Notice(`⚠ Automatic price fetch: Failed for ${failedSymbols}`);
+					}
+					
+					Logger.log(`[Main] Automatic price fetch complete: ${result.savedCount} saved, ${result.failed.length} failed`);
+				} catch (error) {
+					Logger.error('[Main] Automatic price fetch error:', error);
+				}
+			}, intervalMs)
+		);
 	}
 
 	/**
@@ -196,6 +264,7 @@ export default class BeancountPlugin extends Plugin {
 	 */
 	onunload() {
         Logger.log('Plugin unloading...');
+        // Cleanup is handled automatically by registerInterval
     }
 	
 	// Register BQL processor
