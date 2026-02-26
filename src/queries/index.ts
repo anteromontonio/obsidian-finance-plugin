@@ -45,7 +45,7 @@ export function getAllTagsQuery(): string {
  * @returns {string} The BQL query string.
  */
 export function getTotalAssetsCostQuery(currency: string): string { // <-- NEW
-  return `SELECT convert(sum(position), '${currency}') WHERE account ~ '^Assets'`;
+	return `SELECT convert(sum(position), '${currency}') WHERE account ~ '^Assets'`;
 }
 
 /**
@@ -54,7 +54,7 @@ export function getTotalAssetsCostQuery(currency: string): string { // <-- NEW
  * @returns {string} The BQL query string.
  */
 export function getTotalLiabilitiesCostQuery(currency: string): string { // <-- NEW
-   return `SELECT convert(sum(position), '${currency}') WHERE account ~ '^Liabilities'`;
+	return `SELECT convert(sum(position), '${currency}') WHERE account ~ '^Liabilities'`;
 }
 
 /**
