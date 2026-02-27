@@ -4,7 +4,7 @@ import { writable, type Writable, get } from 'svelte/store';
 import type { ChartConfiguration } from 'chart.js/auto';
 import type BeancountPlugin from '../main';
 import * as queries from '../queries/index';
-import { parseAmount, extractConvertedAmount, getCurrentMonthRange } from '../utils/index'; // Import helpers
+import { parseAmount, extractConvertedAmount, getCurrentMonthRange, parseSingleValue } from '../utils/index'; // Import helpers
 import { parse as parseCsv } from 'csv-parse/sync';
 import { Logger } from '../utils/logger';
 
@@ -41,7 +41,7 @@ export interface OverviewState {
  */
 export class OverviewController {
 	private plugin: BeancountPlugin;
-	
+
 	// Create a Svelte store to hold the state
 	public state: Writable<OverviewState>;
 
@@ -84,30 +84,30 @@ export class OverviewController {
 
 		try {
 			const monthRange = getCurrentMonthRange();
-			
-			const [ assetsResult, liabilitiesResult, incomeResult, expensesResult, historicalResult ] = await Promise.all([
+
+			const [assetsResult, liabilitiesResult, incomeResult, expensesResult, historicalResult] = await Promise.all([
 				this.plugin.runQuery(queries.getTotalAssetsCostQuery(reportingCurrency)),
 				this.plugin.runQuery(queries.getTotalLiabilitiesCostQuery(reportingCurrency)),
 				this.plugin.runQuery(queries.getMonthlyIncomeQuery(monthRange.start, monthRange.end, reportingCurrency)),
 				this.plugin.runQuery(queries.getMonthlyExpensesQuery(monthRange.start, monthRange.end, reportingCurrency)),
-			this.plugin.runQuery(queries.getHistoricalNetWorthDataQuery('month', reportingCurrency))
-		]);
-		Logger.log("OverviewController: Historical Result:", historicalResult);			// Process KPI Data
-			const assetsInventoryStr = this.plugin.parseSingleValue(assetsResult);
-			const liabilitiesInventoryStr = this.plugin.parseSingleValue(liabilitiesResult);
-			const incomeInventoryStr = this.plugin.parseSingleValue(incomeResult);
-			const expensesInventoryStr = this.plugin.parseSingleValue(expensesResult);
+				this.plugin.runQuery(queries.getHistoricalNetWorthDataQuery('month', reportingCurrency))
+			]);
+			Logger.log("OverviewController: Historical Result:", historicalResult);			// Process KPI Data
+			const assetsInventoryStr = parseSingleValue(assetsResult);
+			const liabilitiesInventoryStr = parseSingleValue(liabilitiesResult);
+			const incomeInventoryStr = parseSingleValue(incomeResult);
+			const expensesInventoryStr = parseSingleValue(expensesResult);
 
 			const assetsStr = extractConvertedAmount(assetsInventoryStr, reportingCurrency);
 			const liabilitiesStr = extractConvertedAmount(liabilitiesInventoryStr, reportingCurrency);
 			const incomeStr = extractConvertedAmount(incomeInventoryStr, reportingCurrency);
 			const expensesStr = extractConvertedAmount(expensesInventoryStr, reportingCurrency);
-			
+
 			const assetsData = parseAmount(assetsStr);
 			const liabilitiesData = parseAmount(liabilitiesStr);
 			const incomeData = parseAmount(incomeStr);
 			const expensesData = parseAmount(expensesStr);
-			
+
 			// In Beancount:
 			// - Income accounts have negative balances (we want positive for display)
 			// - Expense accounts have positive balances (already positive)
@@ -115,7 +115,7 @@ export class OverviewController {
 			const incomeAmount = Math.abs(incomeData.amount); // Convert negative income to positive
 			const expensesAmount = expensesData.amount; // Expenses are already positive
 			const liabilitiesAmount = Math.abs(liabilitiesData.amount); // Convert negative liabilities to positive
-			
+
 			// Calculate financial metrics
 			const netWorthNum = assetsData.amount - liabilitiesAmount;
 			const savingsNum = incomeAmount - expensesAmount;
@@ -142,28 +142,28 @@ export class OverviewController {
 
 				// New query format: [year, month_number, net_worth_value]
 				// Example: ["2024", "5", "362701.06 INR"]
-				
+
 				// Parse and collect actual data points
 				const dataMap = new Map<string, number>();
 				let minYear = Infinity;
 				let maxYear = -Infinity;
 				let minMonth = Infinity;
 				let maxMonth = -Infinity;
-				
+
 				for (const row of historicalRecords) {
 					if (row.length < 3) continue;
-					
+
 					const year = parseInt(row[0].trim());
 					const monthNum = parseInt(row[1].trim());
 					const valueStr = row[2].trim();
-					
+
 					// Extract net worth value
 					const netWorthStr = extractConvertedAmount(valueStr, reportingCurrency);
 					const netWorthData = parseAmount(netWorthStr);
-					
+
 					const sortKey = `${year}-${monthNum.toString().padStart(2, '0')}`;
 					dataMap.set(sortKey, netWorthData.amount);
-					
+
 					// Track date range
 					if (year < minYear || (year === minYear && monthNum < minMonth)) {
 						minYear = year;
@@ -174,31 +174,31 @@ export class OverviewController {
 						maxMonth = monthNum;
 					}
 				}
-				
+
 				Logger.log("OverviewController: Data Map:", dataMap);
 				Logger.log("OverviewController: Date Range:", { minYear, minMonth, maxYear, maxMonth });
-				
+
 				// Fill in all months between min and max date
-				const labels: string[] = []; 
+				const labels: string[] = [];
 				const dataPoints: (number | null)[] = [];
-				
+
 				let currentYear = minYear;
 				let currentMonth = minMonth;
-				
+
 				while (currentYear < maxYear || (currentYear === maxYear && currentMonth <= maxMonth)) {
 					const sortKey = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
 					const date = new Date(currentYear, currentMonth - 1);
 					const displayLabel = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }).toUpperCase();
-					
+
 					labels.push(displayLabel);
-					
+
 					// Add actual data point if exists, otherwise null (creates gap in line chart)
 					if (dataMap.has(sortKey)) {
 						dataPoints.push(dataMap.get(sortKey)!);
 					} else {
 						dataPoints.push(null);
 					}
-					
+
 					// Move to next month
 					currentMonth++;
 					if (currentMonth > 12) {
@@ -206,7 +206,7 @@ export class OverviewController {
 						currentYear++;
 					}
 				}
-				
+
 				Logger.log("OverviewController: Final Chart Labels:", labels);
 				Logger.log("OverviewController: Final Chart Data Points:", dataPoints);
 
@@ -215,9 +215,9 @@ export class OverviewController {
 					data: {
 						labels: labels,
 						datasets: [{
-							label: `Net Worth (${reportingCurrency})`, 
+							label: `Net Worth (${reportingCurrency})`,
 							data: dataPoints,
-							borderColor: 'rgb(75, 192, 192)', 
+							borderColor: 'rgb(75, 192, 192)',
 							backgroundColor: 'rgba(75, 192, 192, 0.1)',
 							tension: 0.3,
 							fill: true,
@@ -226,8 +226,8 @@ export class OverviewController {
 							spanGaps: true // Connect points across null values (gaps)
 						}]
 					},
-					options: { 
-						responsive: true, 
+					options: {
+						responsive: true,
 						maintainAspectRatio: false,
 						plugins: {
 							title: {
@@ -243,14 +243,14 @@ export class OverviewController {
 								mode: 'index',
 								intersect: false,
 								callbacks: {
-									label: function(context: any) {
+									label: function (context: any) {
 										const value = context.parsed.y;
 										return `Net Worth: ${value.toLocaleString()} ${reportingCurrency}`;
 									}
 								}
 							}
 						},
-						scales: { 
+						scales: {
 							x: {
 								display: true,
 								title: {
@@ -262,7 +262,7 @@ export class OverviewController {
 									color: 'rgba(0, 0, 0, 0.1)'
 								}
 							},
-							y: { 
+							y: {
 								display: true,
 								title: {
 									display: true,
@@ -273,7 +273,7 @@ export class OverviewController {
 									color: 'rgba(0, 0, 0, 0.1)'
 								},
 								ticks: {
-									callback: function(value: any) {
+									callback: function (value: any) {
 										return value.toLocaleString();
 									}
 								}
@@ -293,12 +293,12 @@ export class OverviewController {
 				newState.chartError = `Failed to process chart data: ${chartDataError.message}`;
 				newState.chartConfig = null;
 			}
-			
+
 			// Update the store with all new data
 			this.state.update(s => ({ ...s, ...newState, isLoading: false, error: null }));
 
-		} catch (e) { 
-			Logger.error("Error loading overview data:", e); 
+		} catch (e) {
+			Logger.error("Error loading overview data:", e);
 			this.state.update(s => ({ ...s, isLoading: false, error: `Failed to load data: ${e.message}` }));
 		}
 	}

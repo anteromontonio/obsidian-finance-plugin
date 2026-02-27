@@ -19,25 +19,6 @@ export interface TransactionFilters {
 
 // --- Query Functions ---
 
-/**
- * Gets all unique account names
- * @returns {string} The BQL query string.
- */
-export function getAllAccountsQuery(): string {
-	return `SELECT account`; // Post-processing needed for unique list
-}
-
-/**
- * Gets all unique tags
- * @returns {string} The BQL query string.
- */
-export function getAllTagsQuery(): string {
-	return `SELECT tags`; // Post-processing needed for unique list
-}
-
-// src/queries/index.ts
-
-// ... (other query functions)
 
 /**
  * Gets converted cost of all Asset accounts

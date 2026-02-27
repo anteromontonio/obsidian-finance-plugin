@@ -31,6 +31,7 @@ A comprehensive Beancount integration for [Obsidian](https://obsidian.md) that t
 - 📈 Real-time financial metrics and trend visualization
 - 📝 Inline BQL queries with customizable shortcuts
 - 💰 Complete transaction, balance, and commodity management
+- 💹 **Automated Price Fetching** — runs `bean-price` on a schedule; new prices are deduplicated and appended to `prices.beancount` automatically
 - 🔄 Direct Beancount file integration—no separate database
 
 ---
@@ -41,9 +42,11 @@ This plugin integrates with your existing Beancount setup:
 
 1. **Python 3.8+**
 2. **Beancount v3+**: Install via `pip install beancount`
-3. **bean-query**: Command-line tool for querying Beancount files
-4. **bean-price** *(optional)*: For automatic commodity price fetching
+3. **bean-query**: Command-line tool for querying Beancount files (`pip install beanquery`)
+4. **bean-price** *(optional)*: For automatic commodity price fetching (`pip install beanprice`)
 5. **WSL Support** *(optional)*: Full compatibility for Windows users running Beancount in WSL
+
+> **Note:** `bean-query` and `bean-price` are separate packages from Beancount itself and require their own `pip install` commands.
 
 ---
 

@@ -434,6 +434,51 @@ export class CommoditiesController {
         await this.loadData();
     }
 
+    /**
+     * Deletes a commodity directive from the Beancount file.
+     * Loads the commodity's file location, deletes the directive block, then refreshes.
+     * @param {string} symbol - The commodity symbol to delete.
+     * @returns {Promise<{ success: boolean; error?: string }>}
+     */
+    public async deleteCommodity(symbol: string): Promise<{ success: boolean; error?: string }> {
+        this.loading.set(true);
+        this.error.set(null);
+        try {
+            // Ensure we have fresh file location data
+            await this.loadCommodityDetails(symbol);
+            const current = get(this.selectedCommodity);
+            const filename = (current as any)?.filename;
+            const lineno = (current as any)?.lineno;
+
+            if (!filename || !lineno) {
+                throw new Error('Commodity location not available. Please reload the commodity details.');
+            }
+
+            const { deleteCommodityDirective } = await import('../utils/index');
+            const createBackup = this.plugin.settings.createBackups ?? true;
+            const result = await deleteCommodityDirective(symbol, filename, lineno, createBackup);
+
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to delete commodity');
+            }
+
+            // Clear selection and refresh
+            this.clearSelection();
+            await this.loadData();
+
+            Logger.log(`[CommoditiesController] Successfully deleted commodity ${symbol}`);
+            return { success: true };
+
+        } catch (error) {
+            Logger.error('[CommoditiesController] deleteCommodity error:', error);
+            const errorMsg = error instanceof Error ? error.message : 'Failed to delete commodity';
+            this.error.set(errorMsg);
+            return { success: false, error: errorMsg };
+        } finally {
+            this.loading.set(false);
+        }
+    }
+
 
     /**
      * Fetches current prices for all commodities by running bean-price on

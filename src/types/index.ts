@@ -4,15 +4,7 @@ export * from '../models/account';
 export * from '../models/journal';
 export * from '../models/common';
 
-// Legacy types that might still be needed if not fully covered by models
-export interface TransactionFilters {
-	account?: string | null;
-	startDate?: string | null;
-	endDate?: string | null;
-	payee?: string | null;
-	tag?: string | null;
-}
-
+// Convenience types for legacy callers
 export interface Posting {
 	account: string;
 	amount: string;
@@ -42,7 +34,7 @@ export interface PriceData {
 
 export interface PriceFetchResult {
 	successful: PriceData[];
-	failed: Array<{commodity: string, source: string, error: string}>;
+	failed: Array<{ commodity: string, source: string, error: string }>;
 	fetchedCount: number;
 	savedCount: number;
 }
@@ -54,11 +46,3 @@ export interface PriceFetchStatus {
 		result: PriceFetchResult;
 	};
 }
-
-export interface BeancountPluginSettings {
-	beancountFilePath: string;
-	beancountCommand: string;
-	operatingCurrency: string;
-}
-
-export type { ChartConfiguration, ChartData, ChartOptions } from 'chart.js/auto';
