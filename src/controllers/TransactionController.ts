@@ -37,7 +37,7 @@ export interface TransactionState {
  */
 export class TransactionController {
 	private plugin: BeancountPlugin;
-	
+
 	// Svelte store for all state
 	public state: Writable<TransactionState>;
 
@@ -67,10 +67,10 @@ export class TransactionController {
 		this.state.update(s => ({ ...s, isLoadingFilters: true }));
 		try {
 			const [accountResult, tagResult] = await Promise.all([
-				this.plugin.runQuery(queries.getAllAccountsQuery()),
-				this.plugin.runQuery(queries.getAllTagsQuery())
+				this.plugin.runQuery(`SELECT account`),
+				this.plugin.runQuery(`SELECT tags`)
 			]);
-			
+
 			// Process Accounts
 			const cleanAccountStdout = accountResult.replace(/\r/g, "").trim();
 			const accountRecords: string[][] = parseCsv(cleanAccountStdout, { columns: false, skip_empty_lines: true });
@@ -79,14 +79,14 @@ export class TransactionController {
 			const allAccounts = [...new Set(accountDataRows.map(row => row?.[0]).filter(Boolean))];
 			const builtTree = buildAccountTree(allAccounts);
 			const allNode: AccountNode = { name: 'All Accounts', fullName: null, children: [] };
-			
+
 			// Process Tags
 			const cleanTagStdout = tagResult.replace(/\r/g, "").trim();
 			const tagRecords: string[][] = parseCsv(cleanTagStdout, { columns: false, skip_empty_lines: true, relax_column_count: true });
 			const firstTagRowIsHeader = tagRecords[0]?.[0]?.toLowerCase() === 'tags';
 			const tagDataRows = firstTagRowIsHeader ? tagRecords.slice(1) : tagRecords;
 			const allTags = [...new Set(tagDataRows.flat().flatMap(tagStr => tagStr ? tagStr.split(',') : []).map(tag => tag.trim()).filter(tag => tag !== ''))];
-			
+
 			// Update state
 			this.state.update(s => ({
 				...s,
@@ -95,7 +95,7 @@ export class TransactionController {
 				allAccounts: allAccounts, // Store flat list of account names
 				allTags: allTags
 			}));
-			
+
 		} catch (e) {
 			console.error("Error fetching transaction filters:", e);
 			this.state.update(s => ({ ...s, isLoadingFilters: false, error: "Failed to load filters." }));
@@ -108,7 +108,7 @@ export class TransactionController {
 	 */
 	async handleFilterChange(filters: queries.TransactionFilters) {
 		this.state.update(s => ({ ...s, isLoading: true, error: null, currentFilters: filters }));
-		
+
 		let newTransactions: string[][] = [];
 		let newError: string | null = null;
 
@@ -121,7 +121,7 @@ export class TransactionController {
 			const firstRowIsHeader = records[0]?.[0]?.toLowerCase().includes('date');
 			const dataRows = firstRowIsHeader ? records.slice(1) : records;
 			newTransactions = dataRows.map(row => {
-				const completeRow = [...row]; while(completeRow.length < defaultHeaders.length) completeRow.push(''); return completeRow;
+				const completeRow = [...row]; while (completeRow.length < defaultHeaders.length) completeRow.push(''); return completeRow;
 			});
 		} catch (e) {
 			console.error("Error fetching transactions:", e);

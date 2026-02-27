@@ -10,23 +10,6 @@ import { getTargetFile, getMainLedgerPath, ensureYearFile, type OperationType } 
 import { Logger } from './logger';
 import { SystemDetector } from './SystemDetector';
 
-// --- FILE PATH RESOLVER ---
-
-/**
- * Get the appropriate file path for structured layout operations.
- * 
- * @param plugin - The plugin instance
- * @param operationType - The type of operation (transaction, account, etc.)
- * @param date - Optional date for transaction routing
- * @returns The absolute path to the target file
- */
-function resolveFilePath(
-	plugin: BeancountPlugin,
-	operationType: OperationType,
-	date?: string
-): string {
-	return getTargetFile(plugin, operationType, date);
-}
 
 // --- QUERY RUNNER ---
 
@@ -1044,7 +1027,7 @@ export async function saveOpenDirective(
 	createBackup: boolean = true
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const filePath = resolveFilePath(plugin, 'account', date);
+		const filePath = getTargetFile(plugin, 'account', date);
 		if (!filePath) {
 			return { success: false, error: 'Beancount file path not set' };
 		}
@@ -1105,7 +1088,7 @@ export async function createBalanceAssertion(
 	createBackup: boolean = true
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const filePath = resolveFilePath(plugin, 'balance', date);
+		const filePath = getTargetFile(plugin, 'balance', date);
 		if (!filePath) {
 			return { success: false, error: 'Beancount file path not set' };
 		}
@@ -1163,7 +1146,7 @@ export async function createNote(
 	createBackup: boolean = true
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const filePath = resolveFilePath(plugin, 'note', date);
+		const filePath = getTargetFile(plugin, 'note', date);
 		if (!filePath) {
 			return { success: false, error: 'Beancount file path not set' };
 		}
@@ -1235,7 +1218,7 @@ export async function createCommodity(
 	createBackup: boolean = true
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const filePath = resolveFilePath(plugin, 'commodity', date);
+		const filePath = getTargetFile(plugin, 'commodity', date);
 		if (!filePath) {
 			return { success: false, error: 'Beancount file path not set' };
 		}
@@ -1311,7 +1294,7 @@ export async function createPriceDirective(
 	createBackup: boolean = true
 ): Promise<{ success: boolean; filePath?: string; error?: string }> {
 	try {
-		const filePath = resolveFilePath(plugin, 'price', date);
+		const filePath = getTargetFile(plugin, 'price', date);
 		if (!filePath) {
 			return { success: false, error: 'Beancount file path not set' };
 		}
@@ -1391,12 +1374,11 @@ export async function updateBalance(
 		const query = `SELECT filename, lineno FROM #entries WHERE type='balance' AND date=${date} AND '${account}' IN accounts`;
 		const csv = await runQuery(plugin, query);
 
-		const parser = require('csv-parse/sync');
-		const records = parser.parse(csv, {
+		const records = parseCsv(csv, {
 			columns: true,
 			skip_empty_lines: true,
 			trim: true
-		});
+		}) as any[];
 
 		if (records.length === 0) {
 			return { success: false, error: `Balance assertion not found for ${account} on ${date}` };
@@ -1439,12 +1421,9 @@ export async function updateBalance(
 		lines[lineIndex] = newBalanceText;
 		const newContent = lines.join('\n');
 
-		// Write to temp file then rename (atomic operation)
-		const tempPath = normalizedPath + '.tmp';
-		await writeFile(tempPath, newContent, 'utf-8');
-		renameSync(tempPath, normalizedPath);
+		await atomicFileWrite(normalizedPath, newContent);
 
-		console.debug(`[updateBalance] Successfully updated balance ${balanceId} in ${normalizedPath}`);
+		Logger.log(`[updateBalance] Successfully updated balance ${balanceId} in ${normalizedPath}`);
 
 		return { success: true };
 	} catch (error) {
@@ -1487,12 +1466,11 @@ export async function deleteBalance(
 		const query = `SELECT filename, lineno FROM #entries WHERE type='balance' AND date=${date} AND '${account}' IN accounts`;
 		const csv = await runQuery(plugin, query);
 
-		const parser = require('csv-parse/sync');
-		const records = parser.parse(csv, {
+		const records = parseCsv(csv, {
 			columns: true,
 			skip_empty_lines: true,
 			trim: true
-		});
+		}) as any[];
 
 		if (records.length === 0) {
 			return { success: false, error: `Balance assertion not found for ${account} on ${date}` };
@@ -1537,12 +1515,9 @@ export async function deleteBalance(
 
 		const newContent = newLines.join('\n');
 
-		// Write to temp file then rename (atomic operation)
-		const tempPath = normalizedPath + '.tmp';
-		await writeFile(tempPath, newContent, 'utf-8');
-		renameSync(tempPath, normalizedPath);
+		await atomicFileWrite(normalizedPath, newContent);
 
-		console.debug(`[deleteBalance] Successfully deleted balance ${balanceId} from ${normalizedPath}`);
+		Logger.log(`[deleteBalance] Successfully deleted balance ${balanceId} from ${normalizedPath}`);
 
 		return { success: true };
 	} catch (error) {
@@ -1651,12 +1626,9 @@ export async function updateNote(
 		lines[lineIndex] = newNoteText;
 		const newContent = lines.join('\n');
 
-		// Write to temp file then rename (atomic operation)
-		const tempPath = normalizedPath + '.tmp';
-		await writeFile(tempPath, newContent, 'utf-8');
-		renameSync(tempPath, normalizedPath);
+		await atomicFileWrite(normalizedPath, newContent);
 
-		console.debug(`[updateNote] Successfully updated note ${noteId} in ${normalizedPath}`);
+		Logger.log(`[updateNote] Successfully updated note ${noteId} in ${normalizedPath}`);
 
 		return { success: true };
 	} catch (error) {
@@ -1749,12 +1721,9 @@ export async function deleteNote(
 
 		const newContent = newLines.join('\n');
 
-		// Write to temp file then rename (atomic operation)
-		const tempPath = normalizedPath + '.tmp';
-		await writeFile(tempPath, newContent, 'utf-8');
-		renameSync(tempPath, normalizedPath);
+		await atomicFileWrite(normalizedPath, newContent);
 
-		console.debug(`[deleteNote] Successfully deleted note ${noteId} from ${normalizedPath}`);
+		Logger.log(`[deleteNote] Successfully deleted note ${noteId} from ${normalizedPath}`);
 
 		return { success: true };
 	} catch (error) {
@@ -1850,21 +1819,15 @@ export async function getBalanceEntries(
 			balances.push(balance);
 		}
 
-		// Apply search term filter (in-memory)
+		// Sort by date descending (BQL ORDER BY already handles this; only needed after in-memory filter)
+		// Note: only re-sort after in-memory searchTerm filter that might break BQL ordering
 		if (filters.searchTerm) {
-			const searchLower = filters.searchTerm.toLowerCase();
-			balances = balances.filter((bal: any) => {
-				const accountMatch = bal.account?.toLowerCase().includes(searchLower);
-				return accountMatch;
+			balances.sort((a: any, b: any) => {
+				const dateCompare = b.date.localeCompare(a.date);
+				if (dateCompare !== 0) return dateCompare;
+				return a.account.localeCompare(b.account);
 			});
 		}
-
-		// Sort by date descending
-		balances.sort((a: any, b: any) => {
-			const dateCompare = b.date.localeCompare(a.date);
-			if (dateCompare !== 0) return dateCompare;
-			return a.account.localeCompare(b.account);
-		});
 
 		// Calculate pagination
 		const totalCount = balances.length;
@@ -1966,22 +1929,14 @@ export async function getNoteEntries(
 			notes.push(note);
 		}
 
-		// Apply search term filter (in-memory)
+		// Sort only after in-memory searchTerm filter if applied
 		if (filters.searchTerm) {
-			const searchLower = filters.searchTerm.toLowerCase();
-			notes = notes.filter((note: any) => {
-				const accountMatch = note.account?.toLowerCase().includes(searchLower);
-				const commentMatch = note.comment?.toLowerCase().includes(searchLower);
-				return accountMatch || commentMatch;
+			notes.sort((a: any, b: any) => {
+				const dateCompare = b.date.localeCompare(a.date);
+				if (dateCompare !== 0) return dateCompare;
+				return a.account.localeCompare(b.account);
 			});
 		}
-
-		// Sort by date descending
-		notes.sort((a: any, b: any) => {
-			const dateCompare = b.date.localeCompare(a.date);
-			if (dateCompare !== 0) return dateCompare;
-			return a.account.localeCompare(b.account);
-		});
 
 		// Calculate pagination
 		const totalCount = notes.length;
@@ -2161,14 +2116,14 @@ export async function createTransaction(
 		await ensureYearFile(plugin, folderName, year);
 
 		// Get target file path
-		const beancountFilePath = resolveFilePath(plugin, 'transaction', transactionDate);
+		const beancountFilePath = getTargetFile(plugin, 'transaction', transactionDate);
 		if (!beancountFilePath) {
 			return { success: false, error: 'Beancount file path not configured' };
 		}
 
 		// Convert WSL path if necessary
 		const normalizedPath = convertWslPathToWindows(beancountFilePath);
-		console.debug(`[createTransaction] Path conversion: ${beancountFilePath} -> ${normalizedPath}`);
+		Logger.log(`[createTransaction] Path conversion: ${beancountFilePath} -> ${normalizedPath}`);
 
 		// Create backup if enabled
 		const createBackup = plugin.settings.createBackups ?? true;
@@ -2183,12 +2138,9 @@ export async function createTransaction(
 		// Append transaction with proper newlines
 		const newContent = currentContent + '\n' + transactionText + '\n';
 
-		// Write to temp file then rename (atomic operation)
-		const tempPath = normalizedPath + '.tmp';
-		await writeFile(tempPath, newContent, 'utf-8');
-		renameSync(tempPath, normalizedPath);
+		await atomicFileWrite(normalizedPath, newContent);
 
-		console.debug(`[createTransaction] Successfully created transaction in ${normalizedPath}`);
+		Logger.log(`[createTransaction] Successfully created transaction in ${normalizedPath}`);
 
 		return { success: true };
 	} catch (error) {
@@ -2350,12 +2302,9 @@ export async function updateTransaction(
 
 		const newContent = newLines.join('\n');
 
-		// Write to temp file then rename (atomic operation)
-		const tempPath = normalizedPath + '.tmp';
-		await writeFile(tempPath, newContent, 'utf-8');
-		renameSync(tempPath, normalizedPath);
+		await atomicFileWrite(normalizedPath, newContent);
 
-		console.debug(`[updateTransaction] Successfully updated transaction ${transactionId} in ${normalizedPath}`);
+		Logger.log(`[updateTransaction] Successfully updated transaction ${transactionId} in ${normalizedPath}`);
 
 		return { success: true };
 	} catch (error) {
@@ -2515,12 +2464,9 @@ export async function deleteTransaction(
 
 		const newContent = newLines.join('\n');
 
-		// Write to temp file then rename (atomic operation)
-		const tempPath = normalizedPath + '.tmp';
-		await writeFile(tempPath, newContent, 'utf-8');
-		renameSync(tempPath, normalizedPath);
+		await atomicFileWrite(normalizedPath, newContent);
 
-		console.debug(`[deleteTransaction] Successfully deleted transaction ${transactionId} from ${normalizedPath}`);
+		Logger.log(`[deleteTransaction] Successfully deleted transaction ${transactionId} from ${normalizedPath}`);
 
 		return { success: true };
 	} catch (error) {
@@ -2548,7 +2494,7 @@ export async function saveCloseDirective(
 	createBackup: boolean = true
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		const filePath = resolveFilePath(plugin, 'account', date);
+		const filePath = getTargetFile(plugin, 'account', date);
 		if (!filePath) {
 			return { success: false, error: 'Beancount file path not set' };
 		}
@@ -2774,13 +2720,15 @@ export async function getTransactionEntries(
 			});
 		}
 
-		// Transactions are already sorted by BQL query (date DESC, id, account)
-		// Just ensure consistent ordering
-		transactions.sort((a: any, b: any) => {
-			const dateCompare = b.date.localeCompare(a.date);
-			if (dateCompare !== 0) return dateCompare;
-			return a.id.localeCompare(b.id);
-		});
+		// Already sorted by BQL ORDER BY (date DESC, id, account).
+		// Only re-sort after account/searchTerm in-memory filters.
+		if (filters.account || filters.searchTerm) {
+			transactions.sort((a: any, b: any) => {
+				const dateCompare = b.date.localeCompare(a.date);
+				if (dateCompare !== 0) return dateCompare;
+				return a.id.localeCompare(b.id);
+			});
+		}
 
 		// Calculate pagination
 		const totalCount = transactions.length;

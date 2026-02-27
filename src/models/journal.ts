@@ -133,8 +133,6 @@ export interface JournalFilters {
  * Response structure from the journal API.
  */
 export interface JournalApiResponse {
-    /** List of transactions (legacy field). */
-    transactions?: JournalTransaction[];
     /** List of journal entries. */
     entries?: JournalEntry[];
     /** Total count of entries matching filters. */

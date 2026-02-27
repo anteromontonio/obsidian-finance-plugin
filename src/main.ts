@@ -4,7 +4,7 @@ import { Plugin } from 'obsidian';
 import { BeancountSettingTab, type BeancountPluginSettings, DEFAULT_SETTINGS } from './settings';
 import { BeancountView, BEANCOUNT_VIEW_TYPE } from './ui/views/sidebar/sidebar-view';
 import { UnifiedTransactionModal } from './ui/modals/UnifiedTransactionModal';
-import { runQuery, parseSingleValue, convertWslPathToWindows } from './utils/index';
+import { runQuery } from './utils/index';
 import { UnifiedDashboardView, UNIFIED_DASHBOARD_VIEW_TYPE } from './ui/views/dashboard/unified-dashboard-view';
 import { BQLCodeBlockProcessor } from './ui/markdown/BQLCodeBlockProcessor';
 import { InlineBQLProcessor } from './ui/markdown/InlineBQLProcessor';
@@ -30,7 +30,6 @@ export default class BeancountPlugin extends Plugin {
 	public journalService: JournalService;
 	public priceService: PriceService;
 	public journalStore: ReturnType<typeof createJournalStore>;
-	private pricesFetchIntervalId: number | null = null;
 
 	/**
 	 * Called when the plugin is loaded by Obsidian.
@@ -183,7 +182,6 @@ export default class BeancountPlugin extends Plugin {
 	 */
 	async activateView(viewType: string, location: 'tab' | 'right' | 'left' = 'tab') {
 		// Detach existing leaves of this type first to avoid duplicates
-		this.app.workspace.detachLeavesOfType(viewType);
 		if (location === 'tab') {
 			this.app.workspace.detachLeavesOfType(viewType);
 		}
@@ -218,31 +216,12 @@ export default class BeancountPlugin extends Plugin {
 	}
 
 	/**
-	 * Public wrapper for running BQL queries (used by views).
+	 * Public wrapper for running BQL queries (used by views and controllers).
 	 * @param {string} query - The BQL query.
 	 * @returns {Promise<string>} The CSV output.
 	 */
 	public runQuery = (query: string): Promise<string> => {
-		// Call the imported utility function, passing 'this' (the plugin instance)
 		return runQuery(this, query);
-	}
-
-	/**
-	 * Public wrapper for parsing single values from CSV (used by views).
-	 * @param {string} csv - The CSV string.
-	 * @returns {string} The parsed value.
-	 */
-	public parseSingleValue = (csv: string): string => {
-		return parseSingleValue(csv);
-	}
-
-	/**
-	 * Public wrapper for converting WSL paths (used by views).
-	 * @param {string} wslPath - The WSL path.
-	 * @returns {string} The Windows path.
-	 */
-	public convertWslPathToWindows = (wslPath: string): string => {
-		return convertWslPathToWindows(wslPath);
 	}
 
 	// Helper method to get dashboard refresh callback
