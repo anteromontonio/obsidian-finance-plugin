@@ -26,9 +26,7 @@ The plugin verifies your system has the required software.
 - **Python 3.8 or higher**: The runtime environment for Beancount
 - **Beancount v3+**: The accounting engine (`pip install beancount`)
 - **bean-query**: The query tool for BQL execution (`pip install beanquery` - separate package)
-
-Optional:
-- **bean-price**: For automated price fetching (can be added later)
+- **bean-price** *(optional)*: For automated commodity price fetching (`pip install beanprice`)
 
 ### Running the Check
 
@@ -36,6 +34,7 @@ Optional:
 2. The plugin automatically detects:
    - Python executable and version
    - bean-query command and version  
+   - **bean-price** command and version *(optional — green if found, neutral if not)*
    - System environment (Windows, macOS, Linux, WSL)
 
 ### Results
@@ -44,9 +43,10 @@ Optional:
 If all requirements are satisfied, you'll see:
 - Python command path and version
 - bean-query command path and version
+- bean-price command path and version *(or a neutral notice if not installed)*
 - **"Next: File Setup →"** button to proceed
 
-The detected commands are automatically saved to your settings.
+The detected commands are automatically saved to your settings — including `beanPriceCommand` if bean-price was found.
 
 #### ❌ Prerequisites Not Met
 If requirements are missing, you'll see:
@@ -228,6 +228,7 @@ After onboarding completes:
 
 ### Configure Preferences
 - **Operating Currency**: Set your default currency (USD, EUR, etc.)
+- **Automatic Price Fetching**: If bean-price was detected, enable this in **Settings → General** to keep commodity prices up to date automatically
 - **Performance**: Adjust limits based on your ledger size
 - **BQL**: Configure query display preferences
 - **Backups**: Enable automatic backups (recommended)

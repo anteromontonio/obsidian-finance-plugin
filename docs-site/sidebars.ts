@@ -1,4 +1,4 @@
-import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
+import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 
 /**
  * Creating a sidebar enables you to:
@@ -32,6 +32,7 @@ const sidebars: SidebarsConfig = {
         'core-features/beancount-syntax',
         'core-features/snapshot-view',
         'core-features/architecture-queries',
+        'core-features/price-fetching',
         {
           type: 'category',
           label: 'Unified Dashboard',

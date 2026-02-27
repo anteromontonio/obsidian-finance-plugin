@@ -10,9 +10,8 @@
 
     let platform: string = '';
     let systemInfo: any = null;
-    let isWSLAvailable = false;
-    let useWSL = false;
     let detectedBeancountCommand = '';
+    let detectedBeanPriceCommand = '';
     let isValidating = false;
     let validationResult = { isValid: false, message: '' };
     
@@ -37,12 +36,19 @@
         useWSL: false
     };
 
-    // Command editing state
+    // Command editing state — bean-query
     let isEditingCommand = false;
     let editedBeanQueryCommand = '';
     let commandVerificationStatus: 'idle' | 'success' | 'error' = 'idle';
     let commandVerificationMessage = '';
     let isVerifyingCommand = false;
+
+    // Command editing state — bean-price
+    let isEditingBeanPriceCommand = false;
+    let editedBeanPriceCommand = '';
+    let beanPriceVerificationStatus: 'idle' | 'success' | 'error' = 'idle';
+    let beanPriceVerificationMessage = '';
+    let isVerifyingBeanPriceCommand = false;
 
     onMount(async () => {
         await detectSystemAndFiles();
@@ -55,101 +61,65 @@
     async function detectSystemAndFiles() {
         const systemDetector = SystemDetector.getInstance();
         
-        // Get comprehensive system information
         try {
             systemInfo = await systemDetector.getSystemInfo();
             platform = systemInfo.platform;
         } catch (error) {
-            // Silently handle system info detection errors
             platform = process.platform;
         }
         
-        // Check WSL availability on Windows
-        if (platform === 'win32') {
-            try {
-                isWSLAvailable = await systemDetector.detectWSLAvailability();
-            } catch (error) {
-                // Silently handle WSL availability check errors
-                isWSLAvailable = false;
-            }
-        }
-        
-        // Auto-set WSL usage if running in WSL environment
-        if (systemInfo?.isWSL) {
-            useWSL = true;
-        }
-        
-        // Suggest beancount command based on system
         await suggestBeancountCommand();
     }
 
     function loadCurrentSettings() {
         const settings = plugin.settings;
-        
-        // Detect if current command uses WSL
-        if (settings.beancountCommand && settings.beancountCommand.includes('wsl')) {
-            useWSL = true;
-        }
+        detectedBeanPriceCommand = settings.beanPriceCommand || '';
     }
 
     async function suggestBeancountCommand() {
         const systemDetector = SystemDetector.getInstance();
-        
-        if (useWSL && isWSLAvailable) {
-            detectedBeancountCommand = 'wsl bean-query';
-        } else {
-            // Try to detect beancount command
-            try {
-                const suggestions = await systemDetector.suggestBeancountCommand();
-                if (suggestions.length > 0) {
-                    detectedBeancountCommand = suggestions[0];
-                } else {
-                    detectedBeancountCommand = platform === 'win32' ? 'bean-query.exe' : 'bean-query';
-                }
-            } catch (error) {
+        try {
+            const suggestions = await systemDetector.suggestBeancountCommand();
+            if (suggestions.length > 0) {
+                detectedBeancountCommand = suggestions[0];
+            } else {
                 detectedBeancountCommand = platform === 'win32' ? 'bean-query.exe' : 'bean-query';
             }
+        } catch (error) {
+            detectedBeancountCommand = platform === 'win32' ? 'bean-query.exe' : 'bean-query';
         }
-    }
-
-    async function handleWSLToggle() {
-        await suggestBeancountCommand();
-        await saveSettings();
     }
 
     async function runAutoDetection() {
         if (isDetecting) return;
         
         isDetecting = true;
-        detectionStatus = `Detecting system configuration... ${useWSL ? '(WSL preferred)' : '(Native preferred)'}`;
+        detectionStatus = 'Detecting system configuration...';
         
         try {
             const systemDetector = SystemDetector.getInstance();
             
-            // Run optimal command detection with current file path and WSL preference
-            const results = await systemDetector.detectOptimalBeancountSetup(plugin.settings.beancountFilePath || undefined, useWSL);
+            const results = await systemDetector.detectOptimalBeancountSetup(plugin.settings.beancountFilePath || undefined, false);
             autoDetectionResults = results;
             optimalCommands = results;
             
             // Apply detected settings
-            useWSL = results.useWSL;
-            
-            // Update the main beancount command with the detected bean-query command
             if (results.beanQuery) {
                 detectedBeancountCommand = results.beanQuery;
-                
-                // Save to plugin settings
                 plugin.settings.beancountCommand = results.beanQuery;
-                await plugin.saveSettings();
             }
+            if (results.beanPrice) {
+                detectedBeanPriceCommand = results.beanPrice;
+                plugin.settings.beanPriceCommand = results.beanPrice;
+            }
+            await plugin.saveSettings();
             
-            detectionStatus = `Detection completed - Found: ${[
-                results.python && `Python (${results.useWSL ? 'WSL' : 'Native'})`,
-                results.beanQuery && `bean-query (${results.useWSL ? 'WSL' : 'Native'})`, 
+            detectionStatus = `Detection completed — Found: ${[
+                results.python && `Python`,
+                results.beanQuery && 'bean-query',
                 results.beanPrice && 'bean-price'
             ].filter(Boolean).join(', ')}`;
             
-            // Update validation
             await validateConfiguration();
             
         } catch (error) {
@@ -274,7 +244,6 @@
     async function detectCurrentCommands() {
         const systemDetector = SystemDetector.getInstance();
         
-        // If we have a beancount command set, get its version
         if (plugin.settings.beancountCommand) {
             try {
                 const versionResult = await systemDetector.testCommand(`${plugin.settings.beancountCommand} --version`);
@@ -283,13 +252,23 @@
                     optimalCommands.beanQuery = plugin.settings.beancountCommand;
                     optimalCommands.beanQueryVersion = versionMatch ? versionMatch[1] : 'unknown';
                 }
-            } catch (error) {
-                // Silently handle - command might not be set yet
-            }
+            } catch (error) {}
+        }
+
+        if (plugin.settings.beanPriceCommand) {
+            detectedBeanPriceCommand = plugin.settings.beanPriceCommand;
+            try {
+                const versionResult = await systemDetector.testCommand(`${plugin.settings.beanPriceCommand} --version`);
+                if (versionResult.success && versionResult.output) {
+                    const versionMatch = versionResult.output.match(/(\d+\.\d+\.\d+)/);
+                    optimalCommands.beanPrice = plugin.settings.beanPriceCommand;
+                    optimalCommands.beanPriceVersion = versionMatch ? versionMatch[1] : 'unknown';
+                }
+            } catch (error) {}
         }
     }
 
-    // Command editing functions
+    // Bean-query edit functions
     function enableCommandEdit() {
         isEditingCommand = true;
         editedBeanQueryCommand = plugin.settings.beancountCommand || '';
@@ -305,74 +284,80 @@
             new Notice('❌ Command cannot be empty');
             return;
         }
-
         plugin.settings.beancountCommand = editedBeanQueryCommand.trim();
         await plugin.saveSettings();
-        
         isEditingCommand = false;
         commandVerificationStatus = 'idle';
         commandVerificationMessage = '';
-        
-        // Re-detect command info
         await detectCurrentCommands();
-        
         new Notice('✅ Command saved successfully');
-        
-        dispatch('settingsChanged', {
-            beancountCommand: editedBeanQueryCommand.trim()
-        });
+        dispatch('settingsChanged', { beancountCommand: editedBeanQueryCommand.trim() });
+    }
+
+    // Bean-price edit functions
+    function enableBeanPriceEdit() {
+        isEditingBeanPriceCommand = true;
+        editedBeanPriceCommand = plugin.settings.beanPriceCommand || '';
+    }
+
+    function cancelBeanPriceEdit() {
+        isEditingBeanPriceCommand = false;
+        editedBeanPriceCommand = '';
+    }
+
+    async function saveBeanPriceEdit() {
+        plugin.settings.beanPriceCommand = editedBeanPriceCommand.trim();
+        await plugin.saveSettings();
+        detectedBeanPriceCommand = editedBeanPriceCommand.trim();
+        isEditingBeanPriceCommand = false;
+        beanPriceVerificationStatus = 'idle';
+        beanPriceVerificationMessage = '';
+        await detectCurrentCommands();
+        new Notice('✅ Bean-price command saved');
     }
 
     async function verifyCommand() {
         const commandToVerify = isEditingCommand ? editedBeanQueryCommand : plugin.settings.beancountCommand;
-        
-        if (!commandToVerify || !commandToVerify.trim()) {
-            commandVerificationStatus = 'error';
-            commandVerificationMessage = 'No command to verify';
-            return;
-        }
-
-        if (!plugin.settings.beancountFilePath) {
-            commandVerificationStatus = 'error';
-            commandVerificationMessage = 'No beancount file configured. Please run onboarding first.';
-            new Notice('❌ No beancount file configured');
-            return;
-        }
-
+        if (!commandToVerify?.trim()) { commandVerificationStatus = 'error'; commandVerificationMessage = 'No command to verify'; return; }
+        if (!plugin.settings.beancountFilePath) { commandVerificationStatus = 'error'; commandVerificationMessage = 'No beancount file configured.'; return; }
         isVerifyingCommand = true;
         commandVerificationStatus = 'idle';
         commandVerificationMessage = 'Verifying...';
-
         try {
             const systemDetector = SystemDetector.getInstance();
-            const testQuery = 'SELECT TRUE LIMIT 1';
-            const command = `${commandToVerify.trim()} -f csv "${plugin.settings.beancountFilePath}" "${testQuery}"`;
-            
+            const command = `${commandToVerify.trim()} -f csv "${plugin.settings.beancountFilePath}" "SELECT TRUE LIMIT 1"`;
             const result = await systemDetector.testCommand(command, 15000);
-            
             if (result.success) {
-                commandVerificationStatus = 'success';
-                commandVerificationMessage = '✅ Command verified successfully';
-                new Notice('✅ Command verified successfully');
+                commandVerificationStatus = 'success'; commandVerificationMessage = '✅ Command verified successfully'; new Notice('✅ Command verified successfully');
             } else {
-                commandVerificationStatus = 'error';
-                commandVerificationMessage = `❌ Verification failed: ${result.error || 'Unknown error'}`;
-                new Notice('❌ Command verification failed');
+                commandVerificationStatus = 'error'; commandVerificationMessage = `❌ Verification failed: ${result.error || 'Unknown error'}`; new Notice('❌ Command verification failed');
             }
         } catch (error) {
-            commandVerificationStatus = 'error';
-            commandVerificationMessage = `❌ Error: ${error.message}`;
-            new Notice(`❌ Verification error: ${error.message}`);
-        } finally {
-            isVerifyingCommand = false;
-        }
+            commandVerificationStatus = 'error'; commandVerificationMessage = `❌ Error: ${error.message}`;
+        } finally { isVerifyingCommand = false; }
+    }
+
+    async function verifyBeanPriceCommand() {
+        const cmd = isEditingBeanPriceCommand ? editedBeanPriceCommand : plugin.settings.beanPriceCommand;
+        if (!cmd?.trim()) { beanPriceVerificationStatus = 'error'; beanPriceVerificationMessage = 'No bean-price command configured'; return; }
+        isVerifyingBeanPriceCommand = true;
+        beanPriceVerificationStatus = 'idle';
+        beanPriceVerificationMessage = 'Verifying...';
+        try {
+            const systemDetector = SystemDetector.getInstance();
+            const result = await systemDetector.testCommand(`${cmd.trim()} --help`, 10000);
+            if (result.success) {
+                beanPriceVerificationStatus = 'success'; beanPriceVerificationMessage = '✅ bean-price found and responsive'; new Notice('✅ bean-price verified');
+            } else {
+                beanPriceVerificationStatus = 'error'; beanPriceVerificationMessage = `❌ Not found: ${result.error || 'Command failed'}`; new Notice('❌ bean-price verification failed');
+            }
+        } catch (error) {
+            beanPriceVerificationStatus = 'error'; beanPriceVerificationMessage = `❌ Error: ${error.message}`;
+        } finally { isVerifyingBeanPriceCommand = false; }
     }
 
     $: {
-        // Auto-update when WSL or platform changes
-        if (platform && typeof useWSL !== 'undefined') {
-            suggestBeancountCommand();
-        }
+        if (platform) { suggestBeancountCommand(); }
     }
 </script>
 
@@ -395,12 +380,6 @@
                             <span class="label">Architecture:</span>
                             <span class="value">{systemInfo.arch}</span>
                         </div>
-                        {#if platform === 'win32'}
-                            <div class="info-item">
-                                <span class="label">WSL Available:</span>
-                                <span class="value status" class:available={isWSLAvailable}>{isWSLAvailable ? 'Yes' : 'No'}</span>
-                            </div>
-                        {/if}
                     {:else}
                         <div class="loading">Loading system info...</div>
                     {/if}
@@ -442,68 +421,11 @@
         </div>
     </div>
 
-    {#if platform === 'win32'}
-        <div class="wsl-section" class:active={isWSLAvailable && !systemInfo?.isWSL} class:passive={systemInfo?.isWSL || !isWSLAvailable} class:disabled={!isWSLAvailable}>
-            <div class="wsl-header">
-                <h4>🐧 WSL Configuration</h4>
-                <div class="wsl-status">
-                    {#if isWSLAvailable && systemInfo?.isWSL}
-                        <span class="status-badge running">Running in WSL</span>
-                    {:else if isWSLAvailable}
-                        <span class="status-badge available">WSL Available</span>
-                    {:else}
-                        <span class="status-badge unavailable">WSL Not Available</span>
-                    {/if}
-                </div>
-            </div>
-            
-            <div class="wsl-content">
-                <label class="wsl-toggle" class:disabled={systemInfo?.isWSL || !isWSLAvailable}>
-                    <input 
-                        type="checkbox" 
-                        bind:checked={useWSL} 
-                        on:change={handleWSLToggle}
-                        disabled={systemInfo?.isWSL || !isWSLAvailable}
-                    />
-                    <span class="checkmark"></span>
-                    <div class="toggle-content">
-                        <span class="label-text">Use Windows Subsystem for Linux (WSL)</span>
-                        <span class="description">
-                            {#if systemInfo?.isWSL}
-                                Currently running in WSL environment - WSL usage is automatic
-                            {:else if isWSLAvailable}
-                                Choose this if you have installed the requirements in WSL. WSL provides better compatibility with beancount tools.
-                            {:else}
-                                WSL is not available on this system
-                            {/if}
-                        </span>
-                    </div>
-                </label>
-                
-                {#if systemInfo?.isWSL}
-                    <div class="wsl-info automatic">
-                        <span class="info-icon">ℹ️</span>
-                        <span class="info-text">WSL usage is automatically enabled because you're running inside a WSL environment.</span>
-                    </div>
-                {:else if isWSLAvailable}
-                    <div class="wsl-info optional">
-                        <span class="info-icon">💡</span>
-                        <span class="info-text">Choose this if you have installed Python and beancount requirements in WSL. WSL provides better compatibility and easier package management for beancount tools.</span>
-                    </div>
-                {:else}
-                    <div class="wsl-info unavailable">
-                        <span class="info-icon">⚠️</span>
-                        <span class="info-text">WSL is not installed or not available. Commands will run natively on Windows.</span>
-                    </div>
-                {/if}
-            </div>
-        </div>
-    {/if}
-
     <div class="commands-section">
         <h4>⚙️ Commands</h4>
         
         <div class="command-config">
+            <!-- Bean Query -->
             <div class="command-item-config">
                 <div class="command-info-header">
                     <div class="command-title">
@@ -535,63 +457,86 @@
                     
                     <div class="command-actions">
                         {#if !isEditingCommand}
-                            <button 
-                                class="action-btn edit-btn" 
-                                on:click={enableCommandEdit}
-                                title="Edit command"
-                            >
-                                ✏️ Edit
-                            </button>
-                            <button 
-                                class="action-btn verify-btn" 
-                                on:click={verifyCommand}
-                                disabled={isVerifyingCommand || !plugin.settings.beancountCommand}
-                                title="Verify command works"
-                            >
-                                {#if isVerifyingCommand}
-                                    🔄 Verifying...
-                                {:else}
-                                    ✓ Verify
-                                {/if}
+                            <button class="action-btn edit-btn" on:click={enableCommandEdit} title="Edit command">✏️ Edit</button>
+                            <button class="action-btn verify-btn" on:click={verifyCommand} disabled={isVerifyingCommand || !plugin.settings.beancountCommand} title="Verify command works">
+                                {#if isVerifyingCommand}🔄 Verifying...{:else}✓ Verify{/if}
                             </button>
                         {:else}
-                            <button 
-                                class="action-btn save-btn" 
-                                on:click={saveCommandEdit}
-                                disabled={!editedBeanQueryCommand.trim()}
-                            >
-                                💾 Save
-                            </button>
-                            <button 
-                                class="action-btn cancel-btn" 
-                                on:click={cancelCommandEdit}
-                            >
-                                ✖ Cancel
-                            </button>
+                            <button class="action-btn save-btn" on:click={saveCommandEdit} disabled={!editedBeanQueryCommand.trim()}>💾 Save</button>
+                            <button class="action-btn cancel-btn" on:click={cancelCommandEdit}>✖ Cancel</button>
                         {/if}
                     </div>
                 </div>
                 
-                <!-- Verification Status -->
                 {#if commandVerificationMessage}
                     <div class="verification-status" class:success={commandVerificationStatus === 'success'} class:error={commandVerificationStatus === 'error'}>
-                        <span class="status-icon">
-                            {#if commandVerificationStatus === 'success'}
-                                ✅
-                            {:else if commandVerificationStatus === 'error'}
-                                ❌
-                            {:else}
-                                ℹ️
-                            {/if}
-                        </span>
+                        <span class="status-icon">{commandVerificationStatus === 'success' ? '✅' : commandVerificationStatus === 'error' ? '❌' : 'ℹ️'}</span>
                         <span class="status-message">{commandVerificationMessage}</span>
                     </div>
                 {/if}
                 
                 <div class="command-help">
                     <p class="help-text">
-                        This command is used to execute BQL queries against your Beancount file. 
+                        Executes BQL queries against your Beancount file. 
                         Common values: <code>bean-query</code>, <code>wsl bean-query</code>, or <code>python3 -m beancount.query</code>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Bean Price -->
+            <div class="command-item-config">
+                <div class="command-info-header">
+                    <div class="command-title">
+                        <span class="command-icon">💹</span>
+                        <span class="command-name">Bean Price Command <span class="optional-badge">optional</span></span>
+                    </div>
+                    {#if optimalCommands.beanPriceVersion}
+                        <span class="command-version-badge">v{optimalCommands.beanPriceVersion}</span>
+                    {/if}
+                </div>
+                
+                <div class="command-input-group">
+                    {#if isEditingBeanPriceCommand}
+                        <input 
+                            type="text" 
+                            class="command-input editing"
+                            bind:value={editedBeanPriceCommand}
+                            placeholder="bean-price or python3 -m beancount.scripts.price"
+                        />
+                    {:else}
+                        <input 
+                            type="text" 
+                            class="command-input"
+                            value={plugin.settings.beanPriceCommand}
+                            disabled
+                            placeholder="Not detected — install: pip install beanprice"
+                        />
+                    {/if}
+                    
+                    <div class="command-actions">
+                        {#if !isEditingBeanPriceCommand}
+                            <button class="action-btn edit-btn" on:click={enableBeanPriceEdit} title="Edit command">✏️ Edit</button>
+                            <button class="action-btn verify-btn" on:click={verifyBeanPriceCommand} disabled={isVerifyingBeanPriceCommand || !plugin.settings.beanPriceCommand} title="Verify bean-price works">
+                                {#if isVerifyingBeanPriceCommand}🔄 Verifying...{:else}✓ Verify{/if}
+                            </button>
+                        {:else}
+                            <button class="action-btn save-btn" on:click={saveBeanPriceEdit}>💾 Save</button>
+                            <button class="action-btn cancel-btn" on:click={cancelBeanPriceEdit}>✖ Cancel</button>
+                        {/if}
+                    </div>
+                </div>
+
+                {#if beanPriceVerificationMessage}
+                    <div class="verification-status" class:success={beanPriceVerificationStatus === 'success'} class:error={beanPriceVerificationStatus === 'error'}>
+                        <span class="status-icon">{beanPriceVerificationStatus === 'success' ? '✅' : beanPriceVerificationStatus === 'error' ? '❌' : 'ℹ️'}</span>
+                        <span class="status-message">{beanPriceVerificationMessage}</span>
+                    </div>
+                {/if}
+                
+                <div class="command-help">
+                    <p class="help-text">
+                        Used for automated commodity price fetching. Install with <code>pip install beanprice</code>.
+                        Common values: <code>bean-price</code>, <code>wsl bean-price</code>, or <code>python3 -m beancount.scripts.price</code>
                     </p>
                 </div>
             </div>
@@ -607,7 +552,7 @@
         border: 1px solid var(--background-modifier-border);
     }
 
-    .system-info, .wsl-section, .commands-section {
+    .system-info, .commands-section {
         margin-bottom: 24px;
         padding: 16px;
         background: var(--background-secondary);
@@ -1049,12 +994,25 @@
         line-height: 1.4;
     }
 
+    .optional-badge {
+        background: var(--background-modifier-border);
+        color: var(--text-muted);
+        font-size: 9px;
+        font-weight: 500;
+        padding: 1px 5px;
+        border-radius: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        vertical-align: middle;
+        margin-left: 4px;
+    }
+
     @media (max-width: 768px) {
         .connection-settings {
             padding: 12px;
         }
 
-        .system-info, .wsl-section {
+        .system-info {
             padding: 12px;
             margin-bottom: 16px;
         }

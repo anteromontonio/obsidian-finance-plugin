@@ -33,6 +33,30 @@ Settings are accessible via **Settings → Plugin Options → Beancount for Obsi
 - **Access Logs**: Open Obsidian's Developer Console with `Ctrl+Shift+I` (Windows/Linux) or `Cmd+Option+I` (macOS).
 - **Output Prefix**: Plugin logs are prefixed with `[Beancount]` for easy filtering.
 
+### Automatic Price Fetching
+
+This section controls how the plugin runs `bean-price` to keep your commodity prices up to date.
+
+**Enable automatic price fetching**
+- **Default**: Disabled ❌
+- **Purpose**: When enabled, the plugin runs `bean-price <ledger>` at a regular interval, extracts price directives from stdout, and appends any new ones to `prices.beancount` (duplicates are skipped automatically).
+- **Requires**: `bean-price` installed and detected (seen as ✅ in the Connection status or auto-detected during onboarding).
+- **Install**: `pip install beanprice`
+
+**Fetch interval (hours)**
+- **Default**: 24 hours
+- **Purpose**: How frequently the automatic fetch runs.
+- **Visible**: Only when automatic fetching is enabled.
+- **Note**: The interval starts immediately when you toggle the setting on—no Obsidian restart needed.
+
+**Last automatic fetch**
+- Displays when the most recent automatic fetch ran, shown as a relative time (e.g., *2 hours ago*).
+- Visible only when automatic fetching is enabled and at least one fetch has occurred.
+
+> **Tip**: You can also trigger a manual fetch at any time via Command Palette → **"Fetch Commodity Prices"**.
+> 
+> See the [Automated Price Fetching](../core-features/price-fetching) guide for details on annotating commodities with price sources.
+
 ---
 
 ## 🔌 Connection Tab
