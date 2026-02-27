@@ -49,6 +49,18 @@
 		dispatch("close");
 	}
 
+	let showDeleteConfirm = false;
+	function requestDelete() {
+		showDeleteConfirm = true;
+	}
+	function cancelDelete() {
+		showDeleteConfirm = false;
+	}
+	function confirmDelete() {
+		showDeleteConfirm = false;
+		dispatch("delete", { symbol });
+	}
+
 	$: hasLogo = !!(commodity?.metadata?.logo || commodity?.logo_url);
 	$: logoUrl = commodity?.metadata?.logo || commodity?.logo_url;
 	$: priceSource = commodity?.metadata?.price || commodity?.price_meta;
@@ -207,9 +219,42 @@
 
 	<!-- Footer -->
 	<div class="footer">
+		<button class="btn btn-danger" on:click={requestDelete}
+			>Delete Commodity</button
+		>
 		<button class="btn btn-primary" on:click={close}>Done</button>
 	</div>
 </div>
+
+<!-- Delete Confirmation Overlay -->
+{#if showDeleteConfirm}
+	<div
+		class="confirm-overlay"
+		on:click={cancelDelete}
+		on:keydown={(e) => e.key === "Escape" && cancelDelete()}
+		role="dialog"
+		aria-modal="true"
+		tabindex="-1"
+	>
+		<div class="confirm-dialog" on:click|stopPropagation>
+			<h4>Delete {symbol}</h4>
+			<p>
+				Are you sure you want to delete the <strong>{symbol}</strong>
+				commodity directive? This removes the declaration from your ledger
+				file. Existing transactions that use <strong>{symbol}</strong> will
+				not be affected.
+			</p>
+			<div class="confirm-actions">
+				<button class="btn btn-ghost" on:click={cancelDelete}
+					>Cancel</button
+				>
+				<button class="btn btn-danger" on:click={confirmDelete}
+					>Delete</button
+				>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.modal-body {
@@ -410,8 +455,61 @@
 	/* ── Footer ───────────────────────────────────────── */
 	.footer {
 		display: flex;
-		justify-content: flex-end;
+		justify-content: space-between;
+		align-items: center;
 		padding-top: 4px;
 		border-top: 1px solid var(--background-modifier-border);
+	}
+
+	.btn-danger {
+		background: transparent;
+		border-color: var(--text-error);
+		color: var(--text-error);
+	}
+
+	.btn-danger:hover {
+		background: var(--text-error);
+		color: var(--text-on-accent);
+		border-color: transparent;
+	}
+
+	/* ── Delete confirm overlay ────────────────────────── */
+	.confirm-overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.55);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 9999;
+	}
+
+	.confirm-dialog {
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 10px;
+		padding: 24px;
+		max-width: 400px;
+		width: 90%;
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+	}
+
+	.confirm-dialog h4 {
+		margin: 0 0 12px 0;
+		color: var(--text-normal);
+		font-size: 1.1rem;
+	}
+
+	.confirm-dialog p {
+		margin: 0 0 20px 0;
+		color: var(--text-muted);
+		font-size: 13px;
+		line-height: 1.55;
+	}
+
+	.confirm-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 8px;
 	}
 </style>

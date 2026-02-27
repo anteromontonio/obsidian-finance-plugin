@@ -50,7 +50,7 @@ export class CommodityDetailModal extends Modal {
             console.debug('[CommodityDetailModal] save-metadata result ->', result);
             if (result && result.success) {
                 new Notice('Metadata saved successfully');
-                
+
                 // Reload commodity details to reflect changes in the modal
                 try {
                     await this.controller.loadCommodityDetails(symbol);
@@ -85,6 +85,18 @@ export class CommodityDetailModal extends Modal {
         });
 
         this.component.$on('close', () => this.close());
+
+        this.component.$on('delete', async (e: any) => {
+            const { symbol } = e.detail;
+            console.debug('[CommodityDetailModal] delete event', { symbol });
+            const result = await this.controller.deleteCommodity(symbol);
+            if (result && result.success) {
+                new Notice(`${symbol} commodity deleted`);
+                this.close();
+            } else {
+                new Notice(`Failed to delete ${symbol}: ${result?.error || 'unknown error'}`);
+            }
+        });
     }
 
     onClose() {

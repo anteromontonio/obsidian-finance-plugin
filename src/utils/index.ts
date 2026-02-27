@@ -819,6 +819,81 @@ export async function saveCommodityMetadata(
 	}
 }
 
+/**
+ * Deletes an entire commodity directive block (declaration + metadata lines) from a Beancount file.
+ * Removes the `YYYY-MM-DD commodity SYMBOL` line and all immediately following indented metadata lines.
+ *
+ * @param {string} symbol - The commodity symbol (e.g. "AAPL").
+ * @param {string} filename - The beancount file containing the commodity directive.
+ * @param {number} lineno - The 1-based line number where the commodity directive starts.
+ * @param {boolean} createBackup - Whether to create a .bak backup before modifying the file.
+ * @returns {Promise<{ success: boolean; error?: string }>}
+ */
+export async function deleteCommodityDirective(
+	symbol: string,
+	filename: string,
+	lineno: number,
+	createBackup: boolean = true
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		const normalizedPath = convertWslPathToWindows(filename);
+		console.debug(`[deleteCommodityDirective] Path: ${normalizedPath}, symbol: ${symbol}, line: ${lineno}`);
+
+		// Validate location
+		const locationValid = await validateCommodityLocation(normalizedPath, lineno, symbol);
+		if (!locationValid.success) {
+			return { success: false, error: `Invalid location: ${locationValid.error}` };
+		}
+
+		const content = await readFile(normalizedPath, 'utf-8');
+		const lines = content.split('\n');
+
+		const startIndex = lineno - 1; // Convert to 0-based
+		if (startIndex < 0 || startIndex >= lines.length) {
+			return { success: false, error: 'Line number out of range' };
+		}
+
+		// Find the end of the commodity block (all following indented metadata lines)
+		let endIndex = startIndex;
+		for (let i = startIndex + 1; i < lines.length; i++) {
+			if (lines[i].match(/^\s+\S/)) {
+				endIndex = i;
+			} else {
+				break;
+			}
+		}
+
+		// Remove the whole block (declaration + metadata)
+		const newLines = [
+			...lines.slice(0, startIndex),
+			...lines.slice(endIndex + 1)
+		];
+
+		// Remove any consecutive blank lines that might be left behind (max 1 blank line)
+		const cleanedLines: string[] = [];
+		let prevBlank = false;
+		for (const line of newLines) {
+			const isBlank = line.trim() === '';
+			if (isBlank && prevBlank) continue; // skip duplicate blank lines
+			cleanedLines.push(line);
+			prevBlank = isBlank;
+		}
+
+		await createBackupFile(normalizedPath, createBackup, 'deleteCommodityDirective');
+		await atomicFileWrite(normalizedPath, cleanedLines.join('\n'));
+
+		console.debug(`[deleteCommodityDirective] Successfully deleted commodity ${symbol}`);
+		return { success: true };
+
+	} catch (error) {
+		console.error('[deleteCommodityDirective] Error:', error);
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : String(error)
+		};
+	}
+}
+
 // --- ACCOUNT MANAGEMENT ---
 
 /**
