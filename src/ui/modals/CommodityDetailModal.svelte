@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from "svelte";
+	import { createEventDispatcher, onMount, tick } from "svelte";
 	export let symbol: string;
 	export let commodity: any = {
 		symbol: "",
@@ -15,6 +15,12 @@
 	let editingPrice = false;
 	let logoInput = "";
 	let priceInput = "";
+
+	let priceInputRef: HTMLInputElement | null = null;
+	let logoInputRef: HTMLInputElement | null = null;
+
+	$: if (editingPrice) tick().then(() => priceInputRef?.focus());
+	$: if (editingLogo) tick().then(() => logoInputRef?.focus());
 
 	onMount(() => {
 		logoInput = commodity?.metadata?.logo || commodity?.logo_url || "";
@@ -127,8 +133,8 @@
 					<input
 						type="text"
 						bind:value={priceInput}
+						bind:this={priceInputRef}
 						placeholder="e.g. yahoo/BTC-USD or crypto:coingecko/bitcoin"
-						autofocus
 					/>
 					<span class="edit-hint"
 						>Format: provider/symbol — e.g. <code>yahoo/AAPL</code>
@@ -176,8 +182,8 @@
 					<input
 						type="text"
 						bind:value={logoInput}
+						bind:this={logoInputRef}
 						placeholder="https://example.com/logo.png"
-						autofocus
 					/>
 					<span class="edit-hint"
 						>Direct image URL (PNG, SVG, or JPG)</span
@@ -226,17 +232,15 @@
 	</div>
 </div>
 
+<svelte:window on:keydown={(e) => e.key === 'Escape' && showDeleteConfirm && cancelDelete()} />
+
 <!-- Delete Confirmation Overlay -->
 {#if showDeleteConfirm}
 	<div
 		class="confirm-overlay"
-		on:click={cancelDelete}
-		on:keydown={(e) => e.key === "Escape" && cancelDelete()}
-		role="dialog"
-		aria-modal="true"
-		tabindex="-1"
 	>
-		<div class="confirm-dialog" on:click|stopPropagation>
+		<button class="confirm-backdrop" type="button" on:click={cancelDelete} aria-label="Close dialog"></button>
+		<div class="confirm-dialog" role="dialog" aria-modal="true" tabindex="-1">
 			<h4>Delete {symbol}</h4>
 			<p>
 				Are you sure you want to delete the <strong>{symbol}</strong>
@@ -482,6 +486,15 @@
 		align-items: center;
 		justify-content: center;
 		z-index: 9999;
+	}
+
+	.confirm-backdrop {
+		position: absolute;
+		inset: 0;
+		background: transparent;
+		border: none;
+		cursor: default;
+		padding: 0;
 	}
 
 	.confirm-dialog {
