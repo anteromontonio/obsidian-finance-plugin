@@ -826,30 +826,32 @@
 					<div class="posting-container">
 						<div class="posting-row">
 							<div class="posting-account">
-								<label>Account *</label>
-								<input
-									type="text"
-									bind:value={posting.account}
-									list="accounts-list"
-									placeholder="Account name"
-									required
-								/>
-							</div>
+						<label for="posting-account-{index}">Account *</label>
+						<input
+							id="posting-account-{index}"
+							type="text"
+							bind:value={posting.account}
+							list="accounts-list"
+							placeholder="Account name"
+							required
+						/>
+					</div>
 
-							<div class="posting-amount">
-								<label>Amount</label>
-								<input
-									type="number"
-									step="0.01"
-									bind:value={posting.amount}
-									placeholder="Optional amount"
-								/>
-							</div>
+					<div class="posting-amount">
+						<label for="posting-amount-{index}">Amount</label>
+						<input
+							id="posting-amount-{index}"
+							type="number"
+							step="0.01"
+							bind:value={posting.amount}
+							placeholder="Optional amount"
+						/>
+					</div>
 
-							<div class="posting-currency">
-								<label>Currency</label>
-								<input
-									type="text"
+					<div class="posting-currency">
+						<label for="posting-currency-{index}">Currency</label>
+						<input
+							id="posting-currency-{index}"
 									bind:value={posting.currency}
 									list="currencies-list"
 									placeholder="INR"
@@ -922,39 +924,42 @@
 							<div class="posting-advanced cost-section">
 								<div class="advanced-grid">
 									<div class="advanced-field">
-										<label>Amount</label>
-										<input
-											type="number"
-											step="0.01"
-											bind:value={posting.cost.number}
-											placeholder="150.00"
-										/>
-									</div>
+									<label for="cost-amount-{index}">Amount</label>
+									<input
+										id="cost-amount-{index}"
+										type="number"
+										step="0.01"
+										bind:value={posting.cost.number}
+										placeholder="150.00"
+									/>
+								</div>
 
-									<div class="advanced-field">
-										<label>Currency</label>
-										<input
-											type="text"
-											bind:value={posting.cost.currency}
-											list="currencies-list"
-											placeholder="USD"
-											maxlength="3"
-										/>
-									</div>
+								<div class="advanced-field">
+									<label for="cost-currency-{index}">Currency</label>
+									<input
+									id="cost-currency-{index}"
+										type="text"
+										bind:value={posting.cost.currency}
+										list="currencies-list"
+										placeholder="USD"
+										maxlength="3"
+									/>
+								</div>
 
-									<div class="advanced-field">
-										<label>Date</label>
-										<input
-											type="date"
-											bind:value={posting.cost.date}
-											max={date}
-										/>
-									</div>
+								<div class="advanced-field">
+									<label for="cost-date-{index}">Date</label>
+									<input
+										id="cost-date-{index}"
+										type="date"
+										bind:value={posting.cost.date}
+										max={date}
+									/>
+								</div>
 
-									<div class="advanced-field">
-										<label>Label</label>
-										<input
-											type="text"
+								<div class="advanced-field">
+									<label for="cost-label-{index}">Label</label>
+									<input
+										id="cost-label-{index}"
 											bind:value={posting.cost.label}
 											placeholder="lot-001"
 										/>
@@ -980,20 +985,20 @@
 							<div class="posting-advanced price-section">
 								<div class="advanced-grid">
 									<div class="advanced-field">
-										<label>Amount</label>
-										<input
-											type="number"
-											step="0.01"
-											bind:value={posting.price.amount}
-											placeholder="1.09"
-										/>
-									</div>
+									<label for="price-amount-{index}">Amount</label>
+									<input
+										id="price-amount-{index}"
+										type="number"
+										step="0.01"
+										bind:value={posting.price.amount}
+										placeholder="1.09"
+									/>
+								</div>
 
-									<div class="advanced-field">
-										<label>Currency</label>
-										<input
-											type="text"
-											bind:value={posting.price.currency}
+								<div class="advanced-field">
+									<label for="price-currency-{index}">Currency</label>
+									<input
+										id="price-currency-{index}"
 											list="currencies-list"
 											placeholder="CAD"
 											maxlength="3"
@@ -1042,10 +1047,9 @@
 						<!-- Comment Section -->
 						{#if showPostingComment[index]}
 							<div class="posting-advanced comment-section">
-								<label>Comment</label>
-								<input
-									type="text"
-									bind:value={posting.comment}
+							<label for="posting-comment-{index}">Comment</label>
+							<input
+								id="posting-comment-{index}"
 									placeholder="Inline comment"
 									class="comment-input"
 								/>
@@ -1309,10 +1313,13 @@
 	</div>
 </div>
 
+<svelte:window on:keydown={(e) => e.key === 'Escape' && showDeleteConfirm && cancelDelete()} />
+
 <!-- Delete Confirmation Dialog -->
 {#if showDeleteConfirm}
-	<div class="confirm-overlay" on:click={cancelDelete}>
-		<div class="confirm-dialog" on:click|stopPropagation>
+	<div class="confirm-overlay">
+		<button class="confirm-backdrop" type="button" on:click={cancelDelete} aria-label="Close dialog"></button>
+		<div class="confirm-dialog" role="dialog" aria-modal="true" tabindex="-1">
 			<h4>
 				Delete {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
 			</h4>
@@ -1727,6 +1734,15 @@
 		align-items: center;
 		justify-content: center;
 		z-index: 2000;
+	}
+
+	.confirm-backdrop {
+		position: absolute;
+		inset: 0;
+		background: transparent;
+		border: none;
+		cursor: default;
+		padding: 0;
 	}
 
 	.confirm-dialog {
