@@ -635,18 +635,34 @@ export class SystemDetector {
         };
 
         const systemInfo = await this.getSystemInfo();
-        
-        // Define bean-query commands to test in order of preference
-        let beanQueryCommands = [
+
+        // Resolve absolute path first to handle restricted GUI app PATH environments
+        // (e.g. macOS: ~/.local/bin from uv/pipx not in Obsidian's process PATH)
+        const beanQueryExecutable = await this.findExecutable('bean-query');
+        const beanQueryAbsPath = beanQueryExecutable.found && beanQueryExecutable.accessible && beanQueryExecutable.path
+            ? beanQueryExecutable.path
+            : null;
+
+        // Define bean-query commands to test in order of preference.
+        // Include standalone beanquery package module path (python3 -m beanquery)
+        // in addition to old bundled beancount.query module path.
+        let beanQueryCommands: string[] = [
+            ...(beanQueryAbsPath ? [beanQueryAbsPath] : []),
             'bean-query',
+            'python3 -m beanquery',
+            'python -m beanquery',
             'python3 -m beancount.query',
             'python -m beancount.query',
             'py -m beancount.query'
         ];
-        
+        // Deduplicate in case absolute path resolves to same as 'bean-query'
+        beanQueryCommands = [...new Set(beanQueryCommands)];
+
         // Add WSL prefix if needed
         if (useWSL && systemInfo.platform === 'win32') {
-            beanQueryCommands = beanQueryCommands.map(cmd => `wsl ${cmd}`);
+            beanQueryCommands = beanQueryCommands
+                .filter(cmd => !cmd.startsWith('/') && !cmd.includes(':\\'))
+                .map(cmd => `wsl ${cmd}`);
         }
 
         for (const beanQueryCmd of beanQueryCommands) {
