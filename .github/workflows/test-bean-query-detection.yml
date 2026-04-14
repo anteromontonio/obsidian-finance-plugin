@@ -93,7 +93,7 @@ jobs:
         run: npm ci
 
       - name: Install beanquery via pip
-        run: pip3 install beanquery
+        run: pip3 install beanquery --break-system-packages
 
       - name: Compile and run detection test
         run: |
@@ -122,16 +122,15 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Install bison via Homebrew (beancount 3.x build requirement)
-        run: brew install bison
+      - name: Install bison and pipx via Homebrew (beancount 3.x build requirement)
+        run: brew install bison pipx
 
       - name: Install beanquery via pipx
         run: |
-          pip3 install pipx
           # Add bison to PATH so beancount builds correctly
           export PATH="/opt/homebrew/opt/bison/bin:$PATH"
           pipx install beanquery
-          # pipx installs to ~/.local/bin as well
+          # pipx installs to ~/.local/bin
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Compile test script
