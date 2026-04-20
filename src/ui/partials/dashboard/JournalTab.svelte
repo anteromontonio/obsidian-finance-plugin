@@ -77,7 +77,7 @@
             return;
         }
         applyFilters();
-    }, 500);
+    }, 800);
 
     async function fetchSuggestions() {
         if (!plugin) return;

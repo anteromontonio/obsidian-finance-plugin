@@ -351,9 +351,26 @@ export class OnboardingModal extends Modal {
             Logger.log('[Onboarding] Detecting Python environment...');
             const pythonResult = await detector.detectPythonEnvironment(false);
 
-            // Detect bean-query
+            // Detect bean-query — first honour any user-configured command from settings
             Logger.log('[Onboarding] Detecting bean-query command...');
-            const beanQueryResult = await detector.detectBeanQueryCommand(false, undefined);
+            let beanQueryResult = await detector.detectBeanQueryCommand(false, undefined);
+
+            // If auto-detection failed but the user already has a saved command, verify it
+            if (!beanQueryResult.isValid && this.plugin.settings.beancountCommand) {
+                Logger.log('[Onboarding] Auto-detection failed; trying saved beancountCommand from settings...');
+                const savedCmd = this.plugin.settings.beancountCommand;
+                const savedResult = await detector.testCommand(`${savedCmd} --version`);
+                if (savedResult.success) {
+                    const versionMatch = (savedResult.output || '').match(/(\d+\.\d+\.\d+)/);
+                    beanQueryResult = {
+                        command: savedCmd,
+                        version: versionMatch ? versionMatch[1] : 'unknown',
+                        isValid: true,
+                        errors: []
+                    };
+                    Logger.log('[Onboarding] Saved beancountCommand verified successfully', { command: savedCmd });
+                }
+            }
 
             // Detect bean-price (optional)
             Logger.log('[Onboarding] Detecting bean-price command...');

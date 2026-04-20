@@ -900,14 +900,13 @@
 	}
 
 	.verify-btn {
-		background: var(--background-modifier-success);
-		color: var(--text-success);
-		border: 1px solid var(--text-success);
+		background: var(--text-success);
+		color: white;
+		border: none;
 	}
 
 	.verify-btn:hover:not(:disabled) {
-		background: var(--text-success);
-		color: white;
+		opacity: 0.85;
 	}
 
 	.save-btn {

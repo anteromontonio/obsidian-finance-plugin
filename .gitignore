@@ -28,7 +28,12 @@ TAB_REDESIGN_MOCKUPS.md
 UI_COMPONENT_EXAMPLES.md
 UI_IMPROVEMENT_PLAN.md
 REMOTE_LEDGER_EXPLORATION.md
+
+# graphify knowledge graph outputs
+graphify-out/
 ui-components-dev/*
 PRE_RELEASE_CHECKLIST.md
 CRUD_OPERATIONS_REVIEW.md
 .github/prompts/plan-beanPriceIntegration.prompt.md
+UpdatedCommodityCard.png
+*graphify*

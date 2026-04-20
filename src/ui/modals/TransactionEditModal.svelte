@@ -822,35 +822,36 @@
 
 			<!-- Postings -->
 			<div class="postings-section">
-				<h4>Postings</h4>
 				{#each postings as posting, index}
 					<div class="posting-container">
 						<div class="posting-row">
 							<div class="posting-account">
-								<label>Account *</label>
-								<input
-									type="text"
-									bind:value={posting.account}
-									list="accounts-list"
-									placeholder="Account name"
-									required
-								/>
-							</div>
+						<label for="posting-account-{index}">Account *</label>
+						<input
+							id="posting-account-{index}"
+							type="text"
+							bind:value={posting.account}
+							list="accounts-list"
+							placeholder="Account name"
+							required
+						/>
+					</div>
 
-							<div class="posting-amount">
-								<label>Amount</label>
-								<input
-									type="number"
-									step="0.01"
-									bind:value={posting.amount}
-									placeholder="Optional amount"
-								/>
-							</div>
+					<div class="posting-amount">
+						<label for="posting-amount-{index}">Amount</label>
+						<input
+							id="posting-amount-{index}"
+							type="number"
+							step="0.01"
+							bind:value={posting.amount}
+							placeholder="Optional amount"
+						/>
+					</div>
 
-							<div class="posting-currency">
-								<label>Currency</label>
-								<input
-									type="text"
+					<div class="posting-currency">
+						<label for="posting-currency-{index}">Currency</label>
+						<input
+							id="posting-currency-{index}"
 									bind:value={posting.currency}
 									list="currencies-list"
 									placeholder="INR"
@@ -923,39 +924,42 @@
 							<div class="posting-advanced cost-section">
 								<div class="advanced-grid">
 									<div class="advanced-field">
-										<label>Amount</label>
-										<input
-											type="number"
-											step="0.01"
-											bind:value={posting.cost.number}
-											placeholder="150.00"
-										/>
-									</div>
+									<label for="cost-amount-{index}">Amount</label>
+									<input
+										id="cost-amount-{index}"
+										type="number"
+										step="0.01"
+										bind:value={posting.cost.number}
+										placeholder="150.00"
+									/>
+								</div>
 
-									<div class="advanced-field">
-										<label>Currency</label>
-										<input
-											type="text"
-											bind:value={posting.cost.currency}
-											list="currencies-list"
-											placeholder="USD"
-											maxlength="3"
-										/>
-									</div>
+								<div class="advanced-field">
+									<label for="cost-currency-{index}">Currency</label>
+									<input
+									id="cost-currency-{index}"
+										type="text"
+										bind:value={posting.cost.currency}
+										list="currencies-list"
+										placeholder="USD"
+										maxlength="3"
+									/>
+								</div>
 
-									<div class="advanced-field">
-										<label>Date</label>
-										<input
-											type="date"
-											bind:value={posting.cost.date}
-											max={date}
-										/>
-									</div>
+								<div class="advanced-field">
+									<label for="cost-date-{index}">Date</label>
+									<input
+										id="cost-date-{index}"
+										type="date"
+										bind:value={posting.cost.date}
+										max={date}
+									/>
+								</div>
 
-									<div class="advanced-field">
-										<label>Label</label>
-										<input
-											type="text"
+								<div class="advanced-field">
+									<label for="cost-label-{index}">Label</label>
+									<input
+										id="cost-label-{index}"
 											bind:value={posting.cost.label}
 											placeholder="lot-001"
 										/>
@@ -981,20 +985,20 @@
 							<div class="posting-advanced price-section">
 								<div class="advanced-grid">
 									<div class="advanced-field">
-										<label>Amount</label>
-										<input
-											type="number"
-											step="0.01"
-											bind:value={posting.price.amount}
-											placeholder="1.09"
-										/>
-									</div>
+									<label for="price-amount-{index}">Amount</label>
+									<input
+										id="price-amount-{index}"
+										type="number"
+										step="0.01"
+										bind:value={posting.price.amount}
+										placeholder="1.09"
+									/>
+								</div>
 
-									<div class="advanced-field">
-										<label>Currency</label>
-										<input
-											type="text"
-											bind:value={posting.price.currency}
+								<div class="advanced-field">
+									<label for="price-currency-{index}">Currency</label>
+									<input
+										id="price-currency-{index}"
 											list="currencies-list"
 											placeholder="CAD"
 											maxlength="3"
@@ -1043,10 +1047,9 @@
 						<!-- Comment Section -->
 						{#if showPostingComment[index]}
 							<div class="posting-advanced comment-section">
-								<label>Comment</label>
-								<input
-									type="text"
-									bind:value={posting.comment}
+							<label for="posting-comment-{index}">Comment</label>
+							<input
+								id="posting-comment-{index}"
 									placeholder="Inline comment"
 									class="comment-input"
 								/>
@@ -1111,61 +1114,55 @@
 				</button>
 			</div>
 
-			<!-- Tags & Links -->
+			<!-- Tags & Links (side-by-side) -->
 			<div class="tags-links-section">
-				<h4>Tags & Links</h4>
-				<div class="form-grid">
-					<div class="form-group full-width">
+				<div class="tags-links-row">
+					<div class="form-group">
 						<label for="tags">Tags</label>
 						<input
 							type="text"
 							id="tags"
 							on:keydown={handleTagInput}
 							list="tags-list"
-							placeholder="Type tag and press Enter"
+							placeholder="Tag + Enter"
 						/>
 						<datalist id="tags-list">
 							{#each tags as tag}
 								<option value={tag} />
 							{/each}
 						</datalist>
-
 						{#if selectedTags.length > 0}
 							<div class="selected-tags">
 								{#each selectedTags as tag}
-									<span class="tag">
-										#{tag}
-										<button
+									<span class="tag"
+										>#{tag}<button
 											type="button"
 											on:click={() => removeTag(tag)}
 											>&times;</button
-										>
-									</span>
+										></span
+									>
 								{/each}
 							</div>
 						{/if}
 					</div>
-
-					<div class="form-group full-width">
+					<div class="form-group">
 						<label for="links">Links</label>
 						<input
 							type="text"
 							id="links"
 							on:keydown={handleLinkInput}
-							placeholder="Type link and press Enter"
+							placeholder="Link + Enter"
 						/>
-
 						{#if selectedLinks.length > 0}
 							<div class="selected-links">
 								{#each selectedLinks as link}
-									<span class="link">
-										^{link}
-										<button
+									<span class="link"
+										>^{link}<button
 											type="button"
 											on:click={() => removeLink(link)}
 											>&times;</button
-										>
-									</span>
+										></span
+									>
 								{/each}
 							</div>
 						{/if}
@@ -1316,10 +1313,13 @@
 	</div>
 </div>
 
+<svelte:window on:keydown={(e) => e.key === 'Escape' && showDeleteConfirm && cancelDelete()} />
+
 <!-- Delete Confirmation Dialog -->
 {#if showDeleteConfirm}
-	<div class="confirm-overlay" on:click={cancelDelete}>
-		<div class="confirm-dialog" on:click|stopPropagation>
+	<div class="confirm-overlay">
+		<button class="confirm-backdrop" type="button" on:click={cancelDelete} aria-label="Close dialog"></button>
+		<div class="confirm-dialog" role="dialog" aria-modal="true" tabindex="-1">
 			<h4>
 				Delete {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
 			</h4>
@@ -1344,22 +1344,23 @@
 {/if}
 
 <style>
+	/* ─── Compact Modal ──────────────────────────────────────────── */
 	.transaction-edit-modal {
-		/* Removed all container constraints to let Obsidian handle it */
+		/* container sizing handled by Obsidian */
 	}
 
 	/* Removed .modal-header and related styles */
 
 	.modal-content {
-		padding: 1.5rem;
+		padding: 0.75rem 1rem;
 	}
 
 	.errors {
 		background: var(--background-modifier-error);
 		border: 1px solid var(--text-error);
 		border-radius: 4px;
-		padding: 1rem;
-		margin-bottom: 1rem;
+		padding: 0.5rem 0.75rem;
+		margin-bottom: 0.5rem;
 	}
 
 	.error {
@@ -1371,8 +1372,8 @@
 	.form-grid {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 1rem;
-		margin-bottom: 1.5rem;
+		gap: 0.5rem;
+		margin-bottom: 0.75rem;
 	}
 
 	.form-group {
@@ -1385,17 +1386,19 @@
 	}
 
 	.form-group label {
+		font-size: 0.8rem;
 		font-weight: 500;
-		margin-bottom: 0.5rem;
-		color: var(--text-normal);
+		margin-bottom: 0.2rem;
+		color: var(--text-muted);
 	}
 
 	.form-group input {
-		padding: 0.5rem;
+		padding: 0.3rem 0.5rem;
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 4px;
 		background: var(--background-primary);
 		color: var(--text-normal);
+		font-size: 0.875rem;
 	}
 
 	.form-group input:focus {
@@ -1481,8 +1484,8 @@
 
 	.advanced-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-		gap: 1rem;
+		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+		gap: 0.5rem;
 	}
 
 	.advanced-field {
@@ -1500,12 +1503,12 @@
 	.advanced-field input[type="number"],
 	.advanced-field input[type="text"],
 	.advanced-field input[type="date"] {
-		padding: 0.5rem;
+		padding: 0.25rem 0.4rem;
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 4px;
 		background: var(--background-modifier-form-field);
 		color: var(--text-normal);
-		font-size: 0.875rem;
+		font-size: 0.8rem;
 	}
 
 	.advanced-field.checkbox-field {
@@ -1568,20 +1571,21 @@
 	.posting-account label,
 	.posting-amount label,
 	.posting-currency label {
-		font-size: 0.875rem;
+		font-size: 0.75rem;
 		font-weight: 500;
-		margin-bottom: 0.25rem;
+		margin-bottom: 0.15rem;
 		color: var(--text-muted);
 	}
 
 	.posting-account input,
 	.posting-amount input,
 	.posting-currency input {
-		padding: 0.5rem;
+		padding: 0.3rem 0.5rem;
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 4px;
 		background: var(--background-primary);
 		color: var(--text-normal);
+		font-size: 0.875rem;
 	}
 
 	.remove-posting {
@@ -1613,8 +1617,9 @@
 		color: var(--text-on-accent);
 		border: none;
 		border-radius: 4px;
-		padding: 0.75rem 1rem;
+		padding: 0.35rem 0.75rem;
 		cursor: pointer;
+		font-size: 0.85rem;
 		font-weight: 500;
 	}
 
@@ -1653,7 +1658,7 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 1rem 1.5rem;
+		padding: 0.5rem 1rem;
 		border-top: 1px solid var(--background-modifier-border);
 		background: var(--background-secondary);
 	}
@@ -1664,16 +1669,17 @@
 
 	.footer-right {
 		display: flex;
-		gap: 1rem;
+		gap: 0.5rem;
 	}
 
 	.btn-secondary,
 	.btn-primary,
 	.btn-danger {
-		padding: 0.75rem 1.5rem;
+		padding: 0.4rem 1rem;
 		border: none;
 		border-radius: 4px;
 		cursor: pointer;
+		font-size: 0.875rem;
 		font-weight: 500;
 		transition: background-color 0.2s;
 	}
@@ -1730,6 +1736,15 @@
 		z-index: 2000;
 	}
 
+	.confirm-backdrop {
+		position: absolute;
+		inset: 0;
+		background: transparent;
+		border: none;
+		cursor: default;
+		padding: 0;
+	}
+
 	.confirm-dialog {
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
@@ -1761,19 +1776,19 @@
 	/* Entry Type Tabs */
 	.entry-tabs {
 		display: flex;
-		gap: 0.5rem;
-		margin-bottom: 1.5rem;
+		gap: 0.25rem;
+		margin-bottom: 0.75rem;
 		border-bottom: 1px solid var(--background-modifier-border);
-		padding-bottom: 0.5rem;
+		padding-bottom: 0.25rem;
 	}
 
 	.tab-button {
 		background: none;
 		border: none;
-		padding: 0.75rem 1rem;
+		padding: 0.4rem 0.75rem;
 		cursor: pointer;
 		color: var(--text-muted);
-		font-size: 0.9rem;
+		font-size: 0.85rem;
 		border-radius: 4px 4px 0 0;
 		border-bottom: 2px solid transparent;
 		transition: all 0.2s ease;
@@ -1813,9 +1828,9 @@
 	/* Transaction Header Row */
 	.transaction-header-row {
 		display: grid;
-		grid-template-columns: 150px 120px 1fr 2fr auto;
-		gap: 0.75rem;
-		margin-bottom: 1.5rem;
+		grid-template-columns: 140px 110px 1fr 2fr auto;
+		gap: 0.5rem;
+		margin-bottom: 0.75rem;
 		align-items: end;
 	}
 
@@ -1844,8 +1859,8 @@
 
 	/* Transaction Metadata Section */
 	.transaction-metadata-section {
-		margin-bottom: 1.5rem;
-		padding: 1rem;
+		margin-bottom: 0.5rem;
+		padding: 0.5rem 0.75rem;
 		border: 1px solid var(--interactive-accent);
 		border-radius: 6px;
 		background: var(--background-secondary);
@@ -1864,9 +1879,9 @@
 		background: var(--background-modifier-form-field);
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 4px;
-		padding: 0.5rem 0.75rem;
+		padding: 0.3rem 0.5rem;
 		cursor: pointer;
-		font-size: 1.2rem;
+		font-size: 1rem;
 		transition: all 0.2s;
 	}
 
@@ -1890,11 +1905,11 @@
 		background: var(--background-modifier-form-field);
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 4px;
-		padding: 0.5rem;
+		padding: 0.25rem 0.4rem;
 		cursor: pointer;
-		font-size: 0.9rem;
+		font-size: 0.8rem;
 		font-weight: bold;
-		min-width: 2.5rem;
+		min-width: 1.8rem;
 		transition: all 0.2s;
 	}
 
@@ -1924,8 +1939,8 @@
 
 	/* Posting Advanced Sections */
 	.posting-advanced {
-		margin-top: 0.5rem;
-		padding: 0.75rem;
+		margin-top: 0.35rem;
+		padding: 0.4rem 0.6rem;
 		border-radius: 4px;
 		background: var(--background-secondary);
 	}
@@ -2008,7 +2023,13 @@
 
 	/* Tags & Links Section */
 	.tags-links-section {
-		margin-bottom: 1.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.tags-links-row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.5rem;
 	}
 
 	.tags-links-section h4 {
