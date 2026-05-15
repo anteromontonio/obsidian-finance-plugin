@@ -156,6 +156,13 @@ export function getIndicatorStatusQuery(isRollOver: boolean, currency: string, a
 		if (period === 'week') {
 			return `SELECT year, date_part('week', date), number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ((year(today())-year(${startDate}))*52+(date_part('week', today())-date_part('week',${startDate}))+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate} ORDER BY year DESC, date_part('week', date) DESC LIMIT 1`;
 		}
+		if (period === 'quarter') {
+			return `SELECT year, date_part('quarter', date), number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ((year(today())-year(${startDate}))*4+(date_part('quarter', today())-date_part('quarter',${startDate}))+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate} ORDER BY year DESC, date_part('quarter', date) DESC LIMIT 1`;
+		}
+		if (period === 'year') {
+			return `SELECT year, number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, (year(today())-year(${startDate})+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate} ORDER BY year DESC LIMIT 1`;
+		}
+		// default: month
 		return `SELECT year, month, number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ((year(today())-year(${startDate}))*12+(month(today())-month(${startDate}))+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate} ORDER BY year DESC, month DESC LIMIT 1`;
 	} else {
 		return `SELECT date, number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ${budgetAmount}-number(only('${currency}', convert(sum(position), '${currency}'))) AS _remainingThisCycle WHERE account ~ '^${accountString}' AND date_trunc('${period}', date)=date_trunc('${period}', today())`;

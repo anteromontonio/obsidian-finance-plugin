@@ -12,7 +12,7 @@
 	// Form state
 	let name: string = '';
 	let accountQuery: string = '';
-	let cycle: 'Monthly' | 'Weekly' = 'Monthly';
+	let cycle: 'Monthly' | 'Weekly' | 'Quarterly' | 'Yearly' = 'Monthly';
 	let target: string = '';
 	let currency: string = defaultCurrency;
 	let isRollover: boolean = false;
@@ -125,6 +125,8 @@
 			<select id="budget-cycle" bind:value={cycle}>
 				<option value="Monthly">Monthly</option>
 				<option value="Weekly">Weekly</option>
+				<option value="Quarterly">Quarterly</option>
+				<option value="Yearly">Yearly</option>
 			</select>
 		</div>
 

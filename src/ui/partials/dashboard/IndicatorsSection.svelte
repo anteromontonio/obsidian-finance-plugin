@@ -140,7 +140,8 @@
 			return;
 		}
 		try {
-			const period = item.period.toLowerCase() === 'weekly' ? 'week' : 'month';
+		const periodMap: Record<string, string> = { weekly: 'week', quarterly: 'quarter', yearly: 'year', monthly: 'month' };
+		const period = periodMap[item.period.toLowerCase()] ?? 'month';
 			const csv = await runQuery(
 				plugin,
 				getIndicatorStatusQuery(item.isRollOver, item.currency, item.accountString, item.targetAmount, item.startDate, period)
@@ -191,7 +192,8 @@
 			return;
 		}
 		try {
-			const period = item.period.toLowerCase() === 'weekly' ? 'week' : 'month';
+		const periodMap: Record<string, string> = { weekly: 'week', quarterly: 'quarter', yearly: 'year', monthly: 'month' };
+		const period = periodMap[item.period.toLowerCase()] ?? 'month';
 			const csv = await runQuery(
 				plugin,
 				getIndicatorStatusQuery(item.isRollOver, item.currency, item.accountString, item.targetAmount, item.startDate, period)
