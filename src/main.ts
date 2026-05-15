@@ -5,6 +5,7 @@ import { BeancountSettingTab, type BeancountPluginSettings, DEFAULT_SETTINGS } f
 import { BeancountView, BEANCOUNT_VIEW_TYPE } from './ui/views/sidebar/sidebar-view';
 import { UnifiedTransactionModal } from './ui/modals/UnifiedTransactionModal';
 import { runQuery, type BQLFormat } from './utils/index';
+import { createPluginApi, type BeancountPluginApi } from './api';
 import { UnifiedDashboardView, UNIFIED_DASHBOARD_VIEW_TYPE } from './ui/views/dashboard/unified-dashboard-view';
 import { BQLCodeBlockProcessor } from './ui/markdown/BQLCodeBlockProcessor';
 import { InlineBQLProcessor } from './ui/markdown/InlineBQLProcessor';
@@ -26,6 +27,9 @@ export default class BeancountPlugin extends Plugin {
 	private bqlProcessor: BQLCodeBlockProcessor;
 	public inlineBqlProcessor: InlineBQLProcessor;
 
+	/** Public API surface for inter-plugin access. */
+	public api: BeancountPluginApi;
+
 	// Services
 	public journalService: JournalService;
 	public priceService: PriceService;
@@ -41,6 +45,9 @@ export default class BeancountPlugin extends Plugin {
 		// Initialize Logger
 		Logger.setDebugMode(this.settings.debugMode);
 		Logger.log('Plugin loading...');
+
+		// Expose public API for other plugins
+		this.api = createPluginApi(this);
 
 		// Initialize Core Services
 		this.journalService = new JournalService(this);

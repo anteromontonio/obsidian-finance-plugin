@@ -59,6 +59,7 @@ const sidebars: SidebarsConfig = {
       label: 'Queries & Advanced',
       items: [
         'queries/bql',
+        'queries/plugin-api',
         'queries/troubleshooting',
       ],
     },
