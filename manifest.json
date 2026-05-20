@@ -1,7 +1,7 @@
 {
 	"id": "beancount-finance",
-	"name": "Beancount for Obsidian",
-	"version": "1.4.1",
+	"name": "Beancount Ledger",
+	"version": "1.4.2",
 	"minAppVersion": "0.15.0",
 	"description": "Comprehensive financial dashboard with Beancount integration. Features unified entry management, live BQL queries, connection validation, auto-starting backend, and streamlined settings.",
 	"author": "Mukund Shelake",
