@@ -7,9 +7,5 @@
 	"author": "Mukund Shelake",
 	"authorUrl": "https://mukundshelake.me",
 	"fundingUrl": "https://buymeacoffee.com/mkshp",
-	"fileExtensions": [
-		"beancount",
-		"bean"
-	],
 	"isDesktopOnly": true
 }
