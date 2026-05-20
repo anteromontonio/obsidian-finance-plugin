@@ -34,24 +34,33 @@ The `release.yml` workflow lives in the `ci/add-release-workflow` branch. Open a
 
 Confirm `.github/workflows/release.yml` is present on `master` (merged via PR as described above).
 
-### Step 2 — Merge Dev into master via PR
+### Step 2 — Bump the version on Dev
 
-Open a pull request from `Dev` → `master` on GitHub and merge it. This brings all your work to the release branch.
+Do this on `Dev` — it becomes the last commit before the release PR:
 
-### Step 3 — Bump the version locally (on master)
+```bash
+git checkout Dev
+git pull origin Dev
+npm version 1.0.0 --no-git-tag-version
+git add manifest.json versions.json package.json
+git commit -m "Release 1.0.0"
+git push origin Dev
+```
+
+> `--no-git-tag-version` prevents npm from tagging automatically — you control the tag after the merge.  
+> The `version-bump.mjs` script (wired to `npm version`) automatically keeps `manifest.json` and `versions.json` in sync.
+
+### Step 3 — Open a PR from Dev → master and merge it
+
+1. Go to your repo on GitHub.
+2. Open a pull request from `Dev` → `master`.
+3. Merge it.
+4. Pull master locally so your local copy is up to date:
 
 ```bash
 git checkout master
 git pull origin master
-npm version 1.0.0 --no-git-tag-version
-git add manifest.json versions.json package.json
-git commit -m "Release 1.0.0"
 ```
-
-> `--no-git-tag-version` prevents npm from tagging automatically — you control the tag in the next step.  
-> The `version-bump.mjs` script (wired to `npm version`) automatically keeps `manifest.json` and `versions.json` in sync.
-
-Since `master` is protected, push this commit via a PR or directly if your branch rules allow it. The version bump commit can be included in the Dev → master merge PR.
 
 ### Step 4 — Create and push the release tag
 
@@ -88,27 +97,35 @@ Obsidian reads `manifest.json` from the HEAD of `master`, so keep the version th
 
 Commit and push all changes to the `Dev` branch.
 
-### Step 2 — Merge Dev → master via PR
+### Step 2 — Bump the version on Dev
 
-Open a pull request from `Dev` → `master` on GitHub and merge it.
-
-### Step 3 — Bump the version
-
-On your local `master` (after pulling):
+Do this on `Dev` — it becomes the last commit before the release PR:
 
 ```bash
-git checkout master
-git pull origin master
+git checkout Dev
+git pull origin Dev
 npm version 1.4.0 --no-git-tag-version
 git add manifest.json versions.json package.json
 git commit -m "Release 1.4.0"
-git push origin master   # or via PR if direct push is blocked
+git push origin Dev
 ```
 
 Replace `1.4.0` with the new version following [semver](https://semver.org/) (`x.y.z`):
 - `z` (patch) — bug fixes only
 - `y` (minor) — new features, backwards compatible
 - `x` (major) — breaking changes
+
+### Step 3 — Open a PR from Dev → master and merge it
+
+1. Go to your repo on GitHub.
+2. Open a pull request from `Dev` → `master`.
+3. Merge it.
+4. Pull master locally so your local copy is up to date:
+
+```bash
+git checkout master
+git pull origin master
+```
 
 ### Step 4 — Tag and push
 
@@ -129,16 +146,22 @@ Users on Obsidian will be notified of the update automatically.
 
 ## Quick Reference
 
-```
-# Bump version and release
-git checkout master && git pull origin master
+```bash
+# 1. Bump version on Dev
+git checkout Dev && git pull origin Dev
 npm version <NEW_VERSION> --no-git-tag-version
 git add manifest.json versions.json package.json
 git commit -m "Release <NEW_VERSION>"
-git push origin master
+git push origin Dev
+
+# 2. Open PR Dev → master on GitHub and merge it
+
+# 3. Pull master and tag it locally
+git checkout master && git pull origin master
 git tag -a <NEW_VERSION> -m "<NEW_VERSION>"
 git push origin <NEW_VERSION>
-# → Go to GitHub Releases, publish the draft
+
+# 4. Go to GitHub Releases and publish the draft
 ```
 
 ## Files involved in a release
