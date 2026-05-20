@@ -63,6 +63,11 @@ export class BQLCodeBlockProcessor {
 		// Get user preferences (with fallback to defaults if undefined)
 		const showTools = this.plugin.settings.bqlShowTools ?? true;
 		const showQuery = this.plugin.settings.bqlShowQuery ?? false;
+
+		// Mark clean mode when no header/controls are shown
+		if (!showTools && !showQuery) {
+			container.classList.add('bql-clean-mode');
+		}
 		
 		// Create header with query and controls (only if tools or query should be shown)
 		let header: HTMLElement | null = null;
