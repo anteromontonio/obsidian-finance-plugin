@@ -482,15 +482,15 @@ export class BeancountSettingTab extends PluginSettingTab {
 
     private createValidationElement(container: HTMLElement): HTMLElement {
         const validationEl = container.createEl('div', {
-            cls: 'beancount-validation-message',
-            attr: { style: 'margin-top: 5px; font-size: 0.9em; opacity: 0.8;' }
+            cls: 'beancount-validation-message'
         });
         return validationEl;
     }
 
     private updateValidationDisplay(element: HTMLElement, result: { isValid: boolean; message: string }) {
         element.textContent = result.message;
-        element.style.color = result.isValid ? '#4CAF50' : '#f44336';
+        element.classList.remove('beancount-validation-success', 'beancount-validation-error', 'beancount-validation-neutral');
+        element.classList.add(result.isValid ? 'beancount-validation-success' : 'beancount-validation-error');
     }
 
     private createConnectionSection(containerEl: HTMLElement) {

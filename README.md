@@ -1,4 +1,10 @@
-# Beancount for Obsidian
+# Caution
+- Recent release 1.4.0 has breaking changes for Beta testers (BRAT). I had to change the plugin name and id to make sure obsidian allows submission to community store. This does not work well with BRAT users. If you are using this plugin via BRAT, please reinstall it from BRAT settings. This will not affect existing beancount files.
+- The plugin is now available in community store at `https://community.obsidian.md/plugins/beancount-finance`
+
+-------------------------------------------------
+
+# Beancount Ledger
 
 ![Plugin Logo](docs/assets/Primary_horizontal_logo.png)
 
@@ -73,11 +79,26 @@ For beta testers who want to try the latest development version:
 
 3. **Enable Plugin**:
    - Go to Settings → Community Plugins
-   - Find "Beancount for Obsidian" and enable it
+   - Find "Beancount Ledger" and enable it
 
 BRAT will automatically check for updates and notify you of new versions. This is the recommended way to test beta features before official releases.
 
 **Note**: Beta versions may have bugs. Always keep backups of your Beancount files and vault data.
+
+---
+
+## 🔒 Permissions & Privacy
+
+This plugin requires elevated system access to integrate with your Beancount setup. The following is disclosed in accordance with the [Obsidian Developer policies](https://docs.obsidian.md/Developer+policies):
+
+| Permission | Why it's needed |
+|---|---|
+| **Filesystem access** (`fs`) | Reads and writes your `.beancount` ledger file(s) directly. These files typically live outside the Obsidian vault, so the standard Vault API cannot be used. |
+| **Shell execution** (`child_process`) | Runs `bean-query`, `bean-check`, and `bean-price` — external CLI tools that are part of your Beancount installation. There is no Obsidian-native way to execute external processes. |
+| **Vault enumeration** | Scans vault files to locate BQL shorthand template files configured in settings. |
+| **Clipboard access** | Copies query results or transaction data to the clipboard when you use the copy action in the UI. |
+
+No data is ever sent to external servers. All operations are local to your machine.
 
 ---
 
