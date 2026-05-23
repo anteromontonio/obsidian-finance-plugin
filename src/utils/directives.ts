@@ -870,6 +870,8 @@ export interface IndicatorDirectiveParams {
     currency: string;
     isRollover: boolean;
     startDate: string; // ISO date string YYYY-MM-DD
+    tag?: string;      // optional tag name (without #)
+    tagMode?: 'has' | 'not_has';
 }
 
 /**
@@ -900,6 +902,10 @@ export async function createIndicatorDirective(
             `\ttarget: ${params.target.toFixed(2)}`,
             `\tcurrency: "${params.currency}"`,
         ];
+        if (params.tag && params.tag.trim()) {
+            lines.push(`\ttag: "${params.tag.trim()}"`);
+            lines.push(`\ttagMode: "${params.tagMode || 'has'}"`);
+        }
         const directiveText = lines.join('\n');
 
         await createBackupFile(normalizedPath, createBackup, 'createIndicatorDirective');

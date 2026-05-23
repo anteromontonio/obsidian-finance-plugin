@@ -17,6 +17,8 @@
 		targetAmount: number;
 		currency: string;
 		startDate: string;
+		tag?: string;
+		tagMode?: 'has' | 'not_has';
 		spent: number;
 		remaining: number;
 		loading: boolean;
@@ -122,6 +124,8 @@
 			targetAmount: parseNumericValue(col(r, '_budgetAmount')),
 			currency: col(r, '_currency') || '',
 			startDate: col(r, '_startDate') || '',
+			tag: col(r, '_tag') || undefined,
+			tagMode: (col(r, '_tagMode') || undefined) as 'has' | 'not_has' | undefined,
 			spent: 0,
 			remaining: 0,
 			loading: true,
@@ -144,7 +148,7 @@
 		const period = periodMap[item.period.toLowerCase()] ?? 'month';
 			const csv = await runQuery(
 				plugin,
-				getIndicatorStatusQuery(item.isRollOver, item.currency, item.accountString, item.targetAmount, item.startDate, period)
+				getIndicatorStatusQuery(item.isRollOver, item.currency, item.accountString, item.targetAmount, item.startDate, period, item.tag, item.tagMode)
 			);
 			const rows = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
 			if (rows.length > 0) {
@@ -174,6 +178,8 @@
 			targetAmount: parseNumericValue(col(r, '_targetAmount')),
 			currency: col(r, '_currency') || '',
 			startDate: col(r, '_startDate') || '',
+			tag: col(r, '_tag') || undefined,
+			tagMode: (col(r, '_tagMode') || undefined) as 'has' | 'not_has' | undefined,
 			spent: 0,
 			remaining: 0,
 			loading: true,
@@ -196,7 +202,7 @@
 		const period = periodMap[item.period.toLowerCase()] ?? 'month';
 			const csv = await runQuery(
 				plugin,
-				getIndicatorStatusQuery(item.isRollOver, item.currency, item.accountString, item.targetAmount, item.startDate, period)
+				getIndicatorStatusQuery(item.isRollOver, item.currency, item.accountString, item.targetAmount, item.startDate, period, item.tag, item.tagMode)
 			);
 			const rows = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
 			if (rows.length > 0) {
