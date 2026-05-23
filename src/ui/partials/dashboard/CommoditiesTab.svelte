@@ -124,14 +124,7 @@
 				on:input={handleSearchInput}
 				class="search-input"
 			/>
-			<button
-				on:click={handleRefresh}
-				class="refresh-button"
-				disabled={$loadingStore}
-				title="Refresh commodities data"
-			>
-				{$loadingStore ? "⟳" : "🔄"}
-			</button>
+			<button class="btn btn-primary" on:click={handleRefresh} disabled={$loadingStore}>Refresh</button>
 		</div>
 	</div>
 
@@ -299,24 +292,28 @@
 		width: 200px;
 	}
 
-	.refresh-button {
-		padding: 8px 12px;
+	.btn {
+		padding: 0.4rem 0.8rem;
+		border-radius: 4px;
 		border: 1px solid var(--background-modifier-border);
-		border-radius: 6px;
-		background: var(--background-primary);
+		background: var(--interactive-normal);
 		color: var(--text-normal);
 		cursor: pointer;
-		font-size: 16px;
-		transition: all 0.2s ease;
+		font-size: 0.9rem;
 	}
 
-	.refresh-button:hover:not(:disabled) {
-		background: var(--background-secondary);
+	.btn:hover {
+		background: var(--interactive-hover);
 	}
 
-	.refresh-button:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
+	.btn-primary {
+		background: var(--interactive-accent);
+		color: var(--text-on-accent);
+		border-color: var(--interactive-accent);
+	}
+
+	.btn-primary:hover {
+		background: var(--interactive-accent-hover);
 	}
 
 	.price-fetch-info {

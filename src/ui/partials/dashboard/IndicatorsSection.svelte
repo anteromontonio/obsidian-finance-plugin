@@ -226,9 +226,7 @@
 	<div class="indicators-header">
 		<div class="title-row">
 			<h4>Financial Indicators</h4>
-			<button class="icon-btn" class:spinning={isLoading} on:click={loadAll} title="Refresh" disabled={isLoading}>
-				↺
-			</button>
+			<button class="btn btn-primary" on:click={loadAll} disabled={isLoading}>Refresh</button>
 		</div>
 		<div class="controls-row">
 			<div class="view-toggle">
@@ -465,34 +463,28 @@
 
 	.add-btn:hover { background: var(--interactive-accent-hover); }
 
-	.icon-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 26px;
-		height: 26px;
-		background: transparent;
+	.btn {
+		padding: 0.4rem 0.8rem;
+		border-radius: 4px;
 		border: 1px solid var(--background-modifier-border);
-		border-radius: var(--radius-s);
-		color: var(--text-muted);
-		cursor: pointer;
-		font-size: 15px;
-		line-height: 1;
-		transition: background 0.15s;
-	}
-
-	.icon-btn:hover:not(:disabled) {
-		background: var(--background-modifier-hover);
+		background: var(--interactive-normal);
 		color: var(--text-normal);
+		cursor: pointer;
+		font-size: 0.9rem;
 	}
 
-	.icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+	.btn:hover {
+		background: var(--interactive-hover);
+	}
 
-	.icon-btn.spinning { animation: spin 0.8s linear infinite; }
+	.btn-primary {
+		background: var(--interactive-accent);
+		color: var(--text-on-accent);
+		border-color: var(--interactive-accent);
+	}
 
-	@keyframes spin {
-		from { transform: rotate(0deg); }
-		to { transform: rotate(360deg); }
+	.btn-primary:hover {
+		background: var(--interactive-accent-hover);
 	}
 
 	/* ── Body ──────────────────────────────────────────── */
