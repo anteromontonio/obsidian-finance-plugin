@@ -2,6 +2,7 @@
 // Validation helpers: bean-price price-source validation and logo URL validation.
 
 import { exec } from 'child_process';
+import { requestUrl } from 'obsidian';
 import type BeancountPlugin from '../main';
 import { SystemDetector } from './SystemDetector';
 
@@ -58,20 +59,17 @@ export async function validateLogoUrl(
     }
 
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        const response = await fetch(url, {
+        const response = await requestUrl({
+            url: url,
             method: 'HEAD',
-            signal: controller.signal,
+            throw: false,
         });
-        clearTimeout(timeoutId);
 
-        if (!response.ok) {
-            return { success: false, error: `HTTP ${response.status}: ${response.statusText}` };
+        if (response.status < 200 || response.status >= 300) {
+            return { success: false, error: `HTTP ${response.status}` };
         }
 
-        const contentType = response.headers.get('content-type') || '';
+        const contentType = response.headers['content-type'] || '';
 
         if (!contentType.startsWith('image/')) {
             return { success: false, error: `Expected image content type, got: ${contentType}` };
@@ -79,9 +77,6 @@ export async function validateLogoUrl(
 
         return { success: true, contentType };
     } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-            return { success: false, error: 'Request timed out' };
-        }
         return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }
