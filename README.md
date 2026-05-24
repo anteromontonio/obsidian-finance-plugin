@@ -139,3 +139,5 @@ If this project helps your workflow, consider supporting its development with a 
     height="45"
   />
 </a>
+
+<iframe src="https://github.com/sponsors/mkshp-dev/button" title="Sponsor mkshp-dev" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
