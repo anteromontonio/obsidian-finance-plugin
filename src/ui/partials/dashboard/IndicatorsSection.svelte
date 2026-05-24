@@ -65,6 +65,12 @@
 		return `${abs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 	}
 
+	function formatSignedAmount(amount: number, currency: string): string {
+		const sign = amount < 0 ? '−' : '+';
+		const abs = Math.abs(amount);
+		return `${sign}${abs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+	}
+
 	// For rollover budgets, available budget = spent + remaining (base + accumulated rollover).
 	// For non-rollover, available = base target.
 	function getEffectiveTarget(item: IndicatorItem): number {
@@ -338,11 +344,15 @@
 								</div>
 								{#if item.isRollOver}
 									<div class="stat-block">
-										<span class="stat-label rollover-label">
-											<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+										<span class="stat-label rollover-label" class:rollover-negative={rolloverAmt < 0}>
+											{#if rolloverAmt < 0}
+												<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="7" x2="17" y2="17"/><polyline points="17 7 17 17 7 17"/></svg>
+											{:else}
+												<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+											{/if}
 											Rollover
 										</span>
-										<span class="stat-value rollover-value">{formatAmount(rolloverAmt, item.currency)}</span>
+										<span class="stat-value rollover-value" class:rollover-negative={rolloverAmt < 0}>{formatSignedAmount(rolloverAmt, item.currency)}</span>
 									</div>
 									<div class="stat-block">
 										<span class="stat-label">Available</span>
@@ -709,6 +719,7 @@
 	}
 
 	.rollover-label { color: var(--color-green, #4caf74); }
+	.rollover-label.rollover-negative { color: var(--color-red, #e05252); }
 
 	.stat-value {
 		font-size: var(--font-ui-small);
@@ -718,6 +729,7 @@
 	}
 
 	.rollover-value { color: var(--color-green, #4caf74); }
+	.rollover-value.rollover-negative { color: var(--color-red, #e05252); }
 
 	/* ── Card loading/error ────────────────────────────── */
 	.card-loading-area {
