@@ -13,6 +13,7 @@
 
 	// Extract the stores from the controller
 	$: filteredCommoditiesStore = controller.filteredCommodities;
+	$: operatingCurrency = controller.getOperatingCurrency();
 	$: searchTermStore = controller.searchTerm;
 	$: loadingStore = controller.loading;
 	$: errorStore = controller.error;
@@ -22,6 +23,16 @@
 	$: lastPriceFetchStore = controller.lastPriceFetch;
 
 	// UI state
+	type FilterMode = 'all' | 'has_holding' | 'has_price' | 'has_both';
+	let filterMode: FilterMode = 'all';
+
+	$: displayCommodities = (() => {
+		const list = $filteredCommoditiesStore;
+		if (filterMode === 'has_holding') return list.filter(c => c.isOperatingCurrency || (c.holdings ?? 0) > 0);
+		if (filterMode === 'has_price')   return list.filter(c => c.isOperatingCurrency || !!c.currentPrice);
+		if (filterMode === 'has_both')    return list.filter(c => c.isOperatingCurrency || ((c.holdings ?? 0) > 0 && !!c.currentPrice));
+		return list;
+	})();
 
 	// Load data on mount
 	onMount(async () => {
@@ -128,7 +139,32 @@
 		</div>
 	</div>
 
-	<!-- Last price fetch info -->
+	<!-- Filter toggle -->
+	<div class="filter-bar">
+		<div class="filter-toggle" role="group" aria-label="Filter commodities">
+			<button
+				class="filter-btn"
+				class:active={filterMode === 'all'}
+				on:click={() => filterMode = 'all'}
+			>All</button>
+			<button
+				class="filter-btn"
+				class:active={filterMode === 'has_holding'}
+				on:click={() => filterMode = 'has_holding'}
+			>Has Holding</button>
+			<button
+				class="filter-btn"
+				class:active={filterMode === 'has_price'}
+				on:click={() => filterMode = 'has_price'}
+			>Has Price</button>
+			<button
+				class="filter-btn"
+				class:active={filterMode === 'has_both'}
+				on:click={() => filterMode = 'has_both'}
+			>Has Both</button>
+		</div>
+		<span class="filter-count">{displayCommodities.length} shown</span>
+	</div>
 	{#if $lastPriceFetchStore}
 		<div class="price-fetch-info">
 			ℹ️ Last price update: {formatTimeSince($lastPriceFetchStore.date)} —
@@ -152,12 +188,13 @@
 	{/if}
 
 	<!-- Commodities grid -->
-	{#if !$loadingStore && $filteredCommoditiesStore.length > 0}
+	{#if !$loadingStore && displayCommodities.length > 0}
 		<div class="commodities-grid">
-			{#each $filteredCommoditiesStore as commodity, index}
+			{#each displayCommodities as commodity, index}
 				<CommodityCard
 					{commodity}
 					{index}
+					{operatingCurrency}
 					on:click={handleCommodityClick}
 				/>
 			{/each}
@@ -169,7 +206,9 @@
 			<p>
 				{$searchTermStore
 					? `No commodities match "${$searchTermStore}"`
-					: "No commodities found in your Beancount file"}
+					: filterMode !== 'all'
+					? `No commodities match the "${ filterMode === 'has_holding' ? 'Has Holding' : filterMode === 'has_price' ? 'Has Price' : 'Has Both' }" filter`
+						: 'No commodities found in your Beancount file'}
 			</p>
 			{#if !$searchTermStore}
 				<p class="empty-hint">
@@ -290,6 +329,53 @@
 		color: var(--text-normal);
 		font-size: 14px;
 		width: 200px;
+	}
+
+	/* Filter bar */
+	.filter-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 16px;
+	}
+
+	.filter-toggle {
+		display: flex;
+		background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px;
+		padding: 3px;
+		gap: 2px;
+	}
+
+	.filter-btn {
+		padding: 5px 14px;
+		border: none;
+		border-radius: 6px;
+		background: transparent;
+		color: var(--text-muted);
+		font-size: 13px;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		white-space: nowrap;
+	}
+
+	.filter-btn:hover {
+		color: var(--text-normal);
+		background: var(--background-modifier-hover);
+	}
+
+	.filter-btn.active {
+		background: var(--background-primary);
+		color: var(--text-normal);
+		font-weight: 600;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+	}
+
+	.filter-count {
+		font-size: 12px;
+		color: var(--text-faint);
 	}
 
 	.btn {

@@ -194,6 +194,19 @@ export function getCommoditiesHoldingsQuery(operatingCurrency: string): string {
 	return `SELECT currency, units(sum(position)) AS units_, convert(sum(position), '${operatingCurrency}') AS valueOp_ WHERE account ~ '^Assets' GROUP BY currency`;
 }
 
+/**
+ * Combined holdings query: all data needed to populate the commodity tab in one pass.
+ * For each currency held in Asset accounts, returns:
+ *   - currency_  : commodity symbol (e.g. "DOGE")
+ *   - units_     : raw inventory string (e.g. "65.64 DOGE")
+ *   - valueOp_   : holdings converted to operating currency (e.g. "658.37 INR")
+ *   - price_     : latest price in operating currency (e.g. 10.03)
+ *   - logo_      : logo URL from commodity metadata
+ */
+export function getCombinedCommodityDataQuery(operatingCurrency: string): string {
+	return `SELECT currency AS currency_, units(sum(position)) AS units_, convert(sum(position), '${operatingCurrency}') AS valueOp_, round(getprice(last(currency), '${operatingCurrency}'), 2) AS price_, currency_meta(last(currency), 'logo') AS logo_ WHERE account ~ '^Assets' GROUP BY currency`;
+}
+
 
 export function getCommodityDetailsQuery(symbol: string): string {
 	return `SELECT name AS name_, last(meta) AS meta_, currency_meta(last(name),'logo') AS logo_, currency_meta(last(name), 'price') AS pricemetadata_, meta('filename') AS filename_, meta('lineno') AS lineno_ FROM #commodities WHERE name='${symbol}'`;
