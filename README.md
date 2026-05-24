@@ -140,6 +140,8 @@ If this project helps your workflow, consider supporting its development with a 
   />
 </a>
 
+<br/>
+
 <a href="https://github.com/sponsors/mkshp-dev" target="_blank">
   <img
     src="https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?logo=github-sponsors&style=flat-square"
