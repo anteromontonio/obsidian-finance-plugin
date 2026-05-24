@@ -140,4 +140,10 @@ If this project helps your workflow, consider supporting its development with a 
   />
 </a>
 
-<iframe src="https://github.com/sponsors/mkshp-dev/button" title="Sponsor mkshp-dev" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
+<a href="https://github.com/sponsors/mkshp-dev" target="_blank">
+  <img
+    src="https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?logo=github-sponsors&style=flat-square"
+    alt="Sponsor mkshp-dev on GitHub"
+    height="32"
+  />
+</a>
