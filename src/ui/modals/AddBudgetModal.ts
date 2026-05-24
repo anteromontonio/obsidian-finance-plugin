@@ -57,7 +57,7 @@ export class AddBudgetModal extends Modal {
         });
 
         this.component.$on('save', async (e: any) => {
-            const { name, accountQuery, cycle, target, currency, isRollover, startDate } = e.detail;
+            const { name, accountQuery, cycle, target, currency, isRollover, startDate, tag, tagMode } = e.detail;
             Logger.log('[AddBudgetModal] save event', e.detail);
 
             try {
@@ -70,6 +70,8 @@ export class AddBudgetModal extends Modal {
                     currency,
                     isRollover,
                     startDate,
+                    tag,
+                    tagMode,
                 });
 
                 if (result.success) {

@@ -17,6 +17,8 @@
 	let currency: string = defaultCurrency;
 	let isRollover: boolean = false;
 	let startDate: string = new Date().toISOString().split('T')[0];
+	let tag: string = '';
+	let tagMode: 'has' | 'not_has' = 'has';
 
 	// UI state
 	let nameError: string = '';
@@ -71,6 +73,8 @@
 			currency,
 			isRollover,
 			startDate,
+			tag: tag.trim() || undefined,
+			tagMode: tag.trim() ? tagMode : undefined,
 		});
 	}
 
@@ -167,6 +171,17 @@
 			<input id="target-start" type="date" bind:value={startDate} />
 		</div>
 	{/if}
+
+	<div class="form-group">
+		<label for="target-tag">Tag <span class="optional">(optional)</span></label>
+		<div class="tag-row">
+			<select id="target-tag-mode" bind:value={tagMode}>
+				<option value="has">Has tag</option>
+				<option value="not_has">Does not have tag</option>
+			</select>
+			<input id="target-tag" type="text" bind:value={tag} placeholder="e.g. savings" />
+		</div>
+	</div>
 
 	<div class="modal-actions">
 		<button class="cancel-btn" on:click={handleCancel}>Cancel</button>
@@ -272,6 +287,25 @@
 		cursor: pointer;
 		color: var(--text-normal);
 		font-size: var(--font-ui-small);
+	}
+
+	.optional {
+		color: var(--text-muted);
+		font-size: var(--font-ui-smaller);
+	}
+
+	.tag-row {
+		display: flex;
+		gap: var(--size-4-2);
+	}
+
+	.tag-row select {
+		flex-shrink: 0;
+		width: auto;
+	}
+
+	.tag-row input {
+		flex: 1;
 	}
 
 	.modal-actions {

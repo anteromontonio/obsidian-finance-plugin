@@ -141,31 +141,35 @@ export function getHistoricalIncomeDataQuery(interval: 'month' | 'week' = 'month
 }
 // --- List Budget/Target Quries ---	
 export function getBudgetListQuery(): string {
-	return `SELECT date AS _startDate, meta('name') AS _name, meta('accountQuery') AS _accountString, meta('cycle') AS _period, bool(meta('isRollover')) AS _isRollOver, meta('target') AS _budgetAmount, meta('currency') AS _currency FROM events WHERE type='Indicator' AND description='Budget'`;
+	return `SELECT date AS _startDate, meta('name') AS _name, meta('accountQuery') AS _accountString, meta('cycle') AS _period, bool(meta('isRollover')) AS _isRollOver, meta('target') AS _budgetAmount, meta('currency') AS _currency, meta('tag') AS _tag, meta('tagMode') AS _tagMode FROM events WHERE type='Indicator' AND description='Budget'`;
 }
 
 export function getTargetListQuery(): string {
-	return `SELECT date AS _startDate, meta('name') AS _name, meta('accountQuery') AS _accountString, meta('cycle') AS _period, bool(meta('isRollover')) AS _isRollOver, meta('target') AS _targetAmount, meta('currency') AS _currency FROM events WHERE type='Indicator' AND description='Target'`;
+	return `SELECT date AS _startDate, meta('name') AS _name, meta('accountQuery') AS _accountString, meta('cycle') AS _period, bool(meta('isRollover')) AS _isRollOver, meta('target') AS _targetAmount, meta('currency') AS _currency, meta('tag') AS _tag, meta('tagMode') AS _tagMode FROM events WHERE type='Indicator' AND description='Target'`;
 }
 
 
 // --- Budget/Target Queries ---
 
-export function getIndicatorStatusQuery(isRollOver: boolean, currency: string, accountString: string, budgetAmount: number, startDate: string, period: string): string {
+export function getIndicatorStatusQuery(isRollOver: boolean, currency: string, accountString: string, budgetAmount: number, startDate: string, period: string, tag?: string | null, tagMode?: 'has' | 'not_has'): string {
+	const sanitizedTag = tag ? tag.trim().replace(/^#/, '').replace(/'/g, "''") : '';
+	const tagClause = sanitizedTag
+		? (tagMode === 'not_has' ? `NOT '${sanitizedTag}' IN tags` : `'${sanitizedTag}' IN tags`)
+		: '';
 	if (isRollOver) {
 		if (period === 'week') {
-			return `SELECT year, date_part('week', date), number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ((year(today())-year(${startDate}))*52+(date_part('week', today())-date_part('week',${startDate}))+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate} ORDER BY year DESC, date_part('week', date) DESC LIMIT 1`;
+			return `SELECT year, date_part('week', date), number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ((year(today())-year(${startDate}))*52+(date_part('week', today())-date_part('week',${startDate}))+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate}${tagClause ? ` WHERE ${tagClause}` : ''} ORDER BY year DESC, date_part('week', date) DESC LIMIT 1`;
 		}
 		if (period === 'quarter') {
-			return `SELECT year, date_part('quarter', date), number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ((year(today())-year(${startDate}))*4+(date_part('quarter', today())-date_part('quarter',${startDate}))+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate} ORDER BY year DESC, date_part('quarter', date) DESC LIMIT 1`;
+			return `SELECT year, date_part('quarter', date), number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ((year(today())-year(${startDate}))*4+(date_part('quarter', today())-date_part('quarter',${startDate}))+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate}${tagClause ? ` WHERE ${tagClause}` : ''} ORDER BY year DESC, date_part('quarter', date) DESC LIMIT 1`;
 		}
 		if (period === 'year') {
-			return `SELECT year, number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, (year(today())-year(${startDate})+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate} ORDER BY year DESC LIMIT 1`;
+			return `SELECT year, number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, (year(today())-year(${startDate})+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate}${tagClause ? ` WHERE ${tagClause}` : ''} ORDER BY year DESC LIMIT 1`;
 		}
 		// default: month
-		return `SELECT year, month, number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ((year(today())-year(${startDate}))*12+(month(today())-month(${startDate}))+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate} ORDER BY year DESC, month DESC LIMIT 1`;
+		return `SELECT year, month, number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ((year(today())-year(${startDate}))*12+(month(today())-month(${startDate}))+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate}${tagClause ? ` WHERE ${tagClause}` : ''} ORDER BY year DESC, month DESC LIMIT 1`;
 	} else {
-		return `SELECT date, number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ${budgetAmount}-number(only('${currency}', convert(sum(position), '${currency}'))) AS _remainingThisCycle WHERE account ~ '^${accountString}' AND date_trunc('${period}', date)=date_trunc('${period}', today())`;
+		return `SELECT date, number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ${budgetAmount}-number(only('${currency}', convert(sum(position), '${currency}'))) AS _remainingThisCycle WHERE account ~ '^${accountString}' AND date_trunc('${period}', date)=date_trunc('${period}', today())${tagClause ? ` AND ${tagClause}` : ''}`;
 	}
 }
 
@@ -188,6 +192,19 @@ export function getCommoditiesPriceDataQuery(currency: string): string {
  */
 export function getCommoditiesHoldingsQuery(operatingCurrency: string): string {
 	return `SELECT currency, units(sum(position)) AS units_, convert(sum(position), '${operatingCurrency}') AS valueOp_ WHERE account ~ '^Assets' GROUP BY currency`;
+}
+
+/**
+ * Combined holdings query: all data needed to populate the commodity tab in one pass.
+ * For each currency held in Asset accounts, returns:
+ *   - currency_  : commodity symbol (e.g. "DOGE")
+ *   - units_     : raw inventory string (e.g. "65.64 DOGE")
+ *   - valueOp_   : holdings converted to operating currency (e.g. "658.37 INR")
+ *   - price_     : latest price in operating currency (e.g. 10.03)
+ *   - logo_      : logo URL from commodity metadata
+ */
+export function getCombinedCommodityDataQuery(operatingCurrency: string): string {
+	return `SELECT currency AS currency_, units(sum(position)) AS units_, convert(sum(position), '${operatingCurrency}') AS valueOp_, round(getprice(last(currency), '${operatingCurrency}'), 2) AS price_, currency_meta(last(currency), 'logo') AS logo_ WHERE account ~ '^Assets' GROUP BY currency`;
 }
 
 

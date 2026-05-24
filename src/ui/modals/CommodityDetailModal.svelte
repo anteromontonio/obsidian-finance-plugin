@@ -103,8 +103,6 @@
 				<div class="current-price">
 					Current price: <strong>{currentPrice}</strong>
 				</div>
-			{:else}
-				<div class="current-price">No price data available</div>
 			{/if}
 		</div>
 	</div>

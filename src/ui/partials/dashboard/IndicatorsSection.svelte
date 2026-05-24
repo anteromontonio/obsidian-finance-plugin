@@ -17,6 +17,8 @@
 		targetAmount: number;
 		currency: string;
 		startDate: string;
+		tag?: string;
+		tagMode?: 'has' | 'not_has';
 		spent: number;
 		remaining: number;
 		loading: boolean;
@@ -61,6 +63,12 @@
 	function formatAmount(amount: number, currency: string): string {
 		const abs = Math.abs(amount);
 		return `${abs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+	}
+
+	function formatSignedAmount(amount: number, currency: string): string {
+		const sign = amount < 0 ? '−' : '+';
+		const abs = Math.abs(amount);
+		return `${sign}${abs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 	}
 
 	// For rollover budgets, available budget = spent + remaining (base + accumulated rollover).
@@ -122,6 +130,8 @@
 			targetAmount: parseNumericValue(col(r, '_budgetAmount')),
 			currency: col(r, '_currency') || '',
 			startDate: col(r, '_startDate') || '',
+			tag: col(r, '_tag') || undefined,
+			tagMode: (col(r, '_tagMode') || undefined) as 'has' | 'not_has' | undefined,
 			spent: 0,
 			remaining: 0,
 			loading: true,
@@ -144,7 +154,7 @@
 		const period = periodMap[item.period.toLowerCase()] ?? 'month';
 			const csv = await runQuery(
 				plugin,
-				getIndicatorStatusQuery(item.isRollOver, item.currency, item.accountString, item.targetAmount, item.startDate, period)
+				getIndicatorStatusQuery(item.isRollOver, item.currency, item.accountString, item.targetAmount, item.startDate, period, item.tag, item.tagMode)
 			);
 			const rows = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
 			if (rows.length > 0) {
@@ -174,6 +184,8 @@
 			targetAmount: parseNumericValue(col(r, '_targetAmount')),
 			currency: col(r, '_currency') || '',
 			startDate: col(r, '_startDate') || '',
+			tag: col(r, '_tag') || undefined,
+			tagMode: (col(r, '_tagMode') || undefined) as 'has' | 'not_has' | undefined,
 			spent: 0,
 			remaining: 0,
 			loading: true,
@@ -196,7 +208,7 @@
 		const period = periodMap[item.period.toLowerCase()] ?? 'month';
 			const csv = await runQuery(
 				plugin,
-				getIndicatorStatusQuery(item.isRollOver, item.currency, item.accountString, item.targetAmount, item.startDate, period)
+				getIndicatorStatusQuery(item.isRollOver, item.currency, item.accountString, item.targetAmount, item.startDate, period, item.tag, item.tagMode)
 			);
 			const rows = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
 			if (rows.length > 0) {
@@ -226,9 +238,7 @@
 	<div class="indicators-header">
 		<div class="title-row">
 			<h4>Financial Indicators</h4>
-			<button class="icon-btn" class:spinning={isLoading} on:click={loadAll} title="Refresh" disabled={isLoading}>
-				↺
-			</button>
+			<button class="btn btn-primary" on:click={loadAll} disabled={isLoading}>Refresh</button>
 		</div>
 		<div class="controls-row">
 			<div class="view-toggle">
@@ -334,11 +344,15 @@
 								</div>
 								{#if item.isRollOver}
 									<div class="stat-block">
-										<span class="stat-label rollover-label">
-											<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+										<span class="stat-label rollover-label" class:rollover-negative={rolloverAmt < 0}>
+											{#if rolloverAmt < 0}
+												<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="7" x2="17" y2="17"/><polyline points="17 7 17 17 7 17"/></svg>
+											{:else}
+												<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+											{/if}
 											Rollover
 										</span>
-										<span class="stat-value rollover-value">{formatAmount(rolloverAmt, item.currency)}</span>
+										<span class="stat-value rollover-value" class:rollover-negative={rolloverAmt < 0}>{formatSignedAmount(rolloverAmt, item.currency)}</span>
 									</div>
 									<div class="stat-block">
 										<span class="stat-label">Available</span>
@@ -465,34 +479,28 @@
 
 	.add-btn:hover { background: var(--interactive-accent-hover); }
 
-	.icon-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 26px;
-		height: 26px;
-		background: transparent;
+	.btn {
+		padding: 0.4rem 0.8rem;
+		border-radius: 4px;
 		border: 1px solid var(--background-modifier-border);
-		border-radius: var(--radius-s);
-		color: var(--text-muted);
-		cursor: pointer;
-		font-size: 15px;
-		line-height: 1;
-		transition: background 0.15s;
-	}
-
-	.icon-btn:hover:not(:disabled) {
-		background: var(--background-modifier-hover);
+		background: var(--interactive-normal);
 		color: var(--text-normal);
+		cursor: pointer;
+		font-size: 0.9rem;
 	}
 
-	.icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+	.btn:hover {
+		background: var(--interactive-hover);
+	}
 
-	.icon-btn.spinning { animation: spin 0.8s linear infinite; }
+	.btn-primary {
+		background: var(--interactive-accent);
+		color: var(--text-on-accent);
+		border-color: var(--interactive-accent);
+	}
 
-	@keyframes spin {
-		from { transform: rotate(0deg); }
-		to { transform: rotate(360deg); }
+	.btn-primary:hover {
+		background: var(--interactive-accent-hover);
 	}
 
 	/* ── Body ──────────────────────────────────────────── */
@@ -711,6 +719,7 @@
 	}
 
 	.rollover-label { color: var(--color-green, #4caf74); }
+	.rollover-label.rollover-negative { color: var(--color-red, #e05252); }
 
 	.stat-value {
 		font-size: var(--font-ui-small);
@@ -720,6 +729,7 @@
 	}
 
 	.rollover-value { color: var(--color-green, #4caf74); }
+	.rollover-value.rollover-negative { color: var(--color-red, #e05252); }
 
 	/* ── Card loading/error ────────────────────────────── */
 	.card-loading-area {

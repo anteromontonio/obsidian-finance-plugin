@@ -57,7 +57,7 @@ export class AddTargetModal extends Modal {
         });
 
         this.component.$on('save', async (e: any) => {
-            const { name, accountQuery, cycle, target, currency, isRollover, startDate } = e.detail;
+            const { name, accountQuery, cycle, target, currency, isRollover, startDate, tag, tagMode } = e.detail;
             Logger.log('[AddTargetModal] save event', e.detail);
 
             try {
@@ -70,6 +70,8 @@ export class AddTargetModal extends Modal {
                     currency,
                     isRollover,
                     startDate,
+                    tag,
+                    tagMode,
                 });
 
                 if (result.success) {

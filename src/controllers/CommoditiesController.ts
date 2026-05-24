@@ -8,7 +8,7 @@ import {
     parseCommoditiesListCSV,
     parseCommoditiesPriceDataCSV,
     parseCommodityDetailsCSV,
-    parseCommoditiesHoldingsCSV,
+    parseCombinedCommodityDataCSV,
     validatePriceSource,
     validateLogoUrl,
     saveCommodityMetadata
@@ -156,6 +156,11 @@ export class CommoditiesController {
         this.filteredCommodities.set(filtered);
     }
 
+    /** Returns the configured operating currency (e.g. "INR", "USD"). */
+    public getOperatingCurrency(): string {
+        return this.plugin.settings.operatingCurrency || 'USD';
+    }
+
     /**
      * Load all commodities data using BQL queries.
      * Fetches commodity list and price data, then merges them.
@@ -169,50 +174,55 @@ export class CommoditiesController {
             // Get operating currency from settings
             const operatingCurrency = this.plugin.settings.operatingCurrency || 'USD';
 
-            // Execute all three queries in parallel
-            const [commoditiesCSV, priceDataCSV, holdingsCSV] = await Promise.all([
-                this.plugin.runQuery(queries.getAllCommoditiesQuery()),
-                this.plugin.runQuery(queries.getCommoditiesPriceDataQuery(operatingCurrency)),
-                this.plugin.runQuery(queries.getCommoditiesHoldingsQuery(operatingCurrency))
+            // Execute two queries in parallel: combined holdings+price+logo, and price data for date/isLatest
+            const [combinedCSV, priceDataCSV] = await Promise.all([
+                this.plugin.runQuery(queries.getCombinedCommodityDataQuery(operatingCurrency)),
+                this.plugin.runQuery(queries.getCommoditiesPriceDataQuery(operatingCurrency))
             ]);
 
             console.debug('[CommoditiesController] loadData: received CSV data');
 
             // Parse CSV results
-            const allSymbols = parseCommoditiesListCSV(commoditiesCSV);
+            const combinedMap = parseCombinedCommodityDataCSV(combinedCSV, operatingCurrency);
             const priceDataMap = parseCommoditiesPriceDataCSV(priceDataCSV);
-            const holdingsMap = parseCommoditiesHoldingsCSV(holdingsCSV);
+
+            // Build the full symbol set: held commodities + priced commodities
+            const allSymbols = new Set([...combinedMap.keys(), ...priceDataMap.keys()]);
 
             console.debug(
                 '[CommoditiesController] parsed',
-                allSymbols.length, 'commodities,',
-                priceDataMap.size, 'price entries,',
-                holdingsMap.size, 'holdings entries'
+                combinedMap.size, 'held commodities,',
+                priceDataMap.size, 'price entries'
             );
 
-            // Merge data: iterate all commodities and enrich with price + holdings data
-            const commodities: CommodityInfo[] = allSymbols.map(symbol => {
+            // Merge data: combined query is the primary source for held commodities;
+            // priceDataMap fills in date/isLatest and catches priced-but-unheld commodities.
+            const commodities: CommodityInfo[] = Array.from(allSymbols).map(symbol => {
+                const combined = combinedMap.get(symbol);
                 const priceData = priceDataMap.get(symbol);
-                const holdingsData = holdingsMap.get(symbol);
                 const isOperatingCurrency = symbol === operatingCurrency;
+
+                // Prefer combined query values; fall back to priceDataMap for price/logo
+                const logoUrl = combined?.logo || priceData?.logo || null;
+                const price = combined?.price ?? priceData?.price ?? null;
 
                 return {
                     symbol,
-                    hasPriceMetadata: !!(priceData?.logo || priceData?.price),
-                    priceMetadata: priceData?.logo || undefined,
+                    hasPriceMetadata: !!(logoUrl || price),
+                    priceMetadata: logoUrl || undefined,
                     fullMetadata: {
-                        ...(priceData?.logo ? { logo: priceData.logo } : {}),
+                        ...(logoUrl ? { logo: logoUrl } : {}),
                     },
                     metadata: {
-                        ...(priceData?.logo ? { logo: priceData.logo } : {}),
+                        ...(logoUrl ? { logo: logoUrl } : {}),
                     },
-                    currentPrice: priceData?.price ? `${priceData.price} ${operatingCurrency}` : undefined,
-                    logoUrl: priceData?.logo || null,
+                    currentPrice: price ? `${price} ${operatingCurrency}` : undefined,
+                    logoUrl,
                     priceDate: priceData?.date || null,
                     isPriceLatest: priceData?.isLatest || false,
-                    holdings: holdingsData?.holdings ?? 0,
-                    holdingsRaw: holdingsData?.holdingsRaw || '',
-                    valueInOperatingCurrency: holdingsData?.valueOp ?? 0,
+                    holdings: combined?.holdings ?? 0,
+                    holdingsRaw: combined?.holdingsRaw || '',
+                    valueInOperatingCurrency: combined?.valueOp ?? 0,
                     isOperatingCurrency,
                 } as CommodityInfo;
             });

@@ -126,6 +126,82 @@ export function parseCommodityDetailsCSV(csv: string): {
 }
 
 /**
+ * Parses CSV from getCombinedCommodityDataQuery into a Map keyed by currency symbol.
+ * Format: [currency_, units_, valueOp_, price_, logo_]
+ *
+ * When bean-query's convert() cannot convert to the operating currency (no price
+ * directive exists), it returns the original inventory unchanged (e.g. "0.016 ETHW"
+ * instead of "1234 INR"). We detect this by checking whether the currency token in
+ * valueOp_ matches the operating currency; if not, valueOp is set to 0.
+ */
+export function parseCombinedCommodityDataCSV(
+    csv: string,
+    operatingCurrency: string
+): Map<string, { holdings: number; holdingsRaw: string; valueOp: number; price: string | null; logo: string | null }> {
+    const map = new Map<string, { holdings: number; holdingsRaw: string; valueOp: number; price: string | null; logo: string | null }>();
+
+    const extractNumber = (cell: string | undefined): number => {
+        if (!cell) return 0;
+        const m = cell.match(/-?\d+(?:\.\d+)?/);
+        return m ? parseFloat(m[0]) : 0;
+    };
+
+    // Extract the currency token (e.g. "INR" from "658.35 INR")
+    const extractCurrencyToken = (cell: string): string | null => {
+        const m = cell.match(/[A-Z][A-Z0-9'._-]*/);
+        return m ? m[0] : null;
+    };
+
+    try {
+        const cleanCsv = csv.replace(/\r/g, '').trim();
+        if (!cleanCsv) return map;
+
+        const records: string[][] = parseCsv(cleanCsv, {
+            columns: false,
+            skip_empty_lines: true,
+            relax_column_count: true,
+        });
+
+        for (let i = 1; i < records.length; i++) {
+            const row = records[i];
+            if (row.length < 5) continue;
+
+            const currency = row[0]?.trim();
+            if (!currency) continue;
+
+            const unitsCell = row[1]?.trim() || '';
+            const valueCell = row[2]?.trim() || '';
+            const priceCell = row[3]?.trim() || null;
+            const logoCell = row[4]?.trim() || null;
+
+            const holdings = Math.abs(extractNumber(unitsCell));
+
+            // If convert() couldn't convert, valueCell still contains the original
+            // currency unit. Detect this and zero out the value to avoid mislabeling.
+            const valueCurrencyToken = extractCurrencyToken(valueCell);
+            const valueOp = (valueCurrencyToken && valueCurrencyToken !== operatingCurrency)
+                ? 0
+                : Math.abs(extractNumber(valueCell));
+
+            const holdingsRaw = unitsCell
+                .split(',')
+                .map(s => s.trim())
+                .find(s => /\d/.test(s)) || '';
+
+            const price = priceCell && priceCell !== 'None' ? priceCell : null;
+            const logo = logoCell && logoCell !== 'None' ? logoCell : null;
+
+            map.set(currency, { holdings, holdingsRaw, valueOp, price, logo });
+        }
+
+        return map;
+    } catch (e) {
+        console.error('Error parsing combined commodity data CSV:', e, 'CSV:', csv);
+        return map;
+    }
+}
+
+/**
  * Parses CSV from getCommoditiesHoldingsQuery into a Map keyed by currency symbol.
  *
  * Each row has shape `[currency, units_, valueOp_]` where `units_` is an inventory

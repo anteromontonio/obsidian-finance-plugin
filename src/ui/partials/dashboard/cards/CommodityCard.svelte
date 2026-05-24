@@ -5,6 +5,13 @@
 
 	export let commodity: CommodityInfo;
 	export let index: number = 0;
+	export let operatingCurrency: string = 'USD';
+
+	function formatValue(n: number): string {
+		if (!n) return '0.00';
+		if (n >= 10_000_000) return (n / 1_000_000).toFixed(2) + 'M';
+		return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+	}
 
 	const dispatch = createEventDispatcher();
 
@@ -129,25 +136,50 @@
 		</div>
 
 		<div class="card-body">
-			{#if commodity?.currentPrice}
-				<div class="price-container">
-					<span class="price-main"
-						>{commodity.currentPrice.split(" ")[0]}</span
-					>
-					<span class="price-currency"
-						>{commodity.currentPrice.split(" ")[1] || ""}</span
-					>
+			<!-- Value (primary) -->
+			{#if (commodity?.valueInOperatingCurrency ?? 0) > 0}
+				<div class="value-container">
+					<span class="value-main">{formatValue(commodity.valueInOperatingCurrency ?? 0)}</span>
+					<span class="value-currency">{operatingCurrency}</span>
+				</div>
+			{:else if commodity?.holdingsRaw && !commodity?.isOperatingCurrency}
+				<!-- Has holdings but no price to convert — show raw units -->
+				<div class="value-container">
+					<span class="value-main no-price">{commodity.holdingsRaw.split(' ')[0]}</span>
+					<span class="value-currency">{commodity.symbol}</span>
 				</div>
 			{:else}
-				<div class="no-price-state">
-					<span class="no-price-text">Price unavailable</span>
+				<div class="value-container">
+					<span class="value-main no-price">0.00</span>
+					<span class="value-currency">{operatingCurrency}</span>
 				</div>
 			{/if}
 
-			{#if commodity?.holdingsRaw}
-				<div class="holdings-row">
-					<span class="holdings-label">Holdings</span>
-					<span class="holdings-value">{commodity.holdingsRaw}</span>
+			{#if commodity?.isOperatingCurrency}
+				<!-- Filler block — keeps card height consistent with non-operating cards -->
+				<div class="op-currency-note">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="op-icon"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+					<span>Base currency for all conversions in this ledger</span>
+				</div>
+			{:else}
+				<!-- Price row -->
+				<div class="data-row">
+					<span class="data-label">Price</span>
+					{#if commodity?.currentPrice}
+						<span class="data-value">{commodity.currentPrice}</span>
+					{:else}
+						<span class="data-value unavailable">No price available</span>
+					{/if}
+				</div>
+
+				<!-- Holdings row -->
+				<div class="data-row">
+					<span class="data-label">Holdings</span>
+					{#if commodity?.holdingsRaw}
+						<span class="data-value">{commodity.holdingsRaw}</span>
+					{:else}
+						<span class="data-value unavailable">0 {commodity?.symbol}</span>
+					{/if}
 				</div>
 			{/if}
 		</div>
@@ -337,36 +369,97 @@
 	.card-body {
 		display: flex;
 		flex-direction: column;
+		gap: 0;
 	}
 
-	.price-container {
+	/* Total value — primary display */
+	.value-container {
 		display: flex;
 		align-items: baseline;
-		gap: 4px;
+		gap: 5px;
+		margin-bottom: 10px;
 	}
 
-	.price-main {
-		font-size: 28px;
+	.value-main {
+		font-size: 26px;
 		font-weight: 800;
 		color: var(--text-accent);
 		letter-spacing: -1px;
 		line-height: 1;
+		font-variant-numeric: tabular-nums;
 	}
 
-	.price-currency {
-		font-size: 14px;
+	.value-main.no-price {
+		color: var(--text-muted);
+		font-size: 22px;
+	}
+
+	.value-currency {
+		font-size: 13px;
 		font-weight: 600;
 		color: var(--text-muted);
 	}
 
 	.no-price-state {
-		margin-top: 4px;
+		margin-bottom: 10px;
 	}
 
 	.no-price-text {
 		color: var(--text-muted);
 		font-style: italic;
 		font-size: 14px;
+	}
+
+	/* Price + Holdings rows */
+	.data-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		padding: 9px 0;
+		border-top: 1px dashed var(--background-modifier-border);
+		font-size: 12px;
+	}
+
+	/* Operating-currency info block — fills the space of the two data rows */
+	.op-currency-note {
+		display: flex;
+		align-items: flex-start;
+		gap: 7px;
+		padding: 10px 12px;
+		border-top: 1px dashed var(--background-modifier-border);
+		background: color-mix(in srgb, var(--interactive-accent), transparent 92%);
+		border-radius: 8px;
+		color: var(--text-accent);
+		font-size: 11px;
+		font-style: italic;
+		line-height: 1.4;
+	}
+
+	.op-icon {
+		width: 14px;
+		height: 14px;
+		flex-shrink: 0;
+		margin-top: 1px;
+		opacity: 0.75;
+	}
+
+	.data-label {
+		color: var(--text-faint);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		font-weight: 600;
+	}
+
+	.data-value {
+		color: var(--text-normal);
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.data-value.unavailable {
+		color: var(--text-faint);
+		font-weight: 400;
+		font-style: italic;
 	}
 
 	/* FOOTER SECTION */
@@ -429,25 +522,5 @@
 		vertical-align: middle;
 	}
 
-	/* HOLDINGS ROW */
-	.holdings-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		margin-top: 10px;
-		padding-top: 10px;
-		border-top: 1px dashed var(--background-modifier-border);
-		font-size: 12px;
-	}
-	.holdings-label {
-		color: var(--text-faint);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		font-weight: 600;
-	}
-	.holdings-value {
-		color: var(--text-normal);
-		font-weight: 600;
-		font-variant-numeric: tabular-nums;
-	}
+
 </style>
