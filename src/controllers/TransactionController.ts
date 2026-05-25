@@ -5,6 +5,7 @@ import type BeancountPlugin from '../main';
 import * as queries from '../queries/index';
 import { parse as parseCsv } from 'csv-parse/sync';
 import { buildAccountTree } from '../utils/index';
+import { Logger } from '../utils/logger';
 import type { AccountNode } from '../models/account';
 
 /**
@@ -97,7 +98,7 @@ export class TransactionController {
 			}));
 
 		} catch (e) {
-			console.error("Error fetching transaction filters:", e);
+			Logger.error('Error fetching transaction filters:', e);
 			this.state.update(s => ({ ...s, isLoadingFilters: false, error: "Failed to load filters." }));
 		}
 	}
@@ -133,7 +134,7 @@ export class TransactionController {
 				const completeRow = [...row]; while (completeRow.length < defaultHeaders.length) completeRow.push(''); return completeRow;
 			});
 		} catch (e) {
-			console.error("Error fetching transactions:", e);
+			Logger.error('Error fetching transactions:', e);
 			newError = `Failed to load transactions: ${e.message}`;
 			newTransactions = [];
 		} finally {

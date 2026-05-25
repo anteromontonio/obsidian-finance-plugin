@@ -146,7 +146,7 @@ export async function updateBalance(
         Logger.log(`[updateBalance] Updated ${balanceId}`);
         return { success: true };
     } catch (error) {
-        console.error('[updateBalance] Error:', error);
+        Logger.error('[updateBalance] Error:', error);
         return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }
@@ -190,7 +190,7 @@ export async function deleteBalance(
         Logger.log(`[deleteBalance] Deleted ${balanceId}`);
         return { success: true };
     } catch (error) {
-        console.error('[deleteBalance] Error:', error);
+        Logger.error('[deleteBalance] Error:', error);
         return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }
@@ -273,7 +273,7 @@ export async function updateNote(
         Logger.log(`[updateNote] Updated ${noteId}`);
         return { success: true };
     } catch (error) {
-        console.error('[updateNote] Error:', error);
+        Logger.error('[updateNote] Error:', error);
         return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }
@@ -317,7 +317,7 @@ export async function deleteNote(
         Logger.log(`[deleteNote] Deleted ${noteId}`);
         return { success: true };
     } catch (error) {
-        console.error('[deleteNote] Error:', error);
+        Logger.error('[deleteNote] Error:', error);
         return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }
@@ -573,7 +573,7 @@ export async function createTransaction(
         Logger.log(`[createTransaction] Created transaction in ${normalizedPath}`);
         return { success: true };
     } catch (error) {
-        console.error('[createTransaction] Error:', error);
+        Logger.error('[createTransaction] Error:', error);
         return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }
@@ -655,7 +655,7 @@ export async function updateTransaction(
         Logger.log(`[updateTransaction] Updated ${transactionId}`);
         return { success: true };
     } catch (error) {
-        console.error('[updateTransaction] Error:', error);
+        Logger.error('[updateTransaction] Error:', error);
         return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }
@@ -697,7 +697,7 @@ export async function deleteTransaction(
         Logger.log(`[deleteTransaction] Deleted ${transactionId}`);
         return { success: true };
     } catch (error) {
-        console.error('[deleteTransaction] Error:', error);
+        Logger.error('[deleteTransaction] Error:', error);
         return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }

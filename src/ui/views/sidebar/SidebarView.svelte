@@ -12,14 +12,6 @@
 	export let errorCount = 0;
 	export let errorList: string[] = [];
 
-	// Debug logging for error state
-	$: console.log('[SidebarView.svelte] fileStatus:', fileStatus);
-	$: console.log('[SidebarView.svelte] fileStatusMessage:', fileStatusMessage);
-	$: console.log('[SidebarView.svelte] errorCount:', errorCount);
-	$: console.log('[SidebarView.svelte] errorList:', errorList);
-	$: console.log('[SidebarView.svelte] errorList.length:', errorList.length);
-	$: console.log('[SidebarView.svelte] Showing error section:', fileStatus === 'error' && errorList.length > 0);
-
 	const dispatch = createEventDispatcher();
 
 	function handleRefresh() {

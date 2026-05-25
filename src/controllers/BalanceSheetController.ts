@@ -481,7 +481,7 @@ export class BalanceSheetController {
 			}
 
 		} catch (e) {
-			console.error("Error loading balance sheet:", e);
+			Logger.error('Error loading balance sheet:', e);
 			this.state.update(s => ({ ...s, isLoading: false, error: e.message }));
 		}
 	}

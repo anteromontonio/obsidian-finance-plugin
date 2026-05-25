@@ -214,18 +214,6 @@ export function getCommodityDetailsQuery(symbol: string): string {
 
 // --- Price Queries ---
 
-export function getPriceHistoryQuery(commodity: string): string {
-	return `SELECT date, position, meta('filename') FROM #prices WHERE currency='${commodity}' ORDER BY date DESC`;
-}
-
-export function getStaleCommoditiesQuery(daysOld: number, currency: string): string {
-	return `SELECT currency AS commodity_, last(date) AS lastdate_, round(getprice(last(currency), '${currency}'),2) AS price_ FROM #prices GROUP BY currency HAVING today() - last(date) > ${daysOld}`;
-}
-
-export function getAllPricesQuery(limit: number = 100): string {
-	return `SELECT date, currency, position FROM #prices ORDER BY date DESC LIMIT ${limit}`;
-}
-
 export function getAllCurrenciesQuery(): string {
 	return `SELECT distinct(currency) AS currency_`;
 }

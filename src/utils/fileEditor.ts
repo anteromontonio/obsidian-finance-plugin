@@ -74,7 +74,7 @@ export async function createBackupFile(
         await copyFile(filePath, backupPath);
         Logger.log(`[${functionName}] Created backup: ${backupPath}`);
     } catch (backupError) {
-        console.warn(`[${functionName}] Failed to create backup:`, backupError);
+        Logger.warn(`[${functionName}] Failed to create backup:`, backupError);
         // Continue anyway — backup failure should not block the save
     }
 }

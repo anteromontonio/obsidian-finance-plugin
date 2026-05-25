@@ -3,6 +3,7 @@
 
 import { parse as parseCsv } from 'csv-parse/sync';
 import { parseMetadataString } from './formatters';
+import { Logger } from './logger';
 
 /**
  * Parses CSV from getAllCommoditiesQuery into an array of commodity symbols.
@@ -24,7 +25,7 @@ export function parseCommoditiesListCSV(csv: string): string[] {
             .map(row => row[0]?.trim())
             .filter((symbol): symbol is string => !!symbol && symbol.length > 0);
     } catch (e) {
-        console.error('Error parsing commodities list CSV:', e, 'CSV:', csv);
+        Logger.error('Error parsing commodities list CSV:', e, 'CSV:', csv);
         return [];
     }
 }
@@ -66,7 +67,7 @@ export function parseCommoditiesPriceDataCSV(
 
         return priceDataMap;
     } catch (e) {
-        console.error('Error parsing commodities price data CSV:', e, 'CSV:', csv);
+        Logger.error('Error parsing commodities price data CSV:', e, 'CSV:', csv);
         return priceDataMap;
     }
 }
@@ -120,7 +121,7 @@ export function parseCommodityDetailsCSV(csv: string): {
 
         return { symbol, metadata, logo, priceMetadata, filename, lineno };
     } catch (e) {
-        console.error('Error parsing commodity details CSV:', e, 'CSV:', csv);
+        Logger.error('Error parsing commodity details CSV:', e, 'CSV:', csv);
         return defaultResult;
     }
 }

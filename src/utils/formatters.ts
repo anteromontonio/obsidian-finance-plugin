@@ -2,6 +2,7 @@
 // Pure data-formatting helpers: amounts, currencies, dates, metadata strings, debounce.
 
 import { parse as parseCsv } from 'csv-parse/sync';
+import { Logger } from './logger';
 
 // --- SINGLE-VALUE CSV PARSER ---
 
@@ -67,11 +68,11 @@ export function parseAmount(amountString: string): { amount: number; currency: s
             const currency = match[2];
             return { amount: isNaN(amount) ? 0 : amount, currency: currency || 'USD' };
         } catch (e) {
-            console.error('Error parsing amount:', e, 'String:', amountString);
+            Logger.error('Error parsing amount:', e, 'String:', amountString);
             return defaultValue;
         }
     }
-    console.warn('Could not parse amount string:', amountString);
+    Logger.warn('Could not parse amount string:', amountString);
     return defaultValue;
 }
 
@@ -154,7 +155,7 @@ export function parseMetadataString(metaStr: string): Record<string, any> {
         const jsonStr = metaStr.replace(/'/g, '"').trim();
         return JSON.parse(jsonStr);
     } catch (e) {
-        console.warn('Failed to parse metadata string:', metaStr, e);
+        Logger.warn('Failed to parse metadata string:', metaStr, e);
         return {};
     }
 }
