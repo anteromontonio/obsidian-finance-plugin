@@ -144,6 +144,31 @@ option "booking_method" "STRICT"
 2026-03-15 event "tax-filing" "Filed 2025 Tax Return"
 2026-06-01 event "employer" "Promoted to Senior Position"
 
+;; Financial Indicators (Budgets and Targets)
+2026-01-01 event "Indicator" "Budget"
+  accountQuery: "Expenses:Food"
+  name: "Monthly Food Budget"
+  cycle: "Monthly"
+  isRollover: 0
+  target: 500.00
+  currency: "USD"
+
+2026-01-01 event "Indicator" "Budget"
+  accountQuery: "Expenses:Rent"
+  name: "Monthly Rent"
+  cycle: "Monthly"
+  isRollover: 0
+  target: 1200.00
+  currency: "USD"
+
+2026-01-01 event "Indicator" "Target"
+  accountQuery: "Assets:Savings"
+  name: "Emergency Fund"
+  cycle: "Yearly"
+  isRollover: 1
+  target: 15000.00
+  currency: "USD"
+
 ;; ============================================================================
 ;; Transactions
 ;; ============================================================================
@@ -230,10 +255,10 @@ option "booking_method" "STRICT"
   Income:CapitalGains       -21.75 USD
 
 ;; Query directives (named BQL queries)
-;; query "monthly-expenses" "
-;;   SELECT date, narration, COST(position) AS amount
-;;   FROM account ~ 'Expenses:'
-;;   WHERE year = YEAR(TODAY()) AND month = MONTH(TODAY())
-;; "
+query "monthly-expenses" "
+  SELECT date, narration, COST(position) AS amount
+  FROM account ~ 'Expenses:'
+  WHERE year = YEAR(TODAY()) AND month = MONTH(TODAY())
+"
 `;
 
