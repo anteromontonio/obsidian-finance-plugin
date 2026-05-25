@@ -3,6 +3,7 @@
 import { Plugin } from 'obsidian';
 import { BeancountSettingTab, type BeancountPluginSettings, DEFAULT_SETTINGS } from './settings';
 import { BeancountView, BEANCOUNT_VIEW_TYPE } from './ui/views/sidebar/sidebar-view';
+import { BeancountFileView, BEANCOUNT_FILE_VIEW_TYPE } from './ui/views/beancount-file-view';
 import { UnifiedTransactionModal } from './ui/modals/UnifiedTransactionModal';
 import { runQuery, type BQLFormat } from './utils/index';
 import { createPluginApi, type BeancountPluginApi } from './api';
@@ -77,10 +78,13 @@ export default class BeancountPlugin extends Plugin {
 			UNIFIED_DASHBOARD_VIEW_TYPE,
 			(leaf) => new UnifiedDashboardView(leaf, this)
 		);
+		this.registerView(
+			BEANCOUNT_FILE_VIEW_TYPE,
+			(leaf) => new BeancountFileView(leaf)
+		);
 
-		// Register file extensions so Obsidian shows .beancount and .bean files in file explorer
-		// Note: Uses 'markdown' view type, so Beancount syntax will have some Markdown rendering
-		this.registerExtensions(['beancount', 'bean'], 'markdown');
+		// Register .beancount and .bean files with a plain-text view to avoid Markdown rendering
+		this.registerExtensions(['beancount', 'bean'], BEANCOUNT_FILE_VIEW_TYPE);
 
 		// Add Ribbon Icons
 		this.addRibbonIcon('plus-circle', 'Add Transaction', () => {
