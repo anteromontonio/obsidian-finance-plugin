@@ -482,7 +482,7 @@ export class IncomeStatementController {
 			}
 
 		} catch (e) {
-			console.error('Error loading income statement:', e);
+			Logger.error('Error loading income statement:', e);
 			this.state.update(s => ({ ...s, isLoading: false, error: e.message }));
 		}
 	}

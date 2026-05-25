@@ -1,10 +1,10 @@
-# Caution
+# Beancount Ledger
+
+#### Caution
 - Recent release 1.4.0 has breaking changes for Beta testers (BRAT). I had to change the plugin name and id to make sure obsidian allows submission to community store. This does not work well with BRAT users. If you are using this plugin via BRAT, please reinstall it from BRAT settings. This will not affect existing beancount files.
 - The plugin is now available in community store at `https://community.obsidian.md/plugins/beancount-finance`
 
 -------------------------------------------------
-
-# Beancount Ledger
 
 ![Plugin Logo](docs/assets/Primary_horizontal_logo.png)
 
@@ -137,5 +137,15 @@ If this project helps your workflow, consider supporting its development with a 
     src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=mkshp&button_colour=5F7FFF&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00"
     alt="Buy me a coffee"
     height="45"
+  />
+</a>
+
+<br/>
+
+<a href="https://github.com/sponsors/mkshp-dev" target="_blank">
+  <img
+    src="https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?logo=github-sponsors&style=flat-square"
+    alt="Sponsor mkshp-dev on GitHub"
+    height="32"
   />
 </a>

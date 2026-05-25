@@ -78,7 +78,7 @@ export async function getBalanceEntries(
             has_more: offset + paginatedBalances.length < totalCount,
         };
     } catch (error) {
-        console.error('[getBalanceEntries] Error:', error);
+        Logger.error('[getBalanceEntries] Error:', error);
         throw error;
     }
 }
@@ -155,7 +155,7 @@ export async function getNoteEntries(
             has_more: offset + paginatedNotes.length < totalCount,
         };
     } catch (error) {
-        console.error('[getNoteEntries] Error:', error);
+        Logger.error('[getNoteEntries] Error:', error);
         throw error;
     }
 }
@@ -307,7 +307,7 @@ export async function getTransactionEntries(
             has_more: offset + paginatedTransactions.length < totalCount,
         };
     } catch (error) {
-        console.error('[getTransactionEntries] Error:', error);
+        Logger.error('[getTransactionEntries] Error:', error);
         throw error;
     }
 }

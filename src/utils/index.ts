@@ -48,11 +48,8 @@ export {
 	validateCommodityLocation,
 	updateOperatingCurrency,
 	createQueryDirective,
-	deleteQueryDirective,
 	getQueryDirectives,
-	parseQueryDirectives,
 	createIndicatorDirective,
-	type IndicatorDirectiveParams,
 } from './directives';
 
 // Re-export structuredLayout helpers that some callers pull from utils/index

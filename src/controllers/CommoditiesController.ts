@@ -117,7 +117,7 @@ export class CommoditiesController {
         this.plugin = plugin;
         this.priceService = new PriceService(plugin);
         this.setupReactivity();
-        console.debug('[CommoditiesController] initialized');
+        Logger.log('[CommoditiesController] initialized');
     }
 
     /**
@@ -169,7 +169,7 @@ export class CommoditiesController {
         this.loading.set(true);
         this.error.set(null);
 
-        console.debug('[CommoditiesController] loadData: starting');
+        Logger.log('[CommoditiesController] loadData: starting');
         try {
             // Get operating currency from settings
             const operatingCurrency = this.plugin.settings.operatingCurrency || 'USD';
@@ -180,7 +180,7 @@ export class CommoditiesController {
                 this.plugin.runQuery(queries.getCommoditiesPriceDataQuery(operatingCurrency))
             ]);
 
-            console.debug('[CommoditiesController] loadData: received CSV data');
+            Logger.log('[CommoditiesController] loadData: received CSV data');
 
             // Parse CSV results
             const combinedMap = parseCombinedCommodityDataCSV(combinedCSV, operatingCurrency);
@@ -189,11 +189,7 @@ export class CommoditiesController {
             // Build the full symbol set: held commodities + priced commodities
             const allSymbols = new Set([...combinedMap.keys(), ...priceDataMap.keys()]);
 
-            console.debug(
-                '[CommoditiesController] parsed',
-                combinedMap.size, 'held commodities,',
-                priceDataMap.size, 'price entries'
-            );
+            Logger.log(`[CommoditiesController] parsed ${combinedMap.size} held commodities, ${priceDataMap.size} price entries`);
 
             // Merge data: combined query is the primary source for held commodities;
             // priceDataMap fills in date/isLatest and catches priced-but-unheld commodities.
@@ -244,7 +240,7 @@ export class CommoditiesController {
             this.hasCommodityData.set(commodities.length > 0);
 
         } catch (error) {
-            console.error('Error querying commodities via BQL:', error);
+            Logger.error('Error querying commodities via BQL:', error);
             this.error.set(error instanceof Error ? error.message : 'Failed to query commodities from ledger');
             this.hasCommodityData.set(false);
         } finally {
@@ -258,12 +254,12 @@ export class CommoditiesController {
      * @param {string} symbol - The commodity symbol.
      */
     public async loadCommodityDetails(symbol: string): Promise<void> {
-        console.debug('[CommoditiesController] loadCommodityDetails:', symbol);
+        Logger.log('[CommoditiesController] loadCommodityDetails:', symbol);
         try {
             const detailsCSV = await this.plugin.runQuery(queries.getCommodityDetailsQuery(symbol));
             const details = parseCommodityDetailsCSV(detailsCSV);
 
-            console.debug('[CommoditiesController] loadCommodityDetails: parsed ->', details);
+            Logger.log('[CommoditiesController] loadCommodityDetails: parsed ->', details);
 
             this.selectedCommodity.set({
                 symbol: details.symbol || symbol,
@@ -277,7 +273,7 @@ export class CommoditiesController {
             } as any);
 
         } catch (error) {
-            console.warn('Failed to query commodity details via BQL for', symbol, ':', error);
+            Logger.warn(`Failed to query commodity details via BQL for ${symbol}: ${error}`);
         }
     }
 
@@ -291,7 +287,7 @@ export class CommoditiesController {
         this.loading.set(true);
         this.error.set(null);
         try {
-            console.debug('[CommoditiesController] saveMetadata:', { symbol, metadata });
+            Logger.log(`[CommoditiesController] saveMetadata: ${symbol}`);
 
             // Get file location from selected commodity
             const current = get(this.selectedCommodity);
@@ -306,7 +302,7 @@ export class CommoditiesController {
             const createBackup = this.plugin.settings.createBackups ?? true;
             const result = await saveCommodityMetadata(symbol, metadata, filename, lineno, createBackup);
 
-            console.debug('[CommoditiesController] saveMetadata: result ->', result);
+            Logger.log('[CommoditiesController] saveMetadata: result ->', result);
 
             if (!result.success) {
                 throw new Error(result.error || 'Failed to save metadata');
@@ -317,7 +313,7 @@ export class CommoditiesController {
             await this.loadCommodityDetails(symbol);
             return result;
         } catch (error) {
-            console.error('Error saving commodity metadata:', error);
+            Logger.error('Error saving commodity metadata:', error);
             const msg = error instanceof Error ? error.message : 'Failed to save metadata';
             this.error.set(msg);
             return false;
@@ -337,7 +333,7 @@ export class CommoditiesController {
         try {
             const current = get(this.selectedCommodity) || this.getCommodityBySymbol(symbol);
             const priceMeta = current?.priceMetadata || (current?.fullMetadata || {})['price'];
-            console.debug('[CommoditiesController] testPriceSource:', { symbol, priceMeta });
+            Logger.log(`[CommoditiesController] testPriceSource: ${symbol}`);
 
             if (!priceMeta) {
                 return { success: false, error: 'No price metadata found for commodity' };
@@ -346,10 +342,10 @@ export class CommoditiesController {
             // Use native TypeScript validation (no backend needed)
             const result = await validatePriceSource(this.plugin, priceMeta);
 
-            console.debug('[CommoditiesController] testPriceSource result ->', result);
+            Logger.log('[CommoditiesController] testPriceSource result ->', result);
             return result;
         } catch (error) {
-            console.error('Error testing price source:', error);
+            Logger.error('Error testing price source:', error);
             this.error.set(error instanceof Error ? error.message : 'Failed to test price source');
             return { success: false, error: String(error) };
         } finally {
@@ -364,7 +360,7 @@ export class CommoditiesController {
      * @returns {Promise<any>} The validation result.
      */
     public async testLogoUrl(symbol: string, url: string): Promise<any> {
-        console.debug('[CommoditiesController] testLogoUrl:', { symbol, url });
+        Logger.log(`[CommoditiesController] testLogoUrl: ${symbol}`);
         try {
             if (!url || url.trim() === '') {
                 return { success: false, error: 'No URL provided' };
@@ -373,10 +369,10 @@ export class CommoditiesController {
             // Use native TypeScript validation (no backend needed)
             const result = await validateLogoUrl(url);
 
-            console.debug('[CommoditiesController] testLogoUrl result ->', result);
+            Logger.log('[CommoditiesController] testLogoUrl result ->', result);
             return result;
         } catch (error) {
-            console.error('Error testing logo URL:', error);
+            Logger.error('Error testing logo URL:', error);
             return { success: false, error: String(error) };
         }
     }
@@ -396,7 +392,7 @@ export class CommoditiesController {
      * @param {CommodityInfo} commodity - The commodity to select.
      */
     public async selectCommodity(commodity: CommodityInfo): Promise<void> {
-        console.debug('[CommoditiesController] selectCommodity ->', commodity?.symbol);
+        Logger.log('[CommoditiesController] selectCommodity ->', commodity?.symbol);
         this.selectedCommodity.set(commodity);
         await this.loadCommodityDetails(commodity.symbol);
     }
