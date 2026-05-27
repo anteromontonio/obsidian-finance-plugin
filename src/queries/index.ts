@@ -151,26 +151,67 @@ export function getTargetListQuery(): string {
 
 // --- Budget/Target Queries ---
 
-export function getIndicatorStatusQuery(isRollOver: boolean, currency: string, accountString: string, budgetAmount: number, startDate: string, period: string, tag?: string | null, tagMode?: 'has' | 'not_has'): string {
+/**
+ * Returns the total of postings to the indicator's account that fall within
+ * the CURRENT cycle (week / month / quarter / year), aggregated into ONE row.
+ *
+ * Design notes:
+ *   - The previous implementation for rollover indicators grouped by
+ *     (year, month) and returned `ORDER BY ... DESC LIMIT 1`. That subtly
+ *     broke when the current cycle had no postings yet: the LIMIT 1 would
+ *     return the most recent PAST cycle's row, so `_expenseThisCycle`
+ *     reflected last cycle's spending displayed as if it were this cycle's.
+ *   - The new query has no non-aggregate columns in SELECT, so bean-query
+ *     produces exactly one aggregated row (or zero rows if there are no
+ *     matching postings). That eliminates the wrong-cycle-row class of bugs.
+ *   - For rollover indicators we no longer compute `_remainingThisCycle` in
+ *     SQL — the client recomputes it from `getIndicatorBalanceQuery` so the
+ *     no-postings-ever case (which previously returned zero SQL rows and
+ *     therefore zero rollover) is handled correctly.
+ */
+export function getIndicatorStatusQuery(currency: string, accountString: string, period: string, tag?: string | null, tagMode?: 'has' | 'not_has'): string {
+	// Tag filter: optional, can either require a tag (#tag IN tags) or exclude one (NOT IN tags).
+	// Strip a leading '#' if the user typed it; escape single quotes by doubling per bean-query string literal rules.
 	const sanitizedTag = tag ? tag.trim().replace(/^#/, '').replace(/'/g, "''") : '';
 	const tagClause = sanitizedTag
 		? (tagMode === 'not_has' ? `NOT '${sanitizedTag}' IN tags` : `'${sanitizedTag}' IN tags`)
 		: '';
-	if (isRollOver) {
-		if (period === 'week') {
-			return `SELECT year, date_part('week', date), number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ((year(today())-year(${startDate}))*52+(date_part('week', today())-date_part('week',${startDate}))+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate}${tagClause ? ` WHERE ${tagClause}` : ''} ORDER BY year DESC, date_part('week', date) DESC LIMIT 1`;
-		}
-		if (period === 'quarter') {
-			return `SELECT year, date_part('quarter', date), number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ((year(today())-year(${startDate}))*4+(date_part('quarter', today())-date_part('quarter',${startDate}))+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate}${tagClause ? ` WHERE ${tagClause}` : ''} ORDER BY year DESC, date_part('quarter', date) DESC LIMIT 1`;
-		}
-		if (period === 'year') {
-			return `SELECT year, number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, (year(today())-year(${startDate})+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate}${tagClause ? ` WHERE ${tagClause}` : ''} ORDER BY year DESC LIMIT 1`;
-		}
-		// default: month
-		return `SELECT year, month, number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ((year(today())-year(${startDate}))*12+(month(today())-month(${startDate}))+1)*${budgetAmount}-last(number(only('${currency}',convert(balance, '${currency}')))) AS _remainingThisCycle FROM account ~ '^${accountString}' OPEN ON ${startDate}${tagClause ? ` WHERE ${tagClause}` : ''} ORDER BY year DESC, month DESC LIMIT 1`;
-	} else {
-		return `SELECT date, number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle, ${budgetAmount}-number(only('${currency}', convert(sum(position), '${currency}'))) AS _remainingThisCycle WHERE account ~ '^${accountString}' AND date_trunc('${period}', date)=date_trunc('${period}', today())${tagClause ? ` AND ${tagClause}` : ''}`;
-	}
+	// Aggregate-only SELECT → single row.
+	//   `sum(position)` totals all matching postings into a multi-currency inventory.
+	//   `convert(..., currency)` reduces that inventory to the indicator's display currency.
+	//   `only(currency, ...)` extracts the numeric leg in that currency.
+	//   `number(...)` strips the currency tag so the CSV value is a plain number.
+	// The `date_trunc(period, date) = date_trunc(period, today())` filter restricts
+	// the sum to postings whose cycle bucket matches today's cycle bucket — i.e. THIS cycle.
+	return `SELECT number(only('${currency}', convert(sum(position), '${currency}'))) AS _expenseThisCycle WHERE account ~ '^${accountString}' AND date_trunc('${period}', date)=date_trunc('${period}', today())${tagClause ? ` AND ${tagClause}` : ''}`;
+}
+
+/**
+ * Returns the cumulative balance of postings to the account on or after
+ * `startDate`, aggregated into ONE row. Used by rollover indicators to derive
+ * `remaining = elapsedCycles * targetAmount - balance` on the client.
+ *
+ * Why this exists as a separate query:
+ *   - Rollover semantics need TWO different aggregation scopes in one report:
+ *       (a) current-cycle expense (filtered to today's cycle)
+ *       (b) total accumulated balance since the indicator started
+ *     bean-query doesn't combine those two scopes cleanly in a single SELECT,
+ *     so we run two queries and combine the values client-side.
+ *   - `sum(position)` over all postings since `startDate` is equivalent to
+ *     `last(balance)` for accounts that don't carry an opening inventory,
+ *     which is the case for every account a budget/target would target
+ *     (expenses for budgets, assets for savings targets).
+ */
+export function getIndicatorBalanceQuery(currency: string, accountString: string, startDate: string, tag?: string | null, tagMode?: 'has' | 'not_has'): string {
+	// Same tag-clause handling as in getIndicatorStatusQuery — kept inline rather than
+	// extracted to keep each query function self-contained and easy to read in isolation.
+	const sanitizedTag = tag ? tag.trim().replace(/^#/, '').replace(/'/g, "''") : '';
+	const tagClause = sanitizedTag
+		? (tagMode === 'not_has' ? `NOT '${sanitizedTag}' IN tags` : `'${sanitizedTag}' IN tags`)
+		: '';
+	// `date >= ${startDate}` uses bean-query's date-literal syntax (unquoted YYYY-MM-DD),
+	// matching the pattern already used elsewhere in this file (see `getTransactionsQuery`).
+	return `SELECT number(only('${currency}', convert(sum(position), '${currency}'))) AS _balance WHERE account ~ '^${accountString}' AND date>=${startDate}${tagClause ? ` AND ${tagClause}` : ''}`;
 }
 
 

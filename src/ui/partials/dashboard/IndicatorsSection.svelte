@@ -3,7 +3,11 @@
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { parse as parseCsv } from 'csv-parse/sync';
 	import { runQuery } from '../../../utils';
-	import { getBudgetListQuery, getTargetListQuery, getIndicatorStatusQuery } from '../../../queries';
+	// `getIndicatorStatusQuery`  → current-cycle expense (single aggregated row).
+	// `getIndicatorBalanceQuery` → cumulative balance since the indicator's startDate.
+	// Both are needed for rollover indicators so we can recompute `remaining`
+	// client-side: `remaining = elapsedCycles * targetAmount - balance`.
+	import { getBudgetListQuery, getTargetListQuery, getIndicatorStatusQuery, getIndicatorBalanceQuery } from '../../../queries';
 
 	export let plugin: any = null;
 
@@ -60,13 +64,61 @@
 		return match ? parseFloat(match[0]) : 0;
 	}
 
+	/**
+	 * Counts the cycles elapsed from `startDate` through today, inclusive of both endpoints.
+	 *
+	 * This is the JS mirror of the SQL formula used by the legacy rollover query:
+	 *   ((year(today())-year(start)) * N + (subPart(today()) - subPart(start)) + 1)
+	 * where N and `subPart` depend on the period:
+	 *   • month   → N=12, subPart=month
+	 *   • quarter → N=4,  subPart=quarter
+	 *   • year    → N=1,  subPart=(none)
+	 *   • week    → approximated via (today-start)/7days; ISO week boundaries are
+	 *               ignored deliberately, matching the SQL `date_part('week', date)`
+	 *               approximation closely enough for indicator math.
+	 *
+	 * Used by the rollover formula `remaining = elapsedCycles * targetAmount - balance`.
+	 * Returns at least 1 — if `startDate` is in the future or unparseable we treat
+	 * the indicator as "current cycle only" so rendering never produces NaN.
+	 */
+	function getElapsedCycles(startDate: string, period: string): number {
+		if (!startDate) return 1; // Guard: missing startDate → degenerate to a single cycle.
+		const start = new Date(startDate);
+		const today = new Date();
+		// Guard: an unparseable ISO date string (e.g. malformed event meta) → fall back to 1
+		// rather than propagating NaN into the rollover math.
+		if (isNaN(start.getTime())) return 1;
+		let cycles: number;
+		if (period === 'year') {
+			// Inclusive year count: e.g. start=2024-X, today=2026-Y → 3 cycles (2024, 2025, 2026).
+			cycles = today.getFullYear() - start.getFullYear() + 1;
+		} else if (period === 'quarter') {
+			// Quarter index in [0..3] derived from getMonth() (0=Jan..11=Dec).
+			// Cross-year quarter delta uses *4 for the year wrap.
+			cycles = (today.getFullYear() - start.getFullYear()) * 4
+				+ (Math.floor(today.getMonth() / 3) - Math.floor(start.getMonth() / 3)) + 1;
+		} else if (period === 'week') {
+			// Coarse week counting: floor(delta-in-ms / 1 week) + 1.
+			// Intentionally NOT ISO-week-aligned — matches the SQL behavior, and
+			// rollover budgets are rarely week-granular in practice.
+			const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+			cycles = Math.floor((today.getTime() - start.getTime()) / msPerWeek) + 1;
+		} else {
+			// Default: month. Inclusive month count, with *12 for the year carry.
+			cycles = (today.getFullYear() - start.getFullYear()) * 12
+				+ (today.getMonth() - start.getMonth()) + 1;
+		}
+		// Clamp to >=1: protects against startDate-in-the-future and similar oddities.
+		return Math.max(1, cycles);
+	}
+
 	function formatAmount(amount: number, currency: string): string {
 		const abs = Math.abs(amount);
 		return `${abs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 	}
 
 	function formatSignedAmount(amount: number, currency: string): string {
-		const sign = amount < 0 ? '−' : '+';
+		const sign = amount < 0 ? '−' : ' ';
 		const abs = Math.abs(amount);
 		return `${sign}${abs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 	}
@@ -80,7 +132,10 @@
 
 	function getPct(item: IndicatorItem): number {
 		const eff = getEffectiveTarget(item);
-		if (eff <= 0) return 0;
+		if (eff <= 0) {
+			// Rollover deficit (or zero available with spending) — already over budget.
+			return eff < 0 || item.spent > 0 ? Infinity : 0;
+		}
 		return (item.spent / eff) * 100;
 	}
 
@@ -143,6 +198,9 @@
 
 	async function loadBudgetStatus(index: number) {
 		const item = budgets[index];
+		// Guard: an indicator is only renderable if it has an account scope, a start date,
+		// and a positive base target. Otherwise we render an inline error rather than
+		// dispatching queries that can't meaningfully return a status.
 		if (!item.accountString || !item.startDate || item.targetAmount <= 0) {
 			budgets = budgets.map((b, i) => i === index
 				? { ...b, loading: false, error: 'Indicator data incomplete — check the event directive in events.beancount.' }
@@ -150,24 +208,62 @@
 			return;
 		}
 		try {
-		const periodMap: Record<string, string> = { weekly: 'week', quarterly: 'quarter', yearly: 'year', monthly: 'month' };
-		const period = periodMap[item.period.toLowerCase()] ?? 'month';
-			const csv = await runQuery(
+			// Map user-facing period names (Monthly/Weekly/...) to bean-query's date_trunc tokens.
+			const periodMap: Record<string, string> = { weekly: 'week', quarterly: 'quarter', yearly: 'year', monthly: 'month' };
+			const period = periodMap[item.period.toLowerCase()] ?? 'month';
+
+			// Query A — current-cycle expense. Always run for every indicator.
+			const expensePromise = runQuery(
 				plugin,
-				getIndicatorStatusQuery(item.isRollOver, item.currency, item.accountString, item.targetAmount, item.startDate, period, item.tag, item.tagMode)
+				getIndicatorStatusQuery(item.currency, item.accountString, period, item.tag, item.tagMode)
 			);
-			const rows = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
-			if (rows.length > 0) {
-				const row = rows[0];
-				const spent = Math.abs(parseNumericValue(col(row, '_expenseThisCycle')));
-				const remaining = item.isRollOver
-					? parseNumericValue(col(row, '_remainingThisCycle'))
-					: item.targetAmount - spent;
-				budgets = budgets.map((b, i) => i === index ? { ...b, spent, remaining, loading: false } : b);
+			// Query B — cumulative balance since startDate. Only needed for rollover
+			// indicators (used to compute carry-over). For non-rollover we resolve to ''
+			// so the Promise.all shape stays uniform without firing an unused query.
+			const balancePromise = item.isRollOver
+				? runQuery(plugin, getIndicatorBalanceQuery(item.currency, item.accountString, item.startDate, item.tag, item.tagMode))
+				: Promise.resolve('');
+
+			// Run both queries in parallel — they have no dependencies on each other.
+			const [expenseCsv, balanceCsv] = await Promise.all([expensePromise, balancePromise]);
+
+			// Parse expense CSV. The query selects only aggregate columns, so we get
+			// either 0 rows (no postings this cycle) or 1 row. spent defaults to 0 when no rows.
+			const expenseRows = parseCsv(expenseCsv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
+			// Math.abs preserves the long-standing budget convention: expense postings
+			// in beancount are positive but we display "spent" as an absolute magnitude.
+			const spent = expenseRows.length > 0
+				? Math.abs(parseNumericValue(col(expenseRows[0], '_expenseThisCycle')))
+				: 0;
+
+			// Compute remaining differently depending on indicator type.
+			let remaining: number;
+			if (item.isRollOver) {
+				// Rollover: remaining accumulates unused (or absorbs over-spent) budget
+				// across every elapsed cycle since startDate.
+				//
+				//   remaining = elapsedCycles * targetAmount - cumulativeBalance
+				//
+				// Worked examples (budget = 100/month, started 4 months ago):
+				//   • No postings ever         → balance = 0   → remaining = 400  (3 prior months + this month rolled forward)
+				//   • Spent 250 across history → balance = 250 → remaining = 150
+				//   • Spent 410 across history → balance = 410 → remaining = -10  (over-budget by 10)
+				//
+				// This formula matches the SQL `elapsed*budget - last(balance)` from the
+				// old query, but is now robust to the "no rows this cycle" edge case.
+				const balanceRows = parseCsv(balanceCsv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
+				const balance = balanceRows.length > 0
+					? parseNumericValue(col(balanceRows[0], '_balance'))
+					: 0;
+				remaining = getElapsedCycles(item.startDate, period) * item.targetAmount - balance;
 			} else {
-				budgets = budgets.map((b, i) => i === index ? { ...b, spent: 0, remaining: b.targetAmount, loading: false } : b);
+				// Non-rollover: each cycle is independent. Simple subtraction.
+				remaining = item.targetAmount - spent;
 			}
+
+			budgets = budgets.map((b, i) => i === index ? { ...b, spent, remaining, loading: false } : b);
 		} catch (e) {
+			// Surface query/parse errors in the card itself rather than throwing globally.
 			budgets = budgets.map((b, i) => i === index
 				? { ...b, loading: false, error: e instanceof Error ? e.message : 'Error loading status' } : b);
 		}
@@ -197,6 +293,7 @@
 
 	async function loadTargetStatus(index: number) {
 		const item = targets[index];
+		// Same renderability guard as for budgets — see loadBudgetStatus for rationale.
 		if (!item.accountString || !item.startDate || item.targetAmount <= 0) {
 			targets = targets.map((t, i) => i === index
 				? { ...t, loading: false, error: 'Indicator data incomplete — check the event directive in events.beancount.' }
@@ -204,22 +301,52 @@
 			return;
 		}
 		try {
-		const periodMap: Record<string, string> = { weekly: 'week', quarterly: 'quarter', yearly: 'year', monthly: 'month' };
-		const period = periodMap[item.period.toLowerCase()] ?? 'month';
-			const csv = await runQuery(
+			// Period token mapping, identical to budgets — the same set of cycle granularities applies.
+			const periodMap: Record<string, string> = { weekly: 'week', quarterly: 'quarter', yearly: 'year', monthly: 'month' };
+			const period = periodMap[item.period.toLowerCase()] ?? 'month';
+
+			// Query A — this cycle's net contribution (e.g. amount saved this month for an Assets target).
+			const expensePromise = runQuery(
 				plugin,
-				getIndicatorStatusQuery(item.isRollOver, item.currency, item.accountString, item.targetAmount, item.startDate, period, item.tag, item.tagMode)
+				getIndicatorStatusQuery(item.currency, item.accountString, period, item.tag, item.tagMode)
 			);
-			const rows = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
-			if (rows.length > 0) {
-				const row = rows[0];
-				const current = parseNumericValue(col(row, '_expenseThisCycle'));
-				targets = targets.map((t, i) => i === index
-					? { ...t, spent: current, remaining: t.targetAmount - current, loading: false } : t);
+			// Query B — cumulative balance since startDate, only for rollover targets.
+			// Bug-fix vs prior behavior: the old code ignored `isRollOver` entirely in the
+			// success path, so rollover targets were silently treated like non-rollover.
+			// Now we honor it and apply the same elapsed-cycles formula budgets use.
+			const balancePromise = item.isRollOver
+				? runQuery(plugin, getIndicatorBalanceQuery(item.currency, item.accountString, item.startDate, item.tag, item.tagMode))
+				: Promise.resolve('');
+
+			const [expenseCsv, balanceCsv] = await Promise.all([expensePromise, balancePromise]);
+
+			const expenseRows = parseCsv(expenseCsv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
+			// NOTE: targets keep the signed value here (no Math.abs) — that's the
+			// historical convention because target accounts (Assets) may have positive
+			// deposits AND negative withdrawals in the same cycle, and a signed net is
+			// the meaningful quantity for "how much did I save / move this cycle".
+			const current = expenseRows.length > 0
+				? parseNumericValue(col(expenseRows[0], '_expenseThisCycle'))
+				: 0;
+
+			let remaining: number;
+			if (item.isRollOver) {
+				// Rollover target: same math as rollover budget.
+				//   remaining = elapsedCycles * targetAmount - cumulativeBalance
+				// For a savings target, positive `remaining` means "still need to save more
+				// to be on track including any prior shortfall"; negative means you're ahead.
+				const balanceRows = parseCsv(balanceCsv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
+				const balance = balanceRows.length > 0
+					? parseNumericValue(col(balanceRows[0], '_balance'))
+					: 0;
+				remaining = getElapsedCycles(item.startDate, period) * item.targetAmount - balance;
 			} else {
-				targets = targets.map((t, i) => i === index
-					? { ...t, spent: 0, remaining: t.targetAmount, loading: false } : t);
+				// Non-rollover target: each cycle resets, so remaining is just goal minus this cycle's net.
+				remaining = item.targetAmount - current;
 			}
+
+			targets = targets.map((t, i) => i === index
+				? { ...t, spent: current, remaining, loading: false } : t);
 		} catch (e) {
 			targets = targets.map((t, i) => i === index
 				? { ...t, loading: false, error: e instanceof Error ? e.message : 'Error loading status' } : t);
@@ -328,8 +455,8 @@
 							<!-- Progress section -->
 							<div class="progress-section">
 								<div class="progress-label-row">
-									<span class="progress-label-text">{formatAmount(item.spent, item.currency)} of {formatAmount(effTarget, item.currency)}</span>
-									<span class="pct-text" style="color:{barColor};">{(Math.round(pct * 10) / 10).toFixed(1)}%</span>
+									<span class="progress-label-text">{formatAmount(item.spent, item.currency)} of {effTarget < 0 ? formatSignedAmount(effTarget, item.currency) : formatAmount(effTarget, item.currency)}</span>
+									<span class="pct-text" style="color:{barColor};">{isFinite(pct) ? `${(Math.round(pct * 10) / 10).toFixed(1)}%` : 'Over'}</span>
 								</div>
 								<div class="progress-track">
 									<div class="progress-fill" style="width:{Math.min(pct, 100)}%; background:{barColor};"></div>
@@ -356,7 +483,7 @@
 									</div>
 									<div class="stat-block">
 										<span class="stat-label">Available</span>
-										<span class="stat-value">{formatAmount(effTarget, item.currency)}</span>
+										<span class="stat-value">{formatSignedAmount(effTarget, item.currency)}</span>
 									</div>
 								{:else}
 									<div class="stat-block">
