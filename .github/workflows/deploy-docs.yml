@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - Dev
+    paths:
+      - 'docs-site/**'
 permissions:
   contents: write
   
