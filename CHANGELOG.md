@@ -5,6 +5,19 @@ All notable changes to Beancount for Obsidian will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.2] - 2026-05-27
+
+### Fixed 🐛
+- **Indicators: wrong-cycle data for rollover budgets** — rollover queries previously used `GROUP BY (year, month) ... ORDER BY DESC LIMIT 1`, returning the most recent past cycle's row when the current cycle had no postings yet. Replaced with an aggregate-only query filtered to the current cycle via `date_trunc`.
+- **Indicators: rollover remaining stuck at base amount** — when an account had no postings at all, the query returned zero rows and the fallback reset remaining to `targetAmount`, discarding accumulated carry-over. Remaining is now computed client-side as `elapsedCycles × targetAmount − cumulativeBalance`.
+- **Indicators: negative available budget shown as "On Track"** — a rollover deficit made `effectiveTarget` negative, but `getPct` short-circuited to `0%` (green). Negative or zero effective target now correctly renders as "Over Budget".
+- **Indicators: rollover targets silently treated as non-rollover** — `loadTargetStatus` always computed `remaining = targetAmount − current` regardless of `isRollOver`. Now applies the correct carry-over formula for rollover targets.
+
+### Improved 🚀
+- **Demo ledger** — uncommented the example BQL query and added multiple `event "Indicator"` directives (Budgets and Targets) so the Financial Indicators section is populated when users first test the plugin. Closes [#164](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/164).
+
+---
+
 ## [1.3.0] - 2026-05-01
 
 ### Added ⭐ Financial Indicators
