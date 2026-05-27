@@ -342,8 +342,8 @@ export class BalanceSheetController {
 				maintainAspectRatio: false,
 				plugins: {
 					title: {
-						display: true,
-						text: `Net Worth Trend (${currency})`,
+						display: false,
+						text: `Net Worth (${currency})`,
 						font: { size: 16 }
 					},
 					legend: { display: true, position: 'top' },

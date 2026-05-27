@@ -1,7 +1,7 @@
 // src/utils/validators.ts
 // Validation helpers: bean-price price-source validation and logo URL validation.
 
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 import { requestUrl } from 'obsidian';
 import type BeancountPlugin from '../main';
 import { SystemDetector } from './SystemDetector';
@@ -32,18 +32,65 @@ export async function validatePriceSource(
     }
 
     const source = priceMetadata.trim();
-    const command = `${beanPriceCommand} ${source}`;
+    const [command, ...baseArgs] = splitCommandLine(beanPriceCommand);
+
+    if (!command) {
+        return { success: false, error: 'Invalid bean-price command configuration.' };
+    }
 
     return new Promise((resolve) => {
-        exec(command, { timeout: 10000 }, (error, stdout, stderr) => {
-            if (error) {
-                const errorMsg = stderr?.trim() || error.message;
+        const child = spawn(command, [...baseArgs, '-e', source], {
+            windowsHide: true,
+            shell: false,
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        const timeout = setTimeout(() => {
+            child.kill();
+            resolve({ success: false, error: 'Price source validation timed out after 10 seconds.' });
+        }, 10000);
+
+        child.stdout.on('data', (data: Buffer | string) => {
+            stdout += data.toString();
+        });
+
+        child.stderr.on('data', (data: Buffer | string) => {
+            stderr += data.toString();
+        });
+
+        child.on('error', (error) => {
+            clearTimeout(timeout);
+            resolve({ success: false, error: error.message });
+        });
+
+        child.on('close', (code) => {
+            clearTimeout(timeout);
+            if (code !== 0) {
+                const errorMsg = stderr.trim() || `bean-price exited with code ${code}`;
                 resolve({ success: false, error: errorMsg });
                 return;
             }
-            resolve({ success: true, output: stdout?.trim() || 'Price source validated successfully' });
+
+            resolve({ success: true, output: stdout.trim() || 'Price source validated successfully' });
         });
     });
+}
+
+/**
+ * Split a command line string into executable and args while preserving quoted segments.
+ */
+function splitCommandLine(commandLine: string): string[] {
+    const parts: string[] = [];
+    const regex = /[^\s"']+|"([^"]*)"|'([^']*)'/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(commandLine)) !== null) {
+        parts.push(match[1] ?? match[2] ?? match[0]);
+    }
+
+    return parts;
 }
 
 /**

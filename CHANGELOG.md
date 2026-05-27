@@ -5,6 +5,10 @@ All notable changes to Beancount for Obsidian will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## In-progress
+- **Accounts and Balances: duplicate "Net Worth Trend" label in trend chart area** — removed the extra chart title rendering so the label appears once in the selector UI.
+- **Commodity metadata: price source test failed for valid expressions on Windows** — switched validation to execute `bean-price -e <source>` using argument-based process spawning (instead of shell-quoted command strings), fixing errors such as invalid source with extra quote characters.
+
 ## [1.5.2] - 2026-05-27
 
 ### Fixed 🐛
