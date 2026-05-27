@@ -414,12 +414,16 @@ export class BalanceSheetController {
 			let hasUnconvertedCommodities = false;
 			const unconvertedAccounts: string[] = [];
 
-			for (const row of rows) {
+			const isConvert = valuationMethod === 'convert';
+
+			for (let i = 0, len = rows.length; i < len; i++) {
+				const row = rows[i];
 				if (row.length < 2) continue;
-				const [account, amountStr] = row;
+				const account = row[0];
+				const amountStr = row[1];
 
 				// Check for multi-currency results (only relevant for convert method)
-				if (valuationMethod === 'convert' && amountStr.includes(',')) {
+				if (isConvert && amountStr.indexOf(',') !== -1) {
 					hasUnconvertedCommodities = true;
 					unconvertedAccounts.push(account);
 				}
