@@ -6,7 +6,7 @@ import { readFile } from 'fs/promises';
 import { parse as parseCsv } from 'csv-parse/sync';
 import type BeancountPlugin from '../main';
 import { getTargetFile, ensureYearFile } from './structuredLayout';
-import { atomicFileWrite, createBackupFile, convertWslPathToWindows } from './fileEditor';
+import { atomicFileWrite, createBackupFile, convertWslPathToWindows, getNewlineCharacter } from './fileEditor';
 import { runQuery } from './queryRunner';
 import { Logger } from './logger';
 
@@ -133,7 +133,9 @@ export async function updateBalance(
         Logger.log(`[updateBalance] ${actualFilePath} → ${normalizedPath}, line ${lineno}`);
 
         await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'updateBalance');
-        const lines = (await readFile(normalizedPath, 'utf-8')).split('\n');
+        const _rawContent = await readFile(normalizedPath, 'utf-8');
+        const newline = getNewlineCharacter(_rawContent);
+        const lines = _rawContent.split(/\r?\n/);
 
         if (isNaN(lineno) || lineno < 1 || lineno > lines.length)
             return { success: false, error: `Invalid line number ${lineno}` };
@@ -142,7 +144,7 @@ export async function updateBalance(
         if (balanceData.tolerance) newBalanceText += ` ~ ${balanceData.tolerance}`;
 
         lines[lineno - 1] = newBalanceText;
-        await atomicFileWrite(normalizedPath, lines.join('\n'));
+        await atomicFileWrite(normalizedPath, lines.join(newline));
         Logger.log(`[updateBalance] Updated ${balanceId}`);
         return { success: true };
     } catch (error) {
@@ -180,13 +182,15 @@ export async function deleteBalance(
         Logger.log(`[deleteBalance] ${actualFilePath} → ${normalizedPath}, line ${lineno}`);
 
         await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'deleteBalance');
-        const lines = (await readFile(normalizedPath, 'utf-8')).split('\n');
+        const _rawContent = await readFile(normalizedPath, 'utf-8');
+        const newline = getNewlineCharacter(_rawContent);
+        const lines = _rawContent.split(/\r?\n/);
 
         if (isNaN(lineno) || lineno < 1 || lineno > lines.length)
             return { success: false, error: `Invalid line number ${lineno}` };
 
         lines.splice(lineno - 1, 1);
-        await atomicFileWrite(normalizedPath, lines.join('\n'));
+        await atomicFileWrite(normalizedPath, lines.join(newline));
         Logger.log(`[deleteBalance] Deleted ${balanceId}`);
         return { success: true };
     } catch (error) {
@@ -259,7 +263,9 @@ export async function updateNote(
         Logger.log(`[updateNote] ${actualFilePath} → ${normalizedPath}, line ${lineno}`);
 
         await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'updateNote');
-        const lines = (await readFile(normalizedPath, 'utf-8')).split('\n');
+        const _rawContent = await readFile(normalizedPath, 'utf-8');
+        const newline = getNewlineCharacter(_rawContent);
+        const lines = _rawContent.split(/\r?\n/);
 
         if (isNaN(lineno) || lineno < 1 || lineno > lines.length)
             return { success: false, error: `Invalid line number ${lineno}` };
@@ -269,7 +275,7 @@ export async function updateNote(
         if (noteData.links) for (const l of noteData.links) noteParts.push(`^${l}`);
 
         lines[lineno - 1] = noteParts.join(' ');
-        await atomicFileWrite(normalizedPath, lines.join('\n'));
+        await atomicFileWrite(normalizedPath, lines.join(newline));
         Logger.log(`[updateNote] Updated ${noteId}`);
         return { success: true };
     } catch (error) {
@@ -307,13 +313,15 @@ export async function deleteNote(
         Logger.log(`[deleteNote] ${actualFilePath} → ${normalizedPath}, line ${lineno}`);
 
         await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'deleteNote');
-        const lines = (await readFile(normalizedPath, 'utf-8')).split('\n');
+        const _rawContent = await readFile(normalizedPath, 'utf-8');
+        const newline = getNewlineCharacter(_rawContent);
+        const lines = _rawContent.split(/\r?\n/);
 
         if (isNaN(lineno) || lineno < 1 || lineno > lines.length)
             return { success: false, error: `Invalid line number ${lineno}` };
 
         lines.splice(lineno - 1, 1);
-        await atomicFileWrite(normalizedPath, lines.join('\n'));
+        await atomicFileWrite(normalizedPath, lines.join(newline));
         Logger.log(`[deleteNote] Deleted ${noteId}`);
         return { success: true };
     } catch (error) {
@@ -370,7 +378,9 @@ export async function saveCommodityMetadata(
         const normalizedPath = convertWslPathToWindows(filename);
         await createBackupFile(normalizedPath, createBackup, 'saveCommodityMetadata');
 
-        const lines = (await readFile(normalizedPath, 'utf-8')).split('\n');
+        const _rawContent = await readFile(normalizedPath, 'utf-8');
+        const newline = getNewlineCharacter(_rawContent);
+        const lines = _rawContent.split(/\r?\n/);
 
         if (isNaN(lineno) || lineno < 1 || lineno > lines.length)
             return { success: false, error: `Invalid line number ${lineno}` };
@@ -393,7 +403,7 @@ export async function saveCommodityMetadata(
             .map(([key, value]) => `  ${key}: "${value}"`);
 
         lines.splice(lineIndex + 1, endIndex - lineIndex - 1, ...newMetadataLines);
-        await atomicFileWrite(normalizedPath, lines.join('\n'));
+        await atomicFileWrite(normalizedPath, lines.join(newline));
 
         Logger.log(`[saveCommodityMetadata] Saved metadata for ${symbol}`);
         return { success: true };
@@ -413,7 +423,9 @@ export async function deleteCommodityDirective(
         const normalizedPath = convertWslPathToWindows(filename);
         await createBackupFile(normalizedPath, createBackup, 'deleteCommodityDirective');
 
-        const lines = (await readFile(normalizedPath, 'utf-8')).split('\n');
+        const _rawContent = await readFile(normalizedPath, 'utf-8');
+        const newline = getNewlineCharacter(_rawContent);
+        const lines = _rawContent.split(/\r?\n/);
 
         if (isNaN(lineno) || lineno < 1 || lineno > lines.length)
             return { success: false, error: `Invalid line number ${lineno}` };
@@ -437,7 +449,7 @@ export async function deleteCommodityDirective(
         }
 
         lines.splice(startIndex, endIndex - startIndex);
-        await atomicFileWrite(normalizedPath, lines.join('\n'));
+        await atomicFileWrite(normalizedPath, lines.join(newline));
 
         Logger.log(`[deleteCommodityDirective] Deleted commodity directive for ${symbol}`);
         return { success: true };
@@ -487,7 +499,7 @@ export async function createPriceDirective(
 /**
  * Generates properly formatted Beancount transaction text from a transaction data object.
  */
-export function generateTransactionText(transactionData: any): string {
+export function generateTransactionText(transactionData: any, newline: string = '\n'): string {
     const date = transactionData.date;
     const flag = transactionData.flag || '*';
     const payee = transactionData.payee || '';
@@ -547,7 +559,7 @@ export function generateTransactionText(transactionData: any): string {
         }
     }
 
-    return lines.join('\n');
+    return lines.join(newline);
 }
 
 export async function createTransaction(
@@ -568,7 +580,8 @@ export async function createTransaction(
 
         await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'createTransaction');
         const currentContent = await readFile(normalizedPath, 'utf-8');
-        await atomicFileWrite(normalizedPath, currentContent + '\n' + generateTransactionText(transactionData) + '\n');
+        const newline = getNewlineCharacter(currentContent);
+        await atomicFileWrite(normalizedPath, currentContent + newline + generateTransactionText(transactionData, newline) + newline);
 
         Logger.log(`[createTransaction] Created transaction in ${normalizedPath}`);
         return { success: true };
@@ -642,7 +655,8 @@ export async function updateTransaction(
 
         await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'updateTransaction');
         const currentContent = await readFile(normalizedPath, 'utf-8');
-        const lines = currentContent.split('\n');
+        const newline = getNewlineCharacter(currentContent);
+        const lines = currentContent.split(/\r?\n/);
 
         if (isNaN(lineno) || lineno < 1 || lineno > lines.length)
             return { success: false, error: `Invalid line number ${lineno}` };
@@ -650,8 +664,8 @@ export async function updateTransaction(
         const { startIndex, endIndex } = findTransactionBlock(lines, lineno - 1);
         Logger.log(`[updateTransaction] Block: lines ${startIndex + 1}–${endIndex + 1}`);
 
-        const newLines = [...lines.slice(0, startIndex), generateTransactionText(transactionData), ...lines.slice(endIndex + 1)];
-        await atomicFileWrite(normalizedPath, newLines.join('\n'));
+        const newLines = [...lines.slice(0, startIndex), generateTransactionText(transactionData, newline), ...lines.slice(endIndex + 1)];
+        await atomicFileWrite(normalizedPath, newLines.join(newline));
         Logger.log(`[updateTransaction] Updated ${transactionId}`);
         return { success: true };
     } catch (error) {
@@ -682,7 +696,8 @@ export async function deleteTransaction(
 
         await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'deleteTransaction');
         const currentContent = await readFile(normalizedPath, 'utf-8');
-        const lines = currentContent.split('\n');
+        const newline = getNewlineCharacter(currentContent);
+        const lines = currentContent.split(/\r?\n/);
 
         if (isNaN(lineno) || lineno < 1 || lineno > lines.length)
             return { success: false, error: `Invalid line number ${lineno}` };
@@ -693,7 +708,7 @@ export async function deleteTransaction(
 
         Logger.log(`[deleteTransaction] Block: lines ${startIndex + 1}–${endIndex + 1}`);
         const newLines = [...lines.slice(0, startIndex), ...lines.slice(endIndex + 1)];
-        await atomicFileWrite(normalizedPath, newLines.join('\n'));
+        await atomicFileWrite(normalizedPath, newLines.join(newline));
         Logger.log(`[deleteTransaction] Deleted ${transactionId}`);
         return { success: true };
     } catch (error) {
@@ -752,7 +767,9 @@ export async function validateCommodityLocation(
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const normalizedPath = convertWslPathToWindows(filename);
-        const lines = (await readFile(normalizedPath, 'utf-8')).split('\n');
+        const _rawContent = await readFile(normalizedPath, 'utf-8');
+        const newline = getNewlineCharacter(_rawContent);
+        const lines = _rawContent.split(/\r?\n/);
 
         if (isNaN(lineno) || lineno < 1 || lineno > lines.length)
             return { success: false, error: `Invalid line number ${lineno}` };
