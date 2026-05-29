@@ -45,6 +45,8 @@ export interface BeancountPluginSettings {
     lastAutoPriceFetch: number;
     /** Bean-price command path (detected automatically). */
     beanPriceCommand: string;
+    /** Whether to enable account-name autocomplete in the Beancount editor. */
+    accountAutocomplete: boolean;
 }
 
 /**
@@ -70,7 +72,9 @@ export const DEFAULT_SETTINGS: BeancountPluginSettings = {
     autoPriceFetch: false,
     priceFetchIntervalHours: 24,
     lastAutoPriceFetch: 0,
-    beanPriceCommand: ''
+    beanPriceCommand: '',
+    // Editor Settings
+    accountAutocomplete: true,
 }
 
 /**
@@ -306,6 +310,18 @@ export class BeancountSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.bqlShowQuery)
                 .onChange(async (value) => {
                     this.plugin.settings.bqlShowQuery = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        containerEl.createEl('h3', { text: 'Editor Settings' });
+
+        new Setting(containerEl)
+            .setName('Account name autocomplete')
+            .setDesc('Show a completion popup with matching account names when typing in .beancount files. Reopen the file to apply changes.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.accountAutocomplete)
+                .onChange(async (value) => {
+                    this.plugin.settings.accountAutocomplete = value;
                     await this.plugin.saveSettings();
                 }));
 

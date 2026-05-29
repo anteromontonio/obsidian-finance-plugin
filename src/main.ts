@@ -80,7 +80,7 @@ export default class BeancountPlugin extends Plugin {
 		);
 		this.registerView(
 			BEANCOUNT_FILE_VIEW_TYPE,
-			(leaf) => new BeancountFileView(leaf)
+			(leaf) => new BeancountFileView(leaf, this)
 		);
 
 		// Register .beancount and .bean files with a plain-text view to avoid Markdown rendering

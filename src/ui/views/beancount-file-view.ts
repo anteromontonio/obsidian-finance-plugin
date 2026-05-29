@@ -5,6 +5,8 @@ import { EditorState } from '@codemirror/state';
 import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
 import { searchKeymap } from '@codemirror/search';
 import { beancount } from '../../lang/beancount-language';
+import { beancountAutocomplete, invalidateAccountCache } from '../../lang/beancount-autocomplete';
+import type BeancountPlugin from '../../main';
 
 export const BEANCOUNT_FILE_VIEW_TYPE = 'beancount-file';
 
@@ -16,9 +18,11 @@ export const BEANCOUNT_FILE_VIEW_TYPE = 'beancount-file';
  */
 export class BeancountFileView extends TextFileView {
 	private editorView: EditorView;
+	private plugin: BeancountPlugin | null;
 
-	constructor(leaf: WorkspaceLeaf) {
+	constructor(leaf: WorkspaceLeaf, plugin?: BeancountPlugin) {
 		super(leaf);
+		this.plugin = plugin ?? null;
 	}
 
 	getViewType(): string {
@@ -39,6 +43,9 @@ export class BeancountFileView extends TextFileView {
 
 		const editorContainer = this.contentEl.createDiv({ cls: 'beancount-editor' });
 
+		const autocompleteEnabled =
+			this.plugin != null && this.plugin.settings.accountAutocomplete;
+
 		const state = EditorState.create({
 			doc: '',
 			extensions: [
@@ -54,6 +61,7 @@ export class BeancountFileView extends TextFileView {
 					...searchKeymap,
 					indentWithTab,
 				]),
+				...(autocompleteEnabled ? [beancountAutocomplete(this.plugin!)] : []),
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {
 						this.requestSave();
@@ -87,6 +95,8 @@ export class BeancountFileView extends TextFileView {
 	/** Called by TextFileView when it loads or reloads the file from disk. */
 	setViewData(data: string, _clear: boolean): void {
 		if (!this.editorView) return;
+		// Invalidate the account cache so completions reflect any new open directives
+		if (this.plugin) invalidateAccountCache(this.plugin);
 		this.editorView.dispatch({
 			changes: {
 				from: 0,
