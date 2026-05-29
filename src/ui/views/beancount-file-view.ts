@@ -4,6 +4,7 @@ import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection, hi
 import { EditorState } from '@codemirror/state';
 import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
 import { searchKeymap } from '@codemirror/search';
+import { beancount } from '../../lang/beancount-language';
 
 export const BEANCOUNT_FILE_VIEW_TYPE = 'beancount-file';
 
@@ -41,6 +42,7 @@ export class BeancountFileView extends TextFileView {
 		const state = EditorState.create({
 			doc: '',
 			extensions: [
+				beancount(),
 				lineNumbers(),
 				highlightActiveLineGutter(),
 				drawSelection(),
