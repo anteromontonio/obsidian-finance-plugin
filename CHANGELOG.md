@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## In-progress
 - **Accounts and Balances: duplicate "Net Worth Trend" label in trend chart area** — removed the extra chart title rendering so the label appears once in the selector UI.
 - **Commodity metadata: price source test failed for valid expressions on Windows** — switched validation to execute `bean-price -e <source>` using argument-based process spawning (instead of shell-quoted command strings), fixing errors such as invalid source with extra quote characters.
+- **File writes: race conditions and newline corruption on Windows** — adopted Fava-like file-write safety measures across all CRUD operations:
+  - **Concurrency control:** introduced an async mutex (`FileLock`) in `fileEditor.ts`; concurrent writes to the same path are now queued sequentially, and unique temporary filenames eliminate race conditions between parallel `.tmp` writes.
+  - **Newline preservation:** all read-modify-write operations (`updateBalance`, `deleteBalance`, `updateNote`, `deleteNote`, `updateTransaction`, `deleteTransaction`, `saveCommodityMetadata`, `deleteCommodityDirective`) now detect and preserve the file's original line ending (`\r\n` or `\n`) via `getNewlineCharacter()`.
+  - **Append/create operations extended:** `saveOpenDirective`, `saveCloseDirective`, `createBalanceAssertion`, `createNote`, `createCommodity`, and `createPriceDirective` now also detect the target file's line ending before appending, ensuring newly written directives match the file's existing style. (PR #173 + follow-up)
 
 ## [1.5.2] - 2026-05-27
 

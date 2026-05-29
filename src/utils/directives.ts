@@ -32,7 +32,8 @@ export async function saveOpenDirective(
 
         await createBackupFile(normalizedPath, createBackup, 'saveOpenDirective');
         const content = await readFile(normalizedPath, 'utf-8');
-        const newContent = content.endsWith('\n') ? `${content}${directiveText}\n` : `${content}\n${directiveText}\n`;
+        const newline = getNewlineCharacter(content);
+        const newContent = content.endsWith(newline) ? `${content}${directiveText}${newline}` : `${content}${newline}${directiveText}${newline}`;
         await atomicFileWrite(normalizedPath, newContent);
 
         Logger.log(`[saveOpenDirective] Saved open directive for ${account}`);
@@ -60,7 +61,8 @@ export async function saveCloseDirective(
 
         await createBackupFile(normalizedPath, createBackup, 'saveCloseDirective');
         const content = await readFile(normalizedPath, 'utf-8');
-        const newContent = content.endsWith('\n') ? `${content}${directiveText}\n` : `${content}\n${directiveText}\n`;
+        const newline = getNewlineCharacter(content);
+        const newContent = content.endsWith(newline) ? `${content}${directiveText}${newline}` : `${content}${newline}${directiveText}${newline}`;
         await atomicFileWrite(normalizedPath, newContent);
 
         Logger.log(`[saveCloseDirective] Saved close directive for ${account}`);
@@ -92,7 +94,8 @@ export async function createBalanceAssertion(
 
         await createBackupFile(normalizedPath, createBackup, 'createBalanceAssertion');
         const content = await readFile(normalizedPath, 'utf-8');
-        const newContent = content.endsWith('\n') ? `${content}${directiveText}\n` : `${content}\n${directiveText}\n`;
+        const newline = getNewlineCharacter(content);
+        const newContent = content.endsWith(newline) ? `${content}${directiveText}${newline}` : `${content}${newline}${directiveText}${newline}`;
         await atomicFileWrite(normalizedPath, newContent);
 
         Logger.log(`[createBalanceAssertion] Saved balance for ${account}`);
@@ -222,7 +225,8 @@ export async function createNote(
 
         await createBackupFile(normalizedPath, createBackup, 'createNote');
         const content = await readFile(normalizedPath, 'utf-8');
-        const newContent = content.endsWith('\n') ? `${content}${directiveText}\n` : `${content}\n${directiveText}\n`;
+        const newline = getNewlineCharacter(content);
+        const newContent = content.endsWith(newline) ? `${content}${directiveText}${newline}` : `${content}${newline}${directiveText}${newline}`;
         await atomicFileWrite(normalizedPath, newContent);
 
         Logger.log(`[createNote] Saved note for ${account}`);
@@ -352,11 +356,12 @@ export async function createCommodity(
         const metadataLines: string[] = [];
         if (priceMetadata) metadataLines.push(`  price: "${priceMetadata}"`);
         if (logoUrl) metadataLines.push(`  logo: "${logoUrl}"`);
-        if (metadataLines.length > 0) directiveText += '\n' + metadataLines.join('\n');
 
         await createBackupFile(normalizedPath, createBackup, 'createCommodity');
         const content = await readFile(normalizedPath, 'utf-8');
-        const newContent = content.endsWith('\n') ? `${content}${directiveText}\n` : `${content}\n${directiveText}\n`;
+        const newline = getNewlineCharacter(content);
+        if (metadataLines.length > 0) directiveText += newline + metadataLines.join(newline);
+        const newContent = content.endsWith(newline) ? `${content}${directiveText}${newline}` : `${content}${newline}${directiveText}${newline}`;
         await atomicFileWrite(normalizedPath, newContent);
 
         Logger.log(`[createCommodity] Created commodity ${symbol}`);
@@ -483,7 +488,8 @@ export async function createPriceDirective(
 
         await createBackupFile(normalizedPath, createBackup, 'createPriceDirective');
         const content = await readFile(normalizedPath, 'utf-8');
-        const newContent = content.endsWith('\n') ? `${content}${directiveText}\n` : `${content}\n${directiveText}\n`;
+        const newline = getNewlineCharacter(content);
+        const newContent = content.endsWith(newline) ? `${content}${directiveText}${newline}` : `${content}${newline}${directiveText}${newline}`;
         await atomicFileWrite(normalizedPath, newContent);
 
         Logger.log(`[createPriceDirective] Created price directive for ${commodity}`);
