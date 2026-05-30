@@ -13,37 +13,57 @@ import type { EditorView } from '@codemirror/view';
 // Regex helpers
 // ---------------------------------------------------------------------------
 
-/** A posting line: optional whitespace, account name, optional amount+currency */
-const POSTING_LINE_RE = /^(\s+)([A-Z][A-Za-z0-9]*(?::[A-Za-z0-9][A-Za-z0-9_-]*)*)(\s+.*)?$/;
+/** A line that starts a new top-level directive (column 0, not whitespace/blank). */
+const DIRECTIVE_START_RE = /^(?:\d{4}-\d{2}-\d{2}|option\b|plugin\b|include\b|pushtag\b|poptag\b|query\b|custom\b|event\b)/;
 
-/** A directive-start line (date YYYY-MM-DD or special keywords) */
-const DIRECTIVE_START_RE = /^(?:\d{4}-\d{2}-\d{2}|option\b|plugin\b|include\b|pushtag\b|poptag\b|query\b|custom\b)/;
+/** A transaction block header: date + any flag (* ! P txn T D F R M U N C W I etc.) */
+const TXN_HEADER_RE = /^\d{4}-\d{2}-\d{2}\s+(?:[*!PTDFRMUNCWI]|txn)\b/;
 
-/** Match the numeric amount part: e.g. "  -1,234.56 USD" */
-const AMOUNT_RE = /^(\s*)(-?[\d,]+(?:\.\d+)?)(\s+)([A-Z][A-Z0-9'._-]*)(.*)$/;
-
-/** Match @ or @@ price annotation (possibly with extra spaces) */
-const PRICE_RE  = /\s*(@{1,2})\s*/g;
+/** Match amount + currency at the tail of a posting: "  -1,234.56 USD  @ ..." */
+const AMOUNT_RE = /^(-?[\d,]+(?:\.\d+)?)\s+([A-Z][A-Z0-9'._-]*)(.*)$/;
 
 // ---------------------------------------------------------------------------
-// Block splitting — a "block" is a group of lines separated by blank lines
+// Block splitting — split on top-level directive lines (column 0)
+//   Blank lines between directives are preserved as their own entries.
 // ---------------------------------------------------------------------------
 
-function splitIntoBlocks(lines: string[]): string[][] {
-    const blocks: string[][] = [];
+interface Block {
+    lines: string[];
+    isBlank: boolean; // true = this block is just whitespace/blank lines
+}
+
+function splitIntoBlocks(lines: string[]): Block[] {
+    const blocks: Block[] = [];
     let current: string[] = [];
+
+    const flush = () => {
+        if (current.length > 0) {
+            const allBlank = current.every((l) => l.trim() === '');
+            blocks.push({ lines: current, isBlank: allBlank });
+            current = [];
+        }
+    };
+
     for (const line of lines) {
-        if (line.trim() === '') {
-            if (current.length > 0) {
-                blocks.push(current);
-                current = [];
+        const isDirectiveStart = DIRECTIVE_START_RE.test(line) && line.trim() !== '';
+
+        if (isDirectiveStart) {
+            // Flush whatever we had (blank separators etc.)
+            flush();
+            current.push(line);
+        } else if (line.trim() === '') {
+            // Blank line — flush current directive block, then collect blanks
+            if (current.length > 0 && !current.every((l) => l.trim() === '')) {
+                // We have a real block; end it before the blank
+                flush();
             }
-            blocks.push([line]); // preserve the blank line as its own block
+            current.push(line);
         } else {
+            // Indented line (posting / metadata) — belongs to the current block
             current.push(line);
         }
     }
-    if (current.length > 0) blocks.push(current);
+    flush();
     return blocks;
 }
 
@@ -52,109 +72,105 @@ function splitIntoBlocks(lines: string[]): string[][] {
 // ---------------------------------------------------------------------------
 
 /**
- * Returns true if the block looks like a transaction (first line is a date directive
- * with a flag * or ! and has posting lines beneath it).
- */
-function isTransactionBlock(block: string[]): boolean {
-    if (block.length < 2) return false;
-    return /^\d{4}-\d{2}-\d{2}\s+[*!]/.test(block[0]);
-}
-
-/**
  * Format a single transaction block:
- *   1. Keep the header line as-is (date + flag + payee/narration)
+ *   1. Keep the header line as-is
  *   2. Normalise posting indent to exactly 2 spaces
  *   3. Right-align amounts to the widest amount column within the block
  *   4. Normalise @ / @@ spacing
  */
-function formatTransactionBlock(block: string[]): string[] {
-    const [header, ...rest] = block;
+function formatTransactionBlock(lines: string[]): string[] {
+    const [header, ...rest] = lines;
 
-    // Parse each posting line into components
-    interface Posting {
-        raw: string;
+    interface ParsedPosting {
         account: string;
         amountStr: string | null;
         currency: string | null;
-        tail: string;          // everything after currency (cost, price annotation, comments)
+        tail: string;
         isComment: boolean;
         isBlank: boolean;
+        isMetadata: boolean;
+        rawOther: string | null; // for lines we can't parse
     }
 
-    const postings: Posting[] = rest.map((line) => {
-        if (line.trim() === '') return { raw: line, account: '', amountStr: null, currency: null, tail: '', isComment: false, isBlank: true };
-        if (line.trimStart().startsWith(';')) return { raw: line, account: line.trimStart(), amountStr: null, currency: null, tail: '', isComment: true, isBlank: false };
-
-        const postingMatch = POSTING_LINE_RE.exec(line);
-        if (!postingMatch) return { raw: line, account: line.trimStart(), amountStr: null, currency: null, tail: '', isComment: false, isBlank: false };
-
-        const account = postingMatch[2];
-        const afterAccount = (postingMatch[3] ?? '').trim();
-
-        // Try to parse amount + currency from afterAccount
-        const amountMatch = AMOUNT_RE.exec(` ${afterAccount}`);
-        if (amountMatch) {
-            const amountStr = amountMatch[2];
-            const currency = amountMatch[4];
-            let tail = amountMatch[5].trim();
-            // Normalise @ and @@ spacing
-            tail = tail.replace(/\s*(@{1,2})\s*/g, ' $1 ').trim();
-            return { raw: line, account, amountStr, currency, tail, isComment: false, isBlank: false };
+    const postings: ParsedPosting[] = rest.map((line): ParsedPosting => {
+        if (line.trim() === '') {
+            return { account: '', amountStr: null, currency: null, tail: '', isComment: false, isBlank: true, isMetadata: false, rawOther: null };
+        }
+        const trimmed = line.trimStart();
+        if (trimmed.startsWith(';')) {
+            return { account: trimmed, amountStr: null, currency: null, tail: '', isComment: true, isBlank: false, isMetadata: false, rawOther: null };
         }
 
-        // No amount: account-only posting or metadata
-        return { raw: line, account: afterAccount ? `${account} ${afterAccount}` : account, amountStr: null, currency: null, tail: '', isComment: false, isBlank: false };
+        // Metadata line: "key: value"
+        if (/^[a-z_][a-z0-9_]*\s*:/.test(trimmed)) {
+            return { account: trimmed, amountStr: null, currency: null, tail: '', isComment: false, isBlank: false, isMetadata: true, rawOther: null };
+        }
+
+        // Posting: starts with an account name (Assets:, Liabilities:, …)
+        const accountMatch = trimmed.match(/^([A-Z][A-Za-z0-9]*(?::[A-Za-z0-9][A-Za-z0-9_-]*)*)(.*)$/);
+        if (!accountMatch) {
+            // Unknown — preserve indented
+            return { account: '', amountStr: null, currency: null, tail: '', isComment: false, isBlank: false, isMetadata: false, rawOther: trimmed };
+        }
+
+        const account = accountMatch[1];
+        const afterAccount = accountMatch[2].trim();
+
+        if (!afterAccount) {
+            return { account, amountStr: null, currency: null, tail: '', isComment: false, isBlank: false, isMetadata: false, rawOther: null };
+        }
+
+        // Parse amount + currency [+ tail]
+        const amountMatch = AMOUNT_RE.exec(afterAccount);
+        if (amountMatch) {
+            const amountStr = amountMatch[1];
+            const currency = amountMatch[2];
+            // Normalise @ and @@ spacing
+            let tail = amountMatch[3].trim().replace(/\s*(@{1,2})\s*/g, ' $1 ').trim();
+            return { account, amountStr, currency, tail, isComment: false, isBlank: false, isMetadata: false, rawOther: null };
+        }
+
+        // Account followed by something we can't parse as amount (e.g. cost basis only)
+        return { account, amountStr: null, currency: null, tail: '', isComment: false, isBlank: false, isMetadata: false, rawOther: afterAccount };
     });
 
-    // Find the widest account name among postings that have amounts
+    // Widths for alignment
     let maxAccountLen = 0;
+    let maxAmountLen  = 0;
     for (const p of postings) {
-        if (p.amountStr !== null && !p.isComment && !p.isBlank) {
+        if (p.amountStr !== null && !p.isComment && !p.isBlank && !p.isMetadata) {
             maxAccountLen = Math.max(maxAccountLen, p.account.length);
-        }
-    }
-
-    // Find the widest amount string (for right-alignment)
-    let maxAmountLen = 0;
-    for (const p of postings) {
-        if (p.amountStr !== null && !p.isComment && !p.isBlank) {
-            maxAmountLen = Math.max(maxAmountLen, p.amountStr.length);
+            maxAmountLen  = Math.max(maxAmountLen,  p.amountStr.length);
         }
     }
 
     const result: string[] = [header];
     for (const p of postings) {
-        if (p.isBlank) { result.push(''); continue; }
-        if (p.isComment) {
-            result.push(`  ${p.account}`);
-            continue;
-        }
+        if (p.isBlank)    { result.push(''); continue; }
+        if (p.isComment)  { result.push(`  ${p.account}`); continue; }
+        if (p.isMetadata) { result.push(`  ${p.account}`); continue; }
+        if (p.rawOther !== null) { result.push(`  ${p.rawOther}`); continue; }
         if (p.amountStr === null) {
-            // Metadata or account-only posting
             result.push(`  ${p.account}`);
             continue;
         }
 
-        // Align: 2 spaces + account padded to maxAccountLen + 2 spaces + right-aligned amount + space + currency [+ tail]
         const accountPad = p.account.padEnd(maxAccountLen);
         const amountPad  = p.amountStr.padStart(maxAmountLen);
         const tail = p.tail ? `  ${p.tail}` : '';
         result.push(`  ${accountPad}  ${amountPad} ${p.currency}${tail}`);
     }
-
     return result;
 }
 
 /**
- * Format a non-transaction directive block: normalise indentation of any
- * sub-lines (metadata) to 2 spaces, leaving the first line untouched.
+ * Format a non-transaction directive block: normalise sub-line indentation to 2 spaces.
  */
-function formatDirectiveBlock(block: string[]): string[] {
-    return block.map((line, i) => {
-        if (i === 0) return line; // directive header — keep as-is
-        if (line.trim() === '') return line;
+function formatDirectiveBlock(lines: string[]): string[] {
+    return lines.map((line, i) => {
+        if (i === 0) return line;
+        if (line.trim() === '') return '';
         if (line.trimStart().startsWith(';')) return `  ${line.trimStart()}`;
-        // metadata: re-indent to 2 spaces
         return `  ${line.trimStart()}`;
     });
 }
@@ -171,25 +187,25 @@ function formatDirectiveBlock(block: string[]): string[] {
  * - Preserves blank lines between blocks
  */
 export function formatBeancount(text: string): string {
-    // Detect the original line ending so we can restore it
     const crlf = text.includes('\r\n');
     const lines = text.split(/\r?\n/);
 
-    // Remove trailing whitespace from each line
+    // Remove trailing whitespace per line
     const cleanedLines = lines.map((l) => l.replace(/\s+$/, ''));
 
     const blocks = splitIntoBlocks(cleanedLines);
 
     const formatted: string[] = [];
     for (const block of blocks) {
-        if (block.length === 1 && block[0].trim() === '') {
-            formatted.push(block[0]);
-        } else if (isTransactionBlock(block)) {
-            formatted.push(...formatTransactionBlock(block));
-        } else if (DIRECTIVE_START_RE.test(block[0])) {
-            formatted.push(...formatDirectiveBlock(block));
+        if (block.isBlank) {
+            // Preserve blank separator lines as-is
+            formatted.push(...block.lines);
+        } else if (TXN_HEADER_RE.test(block.lines[0])) {
+            formatted.push(...formatTransactionBlock(block.lines));
+        } else if (DIRECTIVE_START_RE.test(block.lines[0])) {
+            formatted.push(...formatDirectiveBlock(block.lines));
         } else {
-            formatted.push(...block);
+            formatted.push(...block.lines);
         }
     }
 
@@ -203,7 +219,7 @@ export function formatBeancount(text: string): string {
 
 /**
  * A CodeMirror command that formats the entire document in-place.
- * Returns true if a change was made, false otherwise (no-op when content is already clean).
+ * Returns true if a change was made, false otherwise.
  */
 export function formatBeancountCommand(view: EditorView): boolean {
     const current = view.state.doc.toString();
@@ -212,7 +228,6 @@ export function formatBeancountCommand(view: EditorView): boolean {
 
     view.dispatch({
         changes: { from: 0, to: current.length, insert: next },
-        // Preserve cursor position at end if possible
         scrollIntoView: true,
     });
     return true;
