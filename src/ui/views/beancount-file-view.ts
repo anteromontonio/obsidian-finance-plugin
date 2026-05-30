@@ -24,7 +24,7 @@ export const BEANCOUNT_FILE_VIEW_TYPE = 'beancount-file';
 export class BeancountFileView extends TextFileView {
 	private editorView: EditorView;
 	private plugin: BeancountPlugin | null;
-	/** Absolute filesystem path to the open file (for bean-check). */
+	/** Absolute filesystem path to the open file (for lint error filtering). */
 	private filePath: string = '';
 
 	constructor(leaf: WorkspaceLeaf, plugin?: BeancountPlugin) {
@@ -53,8 +53,7 @@ export class BeancountFileView extends TextFileView {
 		const autocompleteEnabled =
 			this.plugin != null && this.plugin.settings.accountAutocomplete;
 
-		// Determine the absolute file path for bean-check (available after the leaf has a file)
-		// We resolve it lazily in setViewData; use '' as placeholder here.
+		// Lint extension: uses bean-query `errors` query; file path is populated lazily in setViewData.
 		const lintMode = this.plugin?.settings.lintMode ?? 'off';
 		const lintExtensions = (this.plugin && lintMode !== 'off')
 			? beancountLinter(this.plugin, () => this.filePath, lintMode)
@@ -129,7 +128,7 @@ export class BeancountFileView extends TextFileView {
 	/** Called by TextFileView when it loads or reloads the file from disk. */
 	setViewData(data: string, _clear: boolean): void {
 		if (!this.editorView) return;
-		// Capture the absolute filesystem path for bean-check linting
+		// Capture the absolute filesystem path for lint error file-matching
 		if (this.file && this.plugin) {
 			// @ts-ignore — app.vault.adapter.getFullPath exists in Obsidian's FileSystemAdapter
 			this.filePath = (this.app as any).vault.adapter.getFullPath

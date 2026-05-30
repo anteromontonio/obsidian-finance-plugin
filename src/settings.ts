@@ -344,7 +344,7 @@ export class BeancountSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Inline lint mode')
-            .setDesc('Run bean-check on the active file and show errors/warnings as inline squiggly underlines. Requires bean-check to be installed. Reopen the file to apply changes.')
+            .setDesc('Show Beancount validation errors as inline squiggly underlines using the existing bean-query connection. Reopen the file to apply changes.')
             .addDropdown(drop => drop
                 .addOption('off', 'Off')
                 .addOption('on-save', 'On save (recommended)')
