@@ -8,6 +8,7 @@ import type { Extension } from '@codemirror/state';
 import type BeancountPlugin from '../main';
 import { runQuery } from '../utils/queryRunner';
 import { Logger } from '../utils/logger';
+import { convertWslPathToWindows } from '../utils/fileEditor';
 
 export type LintMode = 'off' | 'on-save' | 'on-change';
 
@@ -16,15 +17,15 @@ export type LintMode = 'off' | 'on-save' | 'on-change';
 // ---------------------------------------------------------------------------
 
 /**
- * Returns a `getErrors` query result. The BQL `errors` special query returns a
- * table with columns: filename, lineno, message (and sometimes entry).
+ * Returns a `getErrors` query result. Runs the special `.errors` BQL command,
+ * which outputs validation errors in plain text (not CSV).
  * We run it via the standard runQuery / bean-query infrastructure so it
  * automatically respects the user's configured command and WSL path handling.
  */
 export async function getErrors(plugin: BeancountPlugin): Promise<LintError[]> {
-    // `errors` is a built-in BQL keyword — no SELECT/FROM needed.
-    const csv = await runQuery(plugin, 'errors', undefined, 'csv');
-    return parseLintErrorsCsv(csv);
+    // `.errors` is a built-in BQL command.
+    const output = await runQuery(plugin, '.errors', undefined, 'text');
+    return parseLintErrors(output);
 }
 
 // ---------------------------------------------------------------------------
@@ -38,67 +39,35 @@ export interface LintError {
 }
 
 /**
- * Parse the CSV output of `bean-query … errors` into structured LintError objects.
+ * Parse the plain text output of `bean-query … .errors` into structured LintError objects.
  *
- * Expected CSV header line (may vary slightly between beancount versions):
- *   filename,lineno,message
- * or
- *   filename,lineno,message,entry
+ * Expected line format (handles Windows drive letters and relative paths):
+ *   <file>:<line>:<message>
+ * e.g.:
+ *   C:\Users\Asus\Documents\Vaults\plugin_maker\Finances\transactions\2026.beancount:75: Transaction does not balance: (-2.00 USD)
  */
-function parseLintErrorsCsv(csv: string): LintError[] {
+export function parseLintErrors(output: string): LintError[] {
     const errors: LintError[] = [];
-    const lines = csv.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length < 2) return errors; // no header or no data
+    const lines = output.split('\n');
 
-    // Parse header to find column indices
-    const header = splitCsvLine(lines[0]).map(h => h.toLowerCase().trim());
-    const filenameIdx = header.findIndex(h => h === 'filename');
-    const linenoIdx   = header.findIndex(h => h === 'lineno');
-    const messageIdx  = header.findIndex(h => h.startsWith('message'));
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
 
-    if (filenameIdx < 0 || linenoIdx < 0 || messageIdx < 0) {
-        Logger.log('[beancount-lint] Unexpected errors CSV header:', lines[0]);
-        return errors;
-    }
-
-    for (let i = 1; i < lines.length; i++) {
-        const cols = splitCsvLine(lines[i]);
-        const filename = cols[filenameIdx]?.replace(/^"|"$/g, '').trim() ?? '';
-        const lineno   = parseInt(cols[linenoIdx]?.replace(/^"|"$/g, '') ?? '0', 10);
-        const message  = cols[messageIdx]?.replace(/^"|"$/g, '').trim() ?? '';
-
-        if (filename && lineno > 0 && message) {
-            errors.push({ filename, lineno, message });
+        // Match pattern: <file>:<line>:<message>
+        // Using a regex that handles Windows drive letters correctly
+        const match = line.match(/^(.*):(\d+):\s*(.*)$/);
+        if (match) {
+            const filename = match[1].trim();
+            const lineno = parseInt(match[2], 10);
+            const message = match[3].trim();
+            if (filename && !isNaN(lineno) && message) {
+                errors.push({ filename, lineno, message });
+            }
         }
     }
 
     return errors;
-}
-
-/** Naive CSV line splitter that handles double-quoted fields. */
-function splitCsvLine(line: string): string[] {
-    const result: string[] = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (ch === '"') {
-            if (inQuotes && line[i + 1] === '"') {
-                current += '"';
-                i++; // skip escaped quote
-            } else {
-                inQuotes = !inQuotes;
-            }
-        } else if (ch === ',' && !inQuotes) {
-            result.push(current);
-            current = '';
-        } else {
-            current += ch;
-        }
-    }
-    result.push(current);
-    return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -124,13 +93,14 @@ function toDiagnostics(
         offset += line.length + 1;
     }
 
-    // Normalise path separators for comparison
-    const normalise = (p: string) => p.replace(/\\/g, '/').toLowerCase();
+    // Normalise path separators and handle WSL paths for comparison
+    const normalise = (p: string) => convertWslPathToWindows(p).replace(/\\/g, '/').toLowerCase();
     const openNorm  = normalise(openFilePath);
 
     for (const err of errors) {
         // Only show diagnostics for the currently-open file
-        if (!normalise(err.filename).endsWith(openNorm.split('/').pop() ?? '')) continue;
+        const errNorm = normalise(err.filename);
+        if (errNorm !== openNorm && !openNorm.endsWith('/' + errNorm)) continue;
 
         const lineNum = err.lineno - 1; // 0-based
         if (lineNum < 0 || lineNum >= lineOffsets.length) continue;
@@ -144,7 +114,10 @@ function toDiagnostics(
         const from = lineStart;
         const to   = Math.max(lineEnd, lineStart + 1);
 
-        diagnostics.push({ from, to, severity: 'error', message: err.message });
+        // Detect warning status in error message
+        const severity = /warning/i.test(err.message) ? 'warning' : 'error';
+
+        diagnostics.push({ from, to, severity, message: err.message });
     }
 
     return diagnostics;
