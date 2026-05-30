@@ -649,8 +649,8 @@ export async function migrateToStructuredLayout(
         await writeToFile(plugin, ledgerPath, includeStatements);
 
         // Step 6: Update plugin settings
-        const mainLedgerPath = getMainLedgerPath(plugin);
         plugin.settings.structuredFolderName = targetFolderName;
+        const mainLedgerPath = getMainLedgerPath(plugin);
         plugin.settings.structuredFolderPath = mainLedgerPath;
         plugin.settings.beancountFilePath = mainLedgerPath;
         await plugin.saveSettings();
