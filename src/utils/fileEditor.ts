@@ -36,22 +36,64 @@ export function convertWslPathToWindows(wslPath: string): string {
  * @param {string} filePath - The target file path to write to.
  * @param {string} content  - The content to write.
  */
-export async function atomicFileWrite(filePath: string, content: string): Promise<void> {
-    const tempPath = `${filePath}.tmp`;
-    await writeFile(tempPath, content, 'utf-8');
 
+/**
+ * Detects the newline character used in a file.
+ * Returns \r\n if CRLF is detected, otherwise \n.
+ */
+export function getNewlineCharacter(content: string): string {
+    return content.includes('\r\n') ? '\r\n' : '\n';
+}
+
+
+// Simple async mutex lock to prevent concurrent write collisions on the same file
+class FileLock {
+    private locks = new Map<string, Promise<void>>();
+
+    async acquire(filePath: string): Promise<() => void> {
+        let release: () => void = () => {};
+        const newLock = new Promise<void>(resolve => {
+            release = resolve;
+        });
+
+        const currentLock = this.locks.get(filePath) || Promise.resolve();
+        const nextLock = currentLock.then(() => newLock);
+        this.locks.set(filePath, nextLock);
+
+        await currentLock;
+
+        return () => {
+            if (this.locks.get(filePath) === nextLock) {
+                this.locks.delete(filePath);
+            }
+            release();
+        };
+    }
+}
+
+export const fileLock = new FileLock();
+
+export async function atomicFileWrite(filePath: string, content: string): Promise<void> {
+    const releaseLock = await fileLock.acquire(filePath);
     try {
-        // On Windows, delete the target file before renaming
-        if (existsSync(filePath)) {
-            unlinkSync(filePath);
+        const tempPath = `${filePath}.${Math.random().toString(36).substring(2, 15)}.tmp`;
+        await writeFile(tempPath, content, 'utf-8');
+
+        try {
+            // On Windows, delete the target file before renaming
+            if (existsSync(filePath)) {
+                unlinkSync(filePath);
+            }
+            renameSync(tempPath, filePath);
+        } catch (renameError) {
+            // Fallback: direct overwrite
+            await writeFile(filePath, content, 'utf-8');
+            if (existsSync(tempPath)) {
+                unlinkSync(tempPath);
+            }
         }
-        renameSync(tempPath, filePath);
-    } catch (renameError) {
-        // Fallback: direct overwrite
-        await writeFile(filePath, content, 'utf-8');
-        if (existsSync(tempPath)) {
-            unlinkSync(tempPath);
-        }
+    } finally {
+        releaseLock();
     }
 }
 

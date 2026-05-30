@@ -19,14 +19,9 @@ Open Command Palette (`Ctrl/Cmd + P`) → **"Obsidian Finance: Run Setup/Onboard
 
 ## Step 1: Prerequisites Check 🔍
 
-The plugin verifies your system has the required software.
+The plugin verifies your system has the required software (Python, Beancount, bean-query, and optionally bean-price).
 
-### Required Software
-
-- **Python 3.8 or higher**: The runtime environment for Beancount
-- **Beancount v3+**: The accounting engine (`pip install beancount`)
-- **bean-query**: The query tool for BQL execution (`pip install beanquery` - separate package)
-- **bean-price** *(optional)*: For automated commodity price fetching (`pip install beanprice`)
+For a detailed list of system requirements and step-by-step installation instructions for Windows, macOS, Linux, and WSL, please refer to the **[Requirements](./requirements.md)** guide.
 
 ### Running the Check
 
@@ -51,40 +46,9 @@ The detected commands are automatically saved to your settings — including `be
 #### ❌ Prerequisites Not Met
 If requirements are missing, you'll see:
 - Specific items that failed (Python or bean-query)
-- Platform-specific installation instructions
-- Link to official Beancount documentation
+- Direct link to the **[Requirements](./requirements.md)** guide for install instructions
 - Option to **"Skip (Manual Config)"** for later setup
 
-### Installation Instructions
-
-The modal displays platform-specific instructions based on your OS:
-
-**Windows:**
-```powershell
-# Install Python from python.org
-# Then in PowerShell:
-pip install beancount
-pip install beanquery
-bean-query --version
-```
-
-**macOS:**
-```bash
-brew install python@3.11
-pip3 install beancount
-pip3 install beanquery
-bean-query --version
-```
-
-**Linux:**
-```bash
-sudo apt install python3 python3-pip  # Debian/Ubuntu
-pip3 install beancount
-pip3 install beanquery
-bean-query --version
-```
-
-See the [official Beancount installation guide](https://beancount.github.io/docs/installing_beancount.html) for detailed instructions.
 
 ### Skipping Prerequisites
 
@@ -222,9 +186,9 @@ You can run the onboarding wizard anytime:
 After onboarding completes:
 
 ### Verify Connection
-1. Open **Settings → Beancount for Obsidian → Connection**
+1. Open **Settings → Beancount Ledger → Connection**
 2. Check for green checkmarks on all tests
-3. If any tests fail, review the [Troubleshooting Guide](../queries/troubleshooting.md)
+3. If any tests fail, review the [Troubleshooting Guide](../troubleshooting.md)
 
 ### Configure Preferences
 - **Operating Currency**: Set your default currency (USD, EUR, etc.)
@@ -304,4 +268,4 @@ Once configured, you're ready to:
 - Verify installation: `bean-query --version` in terminal
 - Set manual path in Connection settings if auto-detect fails
 
-For more help, see the [Troubleshooting Guide](../queries/troubleshooting.md).
+For more help, see the [Troubleshooting Guide](../troubleshooting.md).

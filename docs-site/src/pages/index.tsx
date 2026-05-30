@@ -15,7 +15,7 @@ function HomepageHeader() {
       <div className="container">
         <img 
           src="img/Primary_horizontal_logo.png" 
-          alt="Beancount for Obsidian Logo" 
+          alt="Beancount ledger Logo" 
           style={{maxWidth: '400px', marginBottom: '2rem'}}
         />
         <Heading as="h1" className="hero__title">
@@ -25,7 +25,7 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/getting-started/intro">
+            to="/docs/intro">
             Get Started
           </Link>
         </div>

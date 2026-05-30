@@ -1,10 +1,12 @@
 ---
-sidebar_position: 3
+sidebar_position: 6
 ---
 
 # Plugin API
 
 The Obsidian Finance plugin exposes a public JavaScript API so that other Obsidian plugins can run Beancount queries programmatically, without needing to invoke `bean-query` themselves.
+
+---
 
 ## Accessing the API
 
@@ -18,6 +20,8 @@ if (!financePlugin?.api) {
 
 const { api } = financePlugin;
 ```
+
+---
 
 ## `api.runQuery(query, filepath?, format?)`
 
@@ -36,7 +40,7 @@ runQuery(
 ### Parameters
 
 | Parameter  | Type                              | Default                        | Description |
-|------------|-----------------------------------|--------------------------------|-------------|
+|:---|:---|:---|:---|
 | `query`    | `string`                          | _(required)_                   | A valid BQL query string. |
 | `filepath` | `string \| undefined`             | Plugin's configured ledger     | Absolute path to a `.beancount` file. If omitted, the file path from the plugin settings is used. |
 | `format`   | `'csv' \| 'text' \| 'beancount'`  | `'csv'`                        | Output format passed to `bean-query` via the `-f` flag. |
@@ -48,9 +52,9 @@ A `Promise<string>` that resolves to the raw output of `bean-query` in the reque
 ### Errors
 
 The promise rejects with an `Error` if:
-- The ledger file path is not configured and no `filepath` was provided.
-- The `bean-query` command is not configured in the plugin settings.
-- The query itself fails (e.g. syntax error or missing account).
+*   The ledger file path is not configured and no `filepath` was provided.
+*   The `bean-query` command is not configured in the plugin settings.
+*   The query itself fails (e.g. syntax error or missing account).
 
 ---
 

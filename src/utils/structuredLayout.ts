@@ -583,7 +583,8 @@ export async function migrateToStructuredLayout(
             { type: 'pad', file: STRUCTURED_FILES.pads, query: "PRINT FROM type='pad'" },
             { type: 'balance', file: STRUCTURED_FILES.balances, query: "PRINT FROM type='balance'" },
             { type: 'note', file: STRUCTURED_FILES.notes, query: "PRINT FROM type='note'" },
-            { type: 'event', file: STRUCTURED_FILES.events, query: "PRINT FROM type='event'" }
+            { type: 'event', file: STRUCTURED_FILES.events, query: "PRINT FROM type='event'" },
+            { type: 'query', file: STRUCTURED_FILES.queries, query: "PRINT FROM type='query'" }
         ];
 
         // Migrate non-transaction directives
@@ -604,31 +605,49 @@ export async function migrateToStructuredLayout(
                 }
             } catch (error) {
                 Logger.log(`[Migration] ! Failed to migrate ${migration.type}: ${error}`);
-                // Continue with other types even if one fails
+                // Always create the file even on failure — ledger.beancount includes it,
+                // so a missing file causes a Beancount "File glob does not match" error.
+                try {
+                    const filePath = path.join(targetFolderName, migration.file).replace(/\\/g, '/');
+                    await writeToFile(plugin, filePath, '');
+                    Logger.log(`[Migration] - Created empty fallback file for ${migration.file}`);
+                } catch (fallbackError) {
+                    Logger.error(`[Migration] ! Failed to create fallback file for ${migration.file}:`, fallbackError);
+                }
             }
         }
 
-        // Step 4: Migrate transactions year by year
+        // Step 4: Migrate transactions by fetching all at once and partitioning by year
         Logger.log('[Migration] Migrating transactions by year...');
-        for (const year of years) {
-            try {
-                const query = `PRINT FROM type='transaction' AND year=${year}`;
-                const content = await runQuery(plugin, query, sourceFile);
-                // Normalize path to use forward slashes for Obsidian vault API
-                const yearFilePath = path.join(targetFolderName, 'transactions', `${year}.beancount`).replace(/\\/g, '/');
+        try {
+            const allTransactionsQuery = "PRINT FROM type='transaction'";
+            const allTransactionsContent = await runQuery(plugin, allTransactionsQuery, sourceFile, 'text');
+            const transactionsByYear = allTransactionsContent && allTransactionsContent.trim()
+                ? splitTransactionsByYear(allTransactionsContent, years)
+                : {};
 
-                if (content && content.trim()) {
-                    await writeToFile(plugin, yearFilePath, content);
-                    Logger.log(`[Migration] ✓ Migrated ${year} transactions to transactions/${year}.beancount`);
-                } else {
-                    // Create empty file so includes don't break
-                    await writeToFile(plugin, yearFilePath, '');
-                    Logger.log(`[Migration] - No transactions found for ${year}, created empty file`);
+            for (const year of years) {
+                try {
+                    const content = transactionsByYear[year];
+                    // Normalize path to use forward slashes for Obsidian vault API
+                    const yearFilePath = path.join(targetFolderName, 'transactions', `${year}.beancount`).replace(/\\/g, '/');
+
+                    if (content && content.trim()) {
+                        await writeToFile(plugin, yearFilePath, content);
+                        Logger.log(`[Migration] ✓ Migrated ${year} transactions to transactions/${year}.beancount`);
+                    } else {
+                        // Create empty file so includes don't break
+                        await writeToFile(plugin, yearFilePath, '');
+                        Logger.log(`[Migration] - No transactions found for ${year}, created empty file`);
+                    }
+                } catch (error) {
+                    Logger.error(`[Migration] ! Failed to write ${year} transactions:`, error);
+                    // Continue with other years
                 }
-            } catch (error) {
-                Logger.error(`[Migration] ! Failed to migrate ${year} transactions:`, error);
-                // Continue with other years
             }
+        } catch (error) {
+            Logger.error(`[Migration] ! Failed to fetch transactions:`, error);
+            // If fetching all fails, we can't migrate any transactions easily, but we'll try to continue
         }
 
         // Step 5: Update main ledger with includes
@@ -639,8 +658,8 @@ export async function migrateToStructuredLayout(
         await writeToFile(plugin, ledgerPath, includeStatements);
 
         // Step 6: Update plugin settings
-        const mainLedgerPath = getMainLedgerPath(plugin);
         plugin.settings.structuredFolderName = targetFolderName;
+        const mainLedgerPath = getMainLedgerPath(plugin);
         plugin.settings.structuredFolderPath = mainLedgerPath;
         plugin.settings.beancountFilePath = mainLedgerPath;
         await plugin.saveSettings();
@@ -656,6 +675,61 @@ export async function migrateToStructuredLayout(
             error: error instanceof Error ? error.message : String(error)
         };
     }
+}
+
+/**
+ * Splits a bulk transaction string (e.g. from `PRINT FROM type='transaction'`) into a map of year -> transactions string.
+ * This is used to avoid making N+1 queries to the Beancount file when migrating transactions by year.
+ *
+ * @param content - The bulk string containing transactions.
+ * @param years - The list of valid years.
+ * @returns Record of years mapping to transaction strings.
+ */
+export function splitTransactionsByYear(content: string, years: number[]): Record<number, string> {
+    const transactionsByYear: Record<number, string[]> = {};
+    for (const year of years) {
+        transactionsByYear[year] = [];
+    }
+
+    const lines = content.split('\n');
+    let currentYear: number | null = null;
+    let currentBlock: string[] = [];
+
+    // Match a transaction date line: YYYY-MM-DD
+    const dateRegex = /^(\d{4})-\d{2}-\d{2}\s+/;
+
+    for (const line of lines) {
+        const dateMatch = line.match(dateRegex);
+        if (dateMatch) {
+            // End of previous block
+            if (currentYear && currentBlock.length > 0) {
+                if (transactionsByYear[currentYear]) {
+                    transactionsByYear[currentYear].push(currentBlock.join('\n'));
+                }
+            }
+
+            // Start of new block
+            currentYear = parseInt(dateMatch[1], 10);
+            currentBlock = [line];
+        } else if (currentBlock.length > 0) {
+            // Continuation of current block
+            currentBlock.push(line);
+        }
+    }
+
+    // Flush last block
+    if (currentYear && currentBlock.length > 0) {
+        if (transactionsByYear[currentYear]) {
+            transactionsByYear[currentYear].push(currentBlock.join('\n'));
+        }
+    }
+
+    const result: Record<number, string> = {};
+    for (const year of years) {
+        // Strip trailing empty lines if needed, or join with double newlines
+        result[year] = transactionsByYear[year].join('\n\n').trim();
+    }
+    return result;
 }
 
 /**
