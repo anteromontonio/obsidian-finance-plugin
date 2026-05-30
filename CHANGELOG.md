@@ -1,4 +1,4 @@
-6# Changelog
+# Changelog
 
 All notable changes to Beancount Ledger will be documented in this file.
 
@@ -6,7 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## In-progress
-- **Documentation: Refactor Docusaurus documentation hierarchy** — restructured the documentation layout to match a more logical user flow, splitting requirements, introducing new guides for direct file editing features (autocomplete, linting, formatting, snippets), documenting the new accounts & balances and income statement dashboard tabs, and grouping advanced BQL queries. Closes [#199](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/199).
+
+## [1.6.0] - 2026-05-31
+
+### Added 🚀
 - **Editor: Inline linting via bean-query `.errors` diagnostics** — Beancount validation errors now appear as red squiggly underlines directly in the editor. Uses the existing `runQuery` / bean-query infrastructure (no separate `bean-check` install required): runs the special `.errors` BQL command, parses the plain text output, and maps results to CodeMirror 6 `Diagnostic` objects. A lint-gutter marker appears in the left margin for each affected line; hovering shows the full error message. Three modes in Settings → BQL → Editor Settings: *Off*, *On save* (default, ~500 ms after save), and *On change* (2 s debounce). Lint runs silently without blocking editing. Implemented in `src/lang/beancount-lint.ts` (`getErrors` + `beancountLinter`). Closes [#190](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/190).
 - **Editor: Directive snippet templates (txn, open, balance, price, pad…)** — typing a directive keyword (`txn`, `open`, `close`, `bal`, `pad`, `price`, `note`) at the very start of a line and pressing Tab now expands a fully-formed directive template with Tab-navigable placeholders. Today's date is pre-filled in every snippet. Implemented in `src/lang/beancount-snippets.ts` as a `beancountSnippetSource` composed into a single `autocompletion()` extension together with the existing account/payee/narration sources in `BeancountFileView`. Closes [#186](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/186).
 - **Editor: Smart indentation and Format Document command** — pressing Enter after a posting or directive line now auto-indents the new line with 2 spaces; a new "Format Document" command (`Ctrl/Cmd+Shift+F` or via the command palette as *Format Beancount Document*) normalises posting indentation to 2 spaces, right-aligns amounts within each transaction block, and fixes `@` / `@@` price-annotation spacing. An opt-in "Format on save" toggle (Settings → BQL → Editor Settings, default off) applies the formatter automatically on every save. Implemented in `src/lang/beancount-indent.ts` (`indentService`) and `src/lang/beancount-format.ts` (pure `formatBeancount` + CodeMirror command). Closes [#184](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/184).
@@ -14,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Editor: Account-name autocomplete in the Beancount file editor** — typing an account prefix (`Assets:`, `Expenses:Food`, etc.) in a `.beancount` file now shows a completion popup with matching open accounts. Completions are sourced from the ledger's `open` directives via `getOpenAccounts()`, sorted by usage frequency, and cached for 30 seconds (cache is invalidated on file reload). The popup is suppressed inside comment lines and string literals. A new toggle **Account name autocomplete** in Settings → BQL → Editor Settings lets users enable or disable the feature. Closes [#180](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/180).
 - **File editor: Beancount syntax highlighting via Lezer grammar** — `.beancount` files now render with full colour-coded syntax highlighting: directives, dates, account names, currencies, amounts, string literals, metadata keys, tags, flags, and comments are each tokenised and mapped to Obsidian CSS variables so the colours adapt automatically to light and dark themes. Implemented as a `StreamLanguage`-backed `LanguageSupport` extension (`src/lang/beancount-language.ts` + `src/lang/beancount-highlight.ts`) consumed by `BeancountFileView`. Closes [#178](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/178).
 - **File editor: replaced textarea with CodeMirror 6 EditorView** — `.beancount` files now open in a full CodeMirror 6 editor with line numbers, undo/redo, find/replace, active-line highlighting, and Tab key support. All `@codemirror/*` packages are provided by Obsidian's runtime; no bundle-size increase. Closes [#176](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/176).
+
+### Improved 🚀
+- **Documentation: Refactor Docusaurus documentation hierarchy** — restructured the documentation layout to match a more logical user flow, splitting requirements, introducing new guides for direct file editing features (autocomplete, linting, formatting, snippets), documenting the new accounts & balances and income statement dashboard tabs, and grouping advanced BQL queries. Closes [#199](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/199).
+
+### Fixed 🐛
 - **Accounts and Balances: duplicate "Net Worth Trend" label in trend chart area** — removed the extra chart title rendering so the label appears once in the selector UI.
 - **Commodity metadata: price source test failed for valid expressions on Windows** — switched validation to execute `bean-price -e <source>` using argument-based process spawning (instead of shell-quoted command strings), fixing errors such as invalid source with extra quote characters.
 - **File writes: race conditions and newline corruption on Windows** — adopted Fava-like file-write safety measures across all CRUD operations:
