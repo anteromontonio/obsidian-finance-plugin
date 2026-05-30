@@ -10,6 +10,7 @@ import { beancountSnippetSource } from '../../lang/beancount-snippets';
 import { autocompletion } from '@codemirror/autocomplete';
 import { beancountIndent } from '../../lang/beancount-indent';
 import { formatBeancountCommand } from '../../lang/beancount-format';
+import { beancountLinter } from '../../lang/beancount-lint';
 import type BeancountPlugin from '../../main';
 
 export const BEANCOUNT_FILE_VIEW_TYPE = 'beancount-file';
@@ -23,6 +24,8 @@ export const BEANCOUNT_FILE_VIEW_TYPE = 'beancount-file';
 export class BeancountFileView extends TextFileView {
 	private editorView: EditorView;
 	private plugin: BeancountPlugin | null;
+	/** Absolute filesystem path to the open file (for bean-check). */
+	private filePath: string = '';
 
 	constructor(leaf: WorkspaceLeaf, plugin?: BeancountPlugin) {
 		super(leaf);
@@ -49,6 +52,13 @@ export class BeancountFileView extends TextFileView {
 
 		const autocompleteEnabled =
 			this.plugin != null && this.plugin.settings.accountAutocomplete;
+
+		// Determine the absolute file path for bean-check (available after the leaf has a file)
+		// We resolve it lazily in setViewData; use '' as placeholder here.
+		const lintMode = this.plugin?.settings.lintMode ?? 'off';
+		const lintExtensions = (this.plugin && lintMode !== 'off')
+			? beancountLinter(this.plugin, () => this.filePath, lintMode)
+			: [];
 
 		const state = EditorState.create({
 			doc: '',
@@ -78,6 +88,7 @@ export class BeancountFileView extends TextFileView {
 					],
 					activateOnTyping: true,
 				}),
+				...lintExtensions,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {
 						this.requestSave();
@@ -118,6 +129,13 @@ export class BeancountFileView extends TextFileView {
 	/** Called by TextFileView when it loads or reloads the file from disk. */
 	setViewData(data: string, _clear: boolean): void {
 		if (!this.editorView) return;
+		// Capture the absolute filesystem path for bean-check linting
+		if (this.file && this.plugin) {
+			// @ts-ignore — app.vault.adapter.getFullPath exists in Obsidian's FileSystemAdapter
+			this.filePath = (this.app as any).vault.adapter.getFullPath
+				? (this.app as any).vault.adapter.getFullPath(this.file.path)
+				: this.file.path;
+		}
 		// Invalidate the account cache so completions reflect any new open directives
 		if (this.plugin) invalidateAccountCache(this.plugin);
 		this.editorView.dispatch({

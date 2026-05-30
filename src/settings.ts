@@ -4,6 +4,7 @@ import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
 import type BeancountPlugin from './main';
 import ConnectionSettings from './ui/partials/settings/ConnectionSettings.svelte';
 import { updateOperatingCurrency } from './utils/index';
+import type { LintMode } from './lang/beancount-lint';
 
 /**
  * Interface defining the plugin settings.
@@ -49,6 +50,8 @@ export interface BeancountPluginSettings {
     accountAutocomplete: boolean;
     /** Whether to format the Beancount file on every save (Format on save). */
     formatOnSave: boolean;
+    /** Lint mode for inline bean-check diagnostics: 'off' | 'on-save' | 'on-change'. */
+    lintMode: LintMode;
 }
 
 /**
@@ -78,6 +81,7 @@ export const DEFAULT_SETTINGS: BeancountPluginSettings = {
     // Editor Settings
     accountAutocomplete: true,
     formatOnSave: false,
+    lintMode: 'on-save',
 }
 
 /**
@@ -335,6 +339,19 @@ export class BeancountSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.formatOnSave)
                 .onChange(async (value) => {
                     this.plugin.settings.formatOnSave = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Inline lint mode')
+            .setDesc('Run bean-check on the active file and show errors/warnings as inline squiggly underlines. Requires bean-check to be installed. Reopen the file to apply changes.')
+            .addDropdown(drop => drop
+                .addOption('off', 'Off')
+                .addOption('on-save', 'On save (recommended)')
+                .addOption('on-change', 'On change (2 s debounce)')
+                .setValue(this.plugin.settings.lintMode)
+                .onChange(async (value) => {
+                    this.plugin.settings.lintMode = value as LintMode;
                     await this.plugin.saveSettings();
                 }));
 
