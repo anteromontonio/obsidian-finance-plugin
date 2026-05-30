@@ -11,58 +11,56 @@ import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
  Create as many sidebars as you want.
  */
 const sidebars: SidebarsConfig = {
-  // Manual sidebar definition to ensure correct ordering and grouping
   tutorialSidebar: [
+    'intro',
     {
       type: 'category',
       label: 'Getting Started',
       collapsed: false,
       items: [
-        'getting-started/intro',
+        'getting-started/requirements',
         'getting-started/installation',
         'getting-started/first-time-setup',
       ],
     },
     {
       type: 'category',
-      label: 'Core Features',
+      label: 'Adding Financial Data',
       collapsed: false,
       items: [
-        'core-features/adding-directives',
-        'core-features/beancount-syntax',
-        'core-features/snapshot-view',
-        'core-features/architecture-queries',
-        'core-features/price-fetching',
-        {
-          type: 'category',
-          label: 'Unified Dashboard',
-          collapsed: false,
-          items: [
-            'core-features/unified-dashboard/overview',
-            'core-features/unified-dashboard/transactions',
-            'core-features/unified-dashboard/journal',
-            'core-features/unified-dashboard/balance-sheet',
-            'core-features/unified-dashboard/commodities',
-          ],
-        },
+        'adding-data/using-plus-button',
+        'adding-data/editing-files',
+        'adding-data/adding-account-commodity',
+        'adding-data/adding-price-metadata',
       ],
     },
     {
       type: 'category',
-      label: 'Configuration',
+      label: 'Dashboards',
+      collapsed: false,
       items: [
-        'configuration/settings',
+        'dashboards/overview',
+        'dashboards/transactions',
+        'dashboards/journal',
+        'dashboards/balance-sheet',
+        'dashboards/accounts-balances',
+        'dashboards/income-statement',
+        'dashboards/commodities',
       ],
     },
+    'queries/bql',
+    'snapshot-view',
+    'plugin-api',
+    'settings',
     {
       type: 'category',
-      label: 'Queries & Advanced',
+      label: 'Advanced',
       items: [
-        'queries/bql',
-        'queries/plugin-api',
-        'queries/troubleshooting',
+        'advanced/beancount-syntax',
+        'advanced/advanced-queries',
       ],
     },
+    'troubleshooting',
   ],
 };
 

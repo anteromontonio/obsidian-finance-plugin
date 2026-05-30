@@ -1,24 +1,24 @@
 ---
-sidebar_position: 2
+sidebar_position: 1
 ---
 
 # Beancount Transaction Syntax
 
 ## 📝 Overview
 
-While the Unified Transaction Modal simplifies data entry through a friendly interface, understanding the underlying Beancount plain-text syntax is valuable for :
+While the Unified Transaction Modal simplifies data entry through a friendly interface, understanding the underlying Beancount plain-text syntax is valuable for:
 
-- **Direct file editing** in your preferred text editor
-- **Power-user workflows** with scripts and automation
-- **Debugging** transaction issues
-- **Understanding** what the plugin generates behind the scenes
+- **Direct file editing** in your preferred text editor.
+- **Power-user workflows** with scripts and automation.
+- **Debugging** transaction issues.
+- **Understanding** what the plugin generates behind the scenes.
 
 This reference covers all Beancount transaction syntax types with clear indicators showing what the plugin currently supports through its UI.
 
 :::tip Support Status Legend
-- ✅ **Fully Supported** - Available through the transaction modal UI
-- ⚠️ **Partially Supported** - Requires manual file editing or workarounds
-- ❌ **Not Yet Supported** - Coming in future versions
+- ✅ **Fully Supported** - Available through the transaction modal UI.
+- ⚠️ **Partially Supported** - Requires manual file editing or workarounds.
+- ❌ **Not Yet Supported** - Coming in future versions.
 :::
 
 ---
@@ -359,15 +359,10 @@ Tags allow you to categorize and filter transactions. They're useful for budgeti
 **Status:** ✅ Fully Supported
 
 **How to use:**
-1. Scroll down to the "Tags" section in the modal
-2. Type tag name (without the `#` symbol)
-3. Press Enter or click the add button
-4. Repeat for multiple tags
-
-**Tips:**
-- Tags appear after the narration in the generated Beancount syntax
-- Use consistent tag names for easier filtering
-- Common tags: `#vacation`, `#work`, `#tax-deductible`, `#reimbursable`
+1. Scroll down to the "Tags" section in the modal.
+2. Type tag name (without the `#` symbol).
+3. Press Enter or click the add button.
+4. Repeat for multiple tags.
 
 ---
 
@@ -384,27 +379,10 @@ Links connect related transactions together (like an invoice and its payment, or
 **Status:** ✅ Fully Supported
 
 **How to use:**
-1. Scroll down to the "Tags & Links" section in the modal
-2. Type link name in the Links field (without the `^` symbol)
-3. Press Enter or click the add button
-4. Repeat for multiple links
-
-### Multiple Related Transactions
-```beancount
-2024-12-01 * "Invoice sent" ^project-alpha
-  Income:Consulting              -5000.00 USD
-  Assets:AccountsReceivable      5000.00 USD
-
-2024-12-30 * "Payment received" ^project-alpha
-  Assets:Checking                5000.00 USD
-  Assets:AccountsReceivable     -5000.00 USD
-```
-**Status:** ✅ Fully Supported
-
-**Tips:**
-- Links appear after tags in the generated Beancount syntax
-- Use consistent link names to connect related transactions
-- Common uses: invoices and payments, project tracking, loan installments
+1. Scroll down to the "Tags & Links" section in the modal.
+2. Type link name in the Links field (without the `^` symbol).
+3. Press Enter or click the add button.
+4. Repeat for multiple links.
 
 ---
 
@@ -424,15 +402,6 @@ Beancount supports arithmetic expressions in amount fields for convenience.
 
 **Workaround:** Calculate the result manually (40.00 USD in this example) and enter the computed value.
 
-### Complex Expression
-```beancount
-2024-12-30 * "Shared expense with adjustment"
-  Liabilities:CreditCard           -85.00 USD
-  Assets:AccountsReceivable:John  ((85.00/2) - 5) USD
-  Expenses:Shopping
-```
-**Status:** ❌ Not Supported
-
 ---
 
 ## 📋 Metadata
@@ -450,221 +419,31 @@ Metadata allows attaching arbitrary key-value data to transactions and postings.
 **Status:** ✅ Fully Supported
 
 **How to use:**
-1. In the transaction header row, click the **📋** (Metadata) button on the far right
-2. This expands the Transaction Metadata section
-3. Click "+ Add Metadata" to add a key-value pair
-4. Enter the key (must be lowercase, e.g., `confirmation`) and value
-5. Add multiple metadata entries as needed
-
-**Note:** Metadata keys must be lowercase with only letters, numbers, hyphens, or underscores. The plugin validates this before saving.
-
-### Posting-Level Metadata
-```beancount
-2024-12-30 * "Stock purchase"
-  Assets:Brokerage:AAPL            10 AAPL {150.00 USD}
-    broker: "E-Trade"
-    order-id: "12345"
-  Assets:Brokerage:Cash         -1500.00 USD
-```
-**Status:** ✅ Fully Supported
-
-**How to use:**
-1. For each posting, click the **📋** button in the posting toolbar (next to 💬, !, @, $)
-2. This expands the Posting Metadata section for that specific posting
-3. Click "+ Add Metadata" to add key-value pairs
-4. Enter keys (must be lowercase) and values
-5. Each posting can have its own independent metadata
-
-**Note:** Posting-level metadata is indented with 4 spaces and appears immediately after the posting line. Beancount's internal metadata (like `filename`, `lineno`, `__tolerances__`, `__accuracy__`) is automatically hidden in the UI.
-
----
-
-## 🚩 Posting-Level Flags
-
-Individual postings can have their own flags (! for pending, * for cleared).
-
-```beancount
-2024-12-30 * "Suspected duplicate"
-  Assets:Checking                -100.00 USD
-  ! Expenses:Misc                 100.00 USD
-```
-**Status:** ✅ Fully Supported
-
-**How to use:**
-1. For each posting, click the **!** button in the posting toolbar
-2. This expands a Flag dropdown for that posting
-3. Select either `*` (cleared) or `!` (pending)
-4. The flag appears before the account name in the generated syntax
-
-**Use case:** Marking individual postings as uncertain while the overall transaction is confirmed.
-
----
-
-## 💬 Comments
-
-### Inline Comments
-```beancount
-2024-12-30 * "Grocery shopping"
-  Expenses:Groceries               75.50 USD  ; Weekly supplies
-  Assets:Cash                     -75.50 USD  ; Paid in cash
-```
-**Status:** ✅ Fully Supported
-
-**How to use:**
-1. For each posting, click the **💬** button in the posting toolbar
-2. This expands a Comment field for that posting
-3. Enter your comment text (without the `;` symbol)
-4. The comment appears at the end of the posting line prefixed with `;`
-
-**Note:** Comments are posting-specific and appear on the same line as the posting amount.
-
-### Block Comments
-```beancount
-; This is a comment line
-; It can span multiple lines
-
-2024-12-30 * "Regular transaction"
-  Expenses:Something               10.00 USD
-  Assets:Cash                     -10.00 USD
-```
-**Status:** ⚠️ Preserved when editing, but not editable through modal
-
----
-
-## 🌍 Multiple Currencies in Same Transaction
-
-Transactions can mix multiple currencies, useful for forex trading, gifts, or international transfers.
-
-```beancount
-2024-12-30 * "Mixed currency transaction"
-  Assets:Cash:USD                -100.00 USD
-  Assets:Cash:EUR                  85.00 EUR @ 1.18 USD
-  Expenses:CurrencyExchange         3.00 USD
-```
-**Status:** ✅ Fully Supported
-
-**How to use:** Each posting can have a different currency in the Currency field. Use prices (@) to record exchange rates when needed.
+1. In the transaction header row, click the **📋** (Metadata) button on the far right.
+2. This expands the Transaction Metadata section.
+3. Click "+ Add Metadata" to add a key-value pair.
+4. Enter the key (must be lowercase) and value.
 
 ---
 
 ## 📊 Feature Support Summary
 
 | Feature | Support | Notes |
-|---------|---------|-------|
-| **Basic Transactions** | | |
-| Transaction flag (*) | ✅ Full | Default in modal |
-| Transaction flag (!) | ✅ Full | Flag dropdown in header |
+|:---|:---|:---|
+| Transaction flags | ✅ Full | Supported via flag selectors |
 | Payee and/or narration | ✅ Full | All combinations supported |
-| Multiple postings (>2) | ✅ Full | Click "Add Posting" |
-| Amount interpolation | ✅ Full | Leave one amount empty |
-| **Prices & Costs** | | |
-| Per-unit price (@) | ✅ Full | Click **@** button |
-| Total price (@@) | ✅ Full | Via checkbox |
-| Per-unit cost (&#123;&#125;) | ✅ Full | Click **$** button |
-| Total cost (&#123;&#123;&#125;&#125;) | ✅ Full | Via checkbox |
-| Cost with date | ✅ Full | Via date picker |
-| Cost with label | ✅ Full | Via text field |
-| Cost + Price together | ✅ Full | Fill both sections |
-| **Lot Matching** | | |
-| By exact cost | ✅ Full | Specify cost amount |
-| By date only | ✅ Full | Date field only |
-| By label only | ✅ Full | Label field only |
-| **Organization** | | |
-| Tags | ✅ Full | Add via Tags section |
-| Links | ✅ Full | Add via Links section |
-| **Advanced** | | |
-| Transaction metadata | ✅ Full | Click **📋** in header |
-| Posting metadata | ✅ Full | Click **📋** per posting |
-| Posting flags | ✅ Full | Click **!** per posting |
-| Inline comments | ✅ Full | Click **💬** per posting |
+| Multiple postings (>2) | ✅ Full | Add unlimited postings in UI |
+| Amount interpolation | ✅ Full | Leave one amount field blank |
+| Per-unit price (@) | ✅ Full | Supported |
+| Total price (@@) | ✅ Full | Supported |
+| Per-unit cost (`{}`) | ✅ Full | Supported |
+| Total cost (`{{}}`) | ✅ Full | Supported |
+| Cost date and label | ✅ Full | Supported in advanced drawer |
+| Cost + Price together | ✅ Full | Supported |
+| Lot matching | ✅ Full | Match by cost, date, or label |
+| Tags & Links | ✅ Full | Supported in tags/links field |
+| Transaction metadata | ✅ Full | Supported |
+| Posting metadata | ✅ Full | Supported |
+| Inline comments | ✅ Full | Supported |
 | Arithmetic expressions | ❌ No | Calculate manually |
-| Multiple currencies | ✅ Full | Mix currencies freely |
-
----
-
-## 💡 Tips for Power Users
-
-### When to Use Cost vs Price
-
-**Use Cost for:**
-- 📈 **Investments** (stocks, bonds, crypto) where you need capital gains tracking
-- 🏦 **Assets held at cost** that you plan to sell later
-- Example: Buying 100 shares of AAPL at $150 each
-
-**Use Price for:**
-- 💱 **Simple currency conversions** without cost basis tracking
-- 📊 **Recording exchange rates** for reference
-- Example: Converting $1000 to €900
-
-**Use Both for:**
-- 💰 **Selling investments** to record both cost basis and sale price
-- Example: Selling AAPL shares bought at $150, now worth $175
-
-### Using the Posting Toolbar
-
-Each posting has a toolbar with 5 feature buttons:
-
-- **$** (Cost) - Add cost basis for investments
-- **@** (Price) - Add conversion price
-- **!** (Flag) - Mark posting as pending (*) or cleared (!)
-- **💬** (Comment) - Add inline comment
-- **📋** (Metadata) - Add posting-level metadata
-
-Click any button to expand that section. You can use multiple features on the same posting.
-
-### Using the Advanced Section Effectively
-
-The **$** (Cost) and **@** (Price) buttons expand sections on each posting:
-
-1. **Cost Basis Section**
-   - **Cost Amount**: Per-unit acquisition cost (or total if checkbox checked)
-   - **Cost Currency**: Currency of the cost
-   - **Cost Date**: Acquisition date (for lot matching)
-   - **Cost Label**: Custom identifier for the lot
-   - **Checkbox**: Check for total cost &#123;&#123;&#125;&#125; instead of per-unit &#123;&#125;
-
-2. **Conversion Price Section**
-   - **Price Amount**: Exchange rate or total amount
-   - **Price Currency**: Currency being converted to
-   - **Checkbox**: Check for total price `@@` instead of per-unit `@`
-
-### Editing Existing Transactions
-
-When you edit a transaction that has costs or prices:
-- The Advanced section **auto-expands** if cost/price data exists
-- All existing values are preserved
-- You can modify or remove cost/price data as needed
-- Empty fields are ignored (won't generate empty cost/price syntax)
-
-### Direct File Editing
-
-If you prefer editing `.beancount` files directly:
-- **Date-ordered**: Keep transactions sorted by date for `bean-check` validation
-- **Indentation**: Use 2 spaces for postings
-- **Alignment**: Align amounts at column 50+ for readability (optional)
-- **Validation**: Run `bean-check` to verify syntax before using
-| Cost + Price | `{150.00 USD} @ 175.00 USD` |
-
----
-
-## 🚀 Future Enhancements
-
-Features planned for future releases:
-
-- ⏳ **Arithmetic expressions** in amounts (e.g., `120.00/3 USD` for split bills)
-- ⏳ **Bulk operations** (multi-transaction editing)
-- ⏳ **Import from CSV/OFX** files
-- ⏳ **Transaction templates** for recurring entries
-
-Have a feature request? [Open an issue on GitHub](https://github.com/mkshp-dev/obsidian-finance-plugin/issues)!
-
----
-
-## 📚 Additional Resources
-
-- [Official Beancount Documentation](https://beancount.github.io/docs/)
-- [Beancount Syntax Cheat Sheet](https://beancount.github.io/docs/beancount_cheat_sheet.html)
-- [Beancount Cookbook](https://beancount.github.io/docs/trading_with_beancount.html)
-- [Plugin GitHub Repository](https://github.com/mkshp-dev/obsidian-finance-plugin)
-
-For help with the transaction modal UI, see [Adding Directives](./adding-directives.md).
+| Multiple currencies | ✅ Full | Supported |

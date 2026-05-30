@@ -4,98 +4,52 @@ sidebar_position: 2
 
 # Installation
 
-This guide covers how to install Beancount for Obsidian and the required dependencies.
+This guide covers how to install the **Beancount for Obsidian** plugin in your Obsidian vault. 
 
-## 📦 Plugin Installation
-
-### Method 1: Community Plugins (Recommended)
-*Note: Once approved by Obsidian.*
-1.  Open Obsidian **Settings** → **Community Plugins**.
-2.  Turn off "Restricted mode".
-3.  Click **Browse** and search for **"Beancount for Obsidian"**.
-4.  Click **Install** and then **Enable**.
-
-### Method 2: Manual Installation (GitHub Releases)
-1.  Download the latest `main.js`, `manifest.json`, and `styles.css` from the [GitHub Releases](https://github.com/mkshp-dev/obsidian-finance-plugin/releases) page.
-2.  Create a folder named `obsidian-finance-plugin` in your vault's plugin directory: `<VaultFolder>/.obsidian/plugins/`.
-3.  Place the downloaded files into this folder.
-4.  Reload Obsidian.
-5.  Go to **Settings** → **Community Plugins** and enable **Beancount for Obsidian**.
-
-### Method 3: BRAT (Beta Testing)
-For testing beta versions:
-1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) from Community Plugins
-2. Use BRAT to add: `mkshp-dev/obsidian-finance-plugin`
-3. Select the `dev` branch for latest features
-4. Enable the plugin in Community Plugins
+> [!NOTE]
+> Before running the plugin, ensure you have set up Python and Beancount on your machine. See the [Requirements](./requirements.md) guide for details.
 
 ---
 
-## 🐍 Beancount Requirements
+## 📦 Installation Methods
 
-The plugin requires Beancount command-line tools to function.
+You can install the plugin using one of the three methods below.
 
-### 1. Python Environment
-Install **Python 3.8 or newer**:
-- **Windows**: [python.org](https://www.python.org/downloads/) or Microsoft Store
-- **macOS**: `brew install python`
-- **Linux**: Usually pre-installed (`python3 --version` to check)
+### Method 1: Obsidian Community Plugins (Recommended)
+Once the plugin is approved and listed in the official Obsidian store, this is the easiest method:
+1.  Open Obsidian and go to **Settings** → **Community Plugins**.
+2.  Turn off **Restricted mode** if it is enabled.
+3.  Click **Browse** and search for **"Beancount for Obsidian"**.
+4.  Click **Install**, and then click **Enable**.
 
-### 2. Beancount
-Install via pip:
+---
 
-```bash
-pip install beancount
-```
+### Method 2: BRAT (Beta Testing / Latest Features)
+If you want to test the absolute latest development versions or pre-releases, you can use the **Obsidian42 - BRAT** plugin:
+1.  Install the **BRAT** plugin from Obsidian's Community Plugins directory.
+2.  Enable BRAT in your settings.
+3.  Open the Command Palette (`Ctrl/Cmd + P`) and run `BRAT: Add a beta plugin for testing`.
+4.  Enter the repository URL: `mkshp-dev/obsidian-finance-plugin`
+5.  Click **Add Plugin**. BRAT will download and enable the plugin.
+6.  *Optional*: In BRAT settings, you can choose to track the `dev` branch to test experimental changes before they are released.
 
-This provides:
-- `bean-check`: For validating Beancount file syntax
-- `bean-price`: For fetching commodity prices (optional)
+---
 
-### 3. Beanquery (Required)
-Bean-query is **not** included with Beancount and must be installed separately:
-
-```bash
-pip install beanquery
-```
-
-This provides:
-- `bean-query`: For running BQL queries (essential for the plugin)
-
-**Verify Installation:**
-```bash
-python --version      # Should show 3.8+
-bean-check --version  # Should display version
-bean-query --version  # Should display version
-```
-
-### Platform-Specific Notes
-
-**Windows:**
-- Add Python Scripts folder to PATH: `C:\Users\YourName\AppData\Local\Programs\Python\Python3X\Scripts\`
-- Restart terminal/Obsidian after installation
-
-**macOS:**
-- Use `pip3` instead of `pip`
-- May need to install Xcode Command Line Tools: `xcode-select --install`
-
-**Linux:**
-- Use `pip3` for Python 3.x
-- Debian/Ubuntu: `sudo apt install python3-pip`
-
-**WSL (Windows Subsystem for Linux):**
-- Install Python and Beancount inside your WSL distribution
-- Plugin auto-detects WSL and handles path conversion
-- Use Linux-style paths: `/mnt/c/...`
+### Method 3: Manual Installation (GitHub Releases)
+If you need to install the plugin manually or without internet access:
+1.  Go to the [GitHub Releases](https://github.com/mkshp-dev/obsidian-finance-plugin/releases) page.
+2.  Download the latest release zip or files: `main.js`, `manifest.json`, and `styles.css`.
+3.  Navigate to your Obsidian vault folder.
+4.  Go to the hidden plugins directory: `<VaultFolder>/.obsidian/plugins/` (you may need to show hidden files in your OS file explorer).
+5.  Create a new folder named `beancount-finance`.
+6.  Place the downloaded `main.js`, `manifest.json`, and `styles.css` files into this folder.
+7.  Reload Obsidian or restart the app.
+8.  Go to **Settings** → **Community Plugins** and enable **Beancount for Obsidian**.
 
 ---
 
 ## ⚙️ Next Steps
 
-After installation:
+Once the plugin is installed and enabled, it will detect if you have a ledger configured. If you don't, it will automatically launch the onboarding setup wizard to guide you through connecting Python and creating your first Beancount files.
 
-1. **Run First-Time Setup**: The [Onboarding Modal](./first-time-setup.md) appears automatically
-2. **Or Configure Manually**: Go to **Settings → Beancount for Obsidian → Connection**
-3. **Test Connection**: Use "Test All Commands" to verify everything works
-
-See [First-Time Setup](./first-time-setup.md) for the complete onboarding walkthrough.
+See the [First-Time Setup](./first-time-setup.md) guide to proceed.

@@ -82,7 +82,7 @@ const config: Config = {
           items: [
             {
               label: 'Getting Started',
-              to: '/docs/getting-started/intro',
+              to: '/docs/intro',
             },
             {
               label: 'Installation',
@@ -90,7 +90,7 @@ const config: Config = {
             },
             {
               label: 'Dashboard',
-              to: '/docs/core-features/unified-dashboard/overview',
+              to: '/docs/dashboards/overview',
             },
           ],
         },

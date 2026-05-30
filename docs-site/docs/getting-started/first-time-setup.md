@@ -224,7 +224,7 @@ After onboarding completes:
 ### Verify Connection
 1. Open **Settings → Beancount for Obsidian → Connection**
 2. Check for green checkmarks on all tests
-3. If any tests fail, review the [Troubleshooting Guide](../queries/troubleshooting.md)
+3. If any tests fail, review the [Troubleshooting Guide](../troubleshooting.md)
 
 ### Configure Preferences
 - **Operating Currency**: Set your default currency (USD, EUR, etc.)
@@ -304,4 +304,4 @@ Once configured, you're ready to:
 - Verify installation: `bean-query --version` in terminal
 - Set manual path in Connection settings if auto-detect fails
 
-For more help, see the [Troubleshooting Guide](../queries/troubleshooting.md).
+For more help, see the [Troubleshooting Guide](../troubleshooting.md).
