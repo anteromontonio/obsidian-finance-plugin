@@ -5,7 +5,9 @@ import { EditorState } from '@codemirror/state';
 import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
 import { searchKeymap } from '@codemirror/search';
 import { beancount } from '../../lang/beancount-language';
-import { beancountAutocomplete, invalidateAccountCache } from '../../lang/beancount-autocomplete';
+import { beancountCompletionSource, invalidateAccountCache } from '../../lang/beancount-autocomplete';
+import { beancountSnippetSource } from '../../lang/beancount-snippets';
+import { autocompletion } from '@codemirror/autocomplete';
 import { beancountIndent } from '../../lang/beancount-indent';
 import { formatBeancountCommand } from '../../lang/beancount-format';
 import type BeancountPlugin from '../../main';
@@ -67,7 +69,15 @@ export class BeancountFileView extends TextFileView {
 					...searchKeymap,
 					indentWithTab,
 				]),
-				...(autocompleteEnabled ? [beancountAutocomplete(this.plugin!)] : []),
+				autocompletion({
+					override: [
+						beancountSnippetSource,
+						...(autocompleteEnabled && this.plugin
+							? [beancountCompletionSource(this.plugin)]
+							: []),
+					],
+					activateOnTyping: true,
+				}),
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {
 						this.requestSave();

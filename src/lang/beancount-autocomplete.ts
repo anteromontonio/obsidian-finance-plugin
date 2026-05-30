@@ -349,6 +349,12 @@ function beancountCompletionSource(plugin: BeancountPlugin) {
 // ---------------------------------------------------------------------------
 
 /**
+ * The raw CompletionSource for use when composing multiple sources into
+ * a single autocompletion() extension.
+ */
+export { beancountCompletionSource };
+
+/**
  * Returns a CodeMirror extension that provides context-aware Beancount autocomplete:
  * account names, payees, narrations, currencies/commodities, tags, and links.
  * Should only be added when the plugin setting `accountAutocomplete` is enabled.
