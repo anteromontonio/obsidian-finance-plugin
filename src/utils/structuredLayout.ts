@@ -584,7 +584,7 @@ export async function migrateToStructuredLayout(
             { type: 'balance', file: STRUCTURED_FILES.balances, query: "PRINT FROM type='balance'" },
             { type: 'note', file: STRUCTURED_FILES.notes, query: "PRINT FROM type='note'" },
             { type: 'event', file: STRUCTURED_FILES.events, query: "PRINT FROM type='event'" },
-            { type: 'query', file: STRUCTURED_FILES.queries, query: "PRINT FROM type='query'" },
+            { type: 'query', file: STRUCTURED_FILES.queries, query: "PRINT FROM type='query'" }
         ];
 
         // Migrate non-transaction directives
@@ -605,7 +605,15 @@ export async function migrateToStructuredLayout(
                 }
             } catch (error) {
                 Logger.log(`[Migration] ! Failed to migrate ${migration.type}: ${error}`);
-                // Continue with other types even if one fails
+                // Always create the file even on failure — ledger.beancount includes it,
+                // so a missing file causes a Beancount "File glob does not match" error.
+                try {
+                    const filePath = path.join(targetFolderName, migration.file).replace(/\\/g, '/');
+                    await writeToFile(plugin, filePath, '');
+                    Logger.log(`[Migration] - Created empty fallback file for ${migration.file}`);
+                } catch (fallbackError) {
+                    Logger.error(`[Migration] ! Failed to create fallback file for ${migration.file}:`, fallbackError);
+                }
             }
         }
 

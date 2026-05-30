@@ -13,16 +13,32 @@
 	flex: 1;
 	width: 100%;
 	height: 100%;
-	resize: none;
-	border: none;
-	outline: none;
+	overflow: hidden;
 	background: var(--background-primary);
 	color: var(--text-normal);
-	font-family: var(--font-monospace);
-	font-size: var(--font-text-size);
 	line-height: var(--line-height-normal);
-	padding: var(--size-4-4);
 	box-sizing: border-box;
+}
+
+.beancount-editor .cm-editor {
+	height: 100%;
+	background: var(--background-primary);
+	color: var(--text-normal);
+}
+
+.beancount-editor .cm-gutters {
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	border-right: 1px solid var(--background-modifier-border);
+}
+
+.beancount-editor .cm-activeLineGutter,
+.beancount-editor .cm-activeLine {
+	background: var(--background-modifier-hover);
+}
+
+.beancount-editor .cm-cursor {
+	border-left-color: var(--text-normal);
 }
 
 /* --- BQL Code Block Styles --- */

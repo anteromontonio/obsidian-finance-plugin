@@ -4,6 +4,7 @@ import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
 import type BeancountPlugin from './main';
 import ConnectionSettings from './ui/partials/settings/ConnectionSettings.svelte';
 import { updateOperatingCurrency } from './utils/index';
+import type { LintMode } from './lang/beancount-lint';
 
 /**
  * Interface defining the plugin settings.
@@ -45,6 +46,12 @@ export interface BeancountPluginSettings {
     lastAutoPriceFetch: number;
     /** Bean-price command path (detected automatically). */
     beanPriceCommand: string;
+    /** Whether to enable account-name autocomplete in the Beancount editor. */
+    accountAutocomplete: boolean;
+    /** Whether to format the Beancount file on every save (Format on save). */
+    formatOnSave: boolean;
+    /** Lint mode for inline bean-check diagnostics: 'off' | 'on-save' | 'on-change'. */
+    lintMode: LintMode;
 }
 
 /**
@@ -70,7 +77,11 @@ export const DEFAULT_SETTINGS: BeancountPluginSettings = {
     autoPriceFetch: false,
     priceFetchIntervalHours: 24,
     lastAutoPriceFetch: 0,
-    beanPriceCommand: ''
+    beanPriceCommand: '',
+    // Editor Settings
+    accountAutocomplete: true,
+    formatOnSave: false,
+    lintMode: 'on-save',
 }
 
 /**
@@ -306,6 +317,41 @@ export class BeancountSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.bqlShowQuery)
                 .onChange(async (value) => {
                     this.plugin.settings.bqlShowQuery = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        containerEl.createEl('h3', { text: 'Editor Settings' });
+
+        new Setting(containerEl)
+            .setName('Editor autocomplete')
+            .setDesc('Show context-aware completions in .beancount files: account names, payees, narrations, currencies/commodities, tags (#), and links (^). Reopen the file to apply changes.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.accountAutocomplete)
+                .onChange(async (value) => {
+                    this.plugin.settings.accountAutocomplete = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Format on save')
+            .setDesc('Automatically format the Beancount file when saving: normalises indentation to 2 spaces, right-aligns amounts, and fixes @ price annotation spacing. Off by default.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.formatOnSave)
+                .onChange(async (value) => {
+                    this.plugin.settings.formatOnSave = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Inline lint mode')
+            .setDesc('Show Beancount validation errors as inline squiggly underlines using the existing bean-query connection. Reopen the file to apply changes.')
+            .addDropdown(drop => drop
+                .addOption('off', 'Off')
+                .addOption('on-save', 'On save (recommended)')
+                .addOption('on-change', 'On change (2 s debounce)')
+                .setValue(this.plugin.settings.lintMode)
+                .onChange(async (value) => {
+                    this.plugin.settings.lintMode = value as LintMode;
                     await this.plugin.saveSettings();
                 }));
 

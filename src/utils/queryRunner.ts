@@ -24,9 +24,14 @@ export type BQLFormat = 'csv' | 'text' | 'beancount';
 export function runQuery(plugin: BeancountPlugin, query: string, filepath?: string, format: BQLFormat = 'csv'): Promise<string> {
     return new Promise((resolve, reject) => {
         const filePath = filepath || getMainLedgerPath(plugin);
-        const commandName = plugin.settings.beancountCommand;
+        let commandName = plugin.settings.beancountCommand;
         if (!filePath) return reject(new Error('File path not set.'));
         if (!commandName) return reject(new Error('Command not set.'));
+
+        // On Windows, if the command is exactly 'bean-query', use 'bean-query.exe' to prevent issues with extensionless wrappers
+        if (process.platform === 'win32' && commandName === 'bean-query') {
+            commandName = 'bean-query.exe';
+        }
 
         // Convert Windows path to WSL path if using WSL
         let queryFilePath = filePath;

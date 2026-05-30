@@ -11,6 +11,7 @@ import { UnifiedDashboardView, UNIFIED_DASHBOARD_VIEW_TYPE } from './ui/views/da
 import { BQLCodeBlockProcessor } from './ui/markdown/BQLCodeBlockProcessor';
 import { InlineBQLProcessor } from './ui/markdown/InlineBQLProcessor';
 import { OnboardingModal } from './ui/modals/OnboardingModal';
+import { formatBeancountCommand } from './lang/beancount-format';
 
 import { JournalService } from './services/journal.service';
 import { PriceService } from './services/price.service';
@@ -80,7 +81,7 @@ export default class BeancountPlugin extends Plugin {
 		);
 		this.registerView(
 			BEANCOUNT_FILE_VIEW_TYPE,
-			(leaf) => new BeancountFileView(leaf)
+			(leaf) => new BeancountFileView(leaf, this)
 		);
 
 		// Register .beancount and .bean files with a plain-text view to avoid Markdown rendering
@@ -115,6 +116,19 @@ export default class BeancountPlugin extends Plugin {
 			id: 'run-beancount-onboarding',
 			name: 'Run Setup/Onboarding',
 			callback: () => { new OnboardingModal(this.app, this).open(); }
+		});
+		this.addCommand({
+			id: 'format-beancount-document',
+			name: 'Format Beancount Document',
+			callback: () => {
+				const active = this.app.workspace.getActiveViewOfType(BeancountFileView);
+				if (active) {
+					formatBeancountCommand((active as any).editorView);
+				} else {
+					// @ts-ignore
+					new this.app.Notice('Open a .beancount file first.');
+				}
+			}
 		});
 
 		// Add Fetch Commodity Prices command
