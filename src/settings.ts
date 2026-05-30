@@ -316,8 +316,8 @@ export class BeancountSettingTab extends PluginSettingTab {
         containerEl.createEl('h3', { text: 'Editor Settings' });
 
         new Setting(containerEl)
-            .setName('Account name autocomplete')
-            .setDesc('Show a completion popup with matching account names when typing in .beancount files. Reopen the file to apply changes.')
+            .setName('Editor autocomplete')
+            .setDesc('Show context-aware completions in .beancount files: account names, payees, narrations, currencies/commodities, tags (#), and links (^). Reopen the file to apply changes.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.accountAutocomplete)
                 .onChange(async (value) => {
