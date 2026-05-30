@@ -48,7 +48,7 @@ export interface LintError {
  */
 export function parseLintErrors(output: string): LintError[] {
     const errors: LintError[] = [];
-    const lines = output.split('\n');
+    const lines = output.replace(/\r/g, '').split('\n');
 
     for (const line of lines) {
         const trimmed = line.trim();
