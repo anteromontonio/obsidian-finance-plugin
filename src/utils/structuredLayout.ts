@@ -583,7 +583,8 @@ export async function migrateToStructuredLayout(
             { type: 'pad', file: STRUCTURED_FILES.pads, query: "PRINT FROM type='pad'" },
             { type: 'balance', file: STRUCTURED_FILES.balances, query: "PRINT FROM type='balance'" },
             { type: 'note', file: STRUCTURED_FILES.notes, query: "PRINT FROM type='note'" },
-            { type: 'event', file: STRUCTURED_FILES.events, query: "PRINT FROM type='event'" }
+            { type: 'event', file: STRUCTURED_FILES.events, query: "PRINT FROM type='event'" },
+            { type: 'query', file: STRUCTURED_FILES.queries, query: "PRINT FROM type='query'" },
         ];
 
         // Migrate non-transaction directives

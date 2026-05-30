@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## In-progress
+- **Demo Ledger & Migration: bean errors out of the box and missing queries.beancount** — fixed two independent issues: (1) the demo ledger's `query` directive was missing its required date prefix (`YYYY-MM-DD query …`) causing a parse error; the conflicting `pad`+balance assertion that duplicated the opening balance transaction was removed, and the hard-coded `2026-02-01` balance assertion was corrected to the actual computed value; (2) `migrateToStructuredLayout` was not migrating `query` directives — added `PRINT FROM type='query'` to the migrations array so named queries are preserved in `queries.beancount` during onboarding. Closes [#197](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/197).
 - **Accounts and Balances: duplicate "Net Worth Trend" label in trend chart area** — removed the extra chart title rendering so the label appears once in the selector UI.
 - **Commodity metadata: price source test failed for valid expressions on Windows** — switched validation to execute `bean-price -e <source>` using argument-based process spawning (instead of shell-quoted command strings), fixing errors such as invalid source with extra quote characters.
 - **File writes: race conditions and newline corruption on Windows** — adopted Fava-like file-write safety measures across all CRUD operations:

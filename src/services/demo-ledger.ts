@@ -110,18 +110,17 @@ option "booking_method" "STRICT"
 ;; ============================================================================
 ;; Automatic balance padding - fills in missing amounts
 
-2026-01-01 pad Assets:Checking Equity:Opening-Balances
 
 ;; ============================================================================
 ;; Balance Assertions
 ;; ============================================================================
 ;; Verify account balances at specific dates
 
-2026-01-01 balance Assets:Checking 5000.00 USD
-2026-01-01 balance Assets:Savings 10000.00 USD
-2026-01-01 balance Liabilities:CreditCard -500.00 USD
+2026-01-02 balance Assets:Checking  5000.00 USD
+2026-01-02 balance Assets:Savings   10000.00 USD
+2026-01-02 balance Liabilities:CreditCard -500.00 USD
 
-2026-02-01 balance Assets:Checking 3555.00 USD
+2026-02-01 balance Assets:Checking 2853.05 USD
 
 ;; ============================================================================
 ;; Notes
@@ -255,7 +254,7 @@ option "booking_method" "STRICT"
   Income:CapitalGains       -21.75 USD
 
 ;; Query directives (named BQL queries)
-query "monthly-expenses" "
+2026-01-01 query "monthly-expenses" "
   SELECT date, narration, COST(position) AS amount
   FROM account ~ 'Expenses:'
   WHERE year = YEAR(TODAY()) AND month = MONTH(TODAY())
