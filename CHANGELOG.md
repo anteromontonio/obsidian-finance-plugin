@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## In-progress
 
+- **Security: Replace direct filesystem access in plugin services** — Partially replaced Node `fs` read/write checks in `PriceService` with Obsidian Vault API calls to avoid direct filesystem access from renderer code; continuing migration of remaining file I/O helpers to Vault APIs. Closes [#203](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/203).
+
 ## [1.6.0] - 2026-05-31
 
 ### Added 🚀
