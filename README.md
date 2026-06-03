@@ -38,7 +38,7 @@ A comprehensive Beancount integration for [Obsidian](https://obsidian.md) that t
 - 📝 Inline BQL queries with named query directives (`bql-q:name`)
 - 💰 Complete transaction, balance, and commodity management
 - 💹 **Automated Price Fetching** — runs `bean-price` on a schedule; new prices are deduplicated and appended to `prices.beancount` automatically
-- 🔄 Direct Beancount file integration—no separate database
+- 🔄 Vault-local Beancount file integration — no separate database
 
 ---
 
@@ -89,16 +89,19 @@ BRAT will automatically check for updates and notify you of new versions. This i
 
 ## 🔒 Permissions & Privacy
 
-This plugin requires elevated system access to integrate with your Beancount setup. The following is disclosed in accordance with the [Obsidian Developer policies](https://docs.obsidian.md/Developer+policies):
+Beancount Ledger is a local-first plugin. It does not send ledger data, account names, query results, or prices to a project server.
 
-| Permission | Why it's needed |
-|---|---|
-| **Filesystem access** (`fs`) | Reads and writes your `.beancount` ledger file(s) directly. These files typically live outside the Obsidian vault, so the standard Vault API cannot be used. |
-| **Shell execution** (`child_process`) | Runs `bean-query`, `bean-check`, and `bean-price` — external CLI tools that are part of your Beancount installation. There is no Obsidian-native way to execute external processes. |
-| **Vault enumeration** | Scans vault files to locate BQL shorthand template files configured in settings. |
-| **Clipboard access** | Copies query results or transaction data to the clipboard when you use the copy action in the UI. |
+| Access | Current use | Direction |
+|---|---|---|
+| Vault file access | Reads/writes Beancount files stored inside the current Obsidian vault, including generated `prices.beancount` output. | Preferred path. New file I/O should use the Obsidian Vault API. |
+| Filesystem access (`fs`) | Legacy helpers may still exist for migration, backups, path conversion, or older outside-vault setups. | Being reduced. Users should keep ledger files inside the vault for community-plugin compatibility. |
+| Shell execution (`child_process`) | Runs local Beancount tools such as `bean-query`, `bean-check`, and `bean-price`. | Still required unless those tools are replaced by an Obsidian-native implementation. |
+| Vault enumeration | Finds configured BQL/template files in the vault. | Required for plugin features. |
+| Clipboard access | Copies query results or transaction text when the user clicks a copy action. | User-initiated only. |
 
-No data is ever sent to external servers. All operations are local to your machine.
+### Vault-only ledger recommendation
+
+For the Obsidian community plugin review path, keep your main ledger and included Beancount files inside the current vault. If your ledger currently lives outside the vault, move it into the vault and update plugin settings to point to the vault-local file. Future releases will prefer vault-local file access and may remove support for direct writes outside the vault.
 
 ---
 
