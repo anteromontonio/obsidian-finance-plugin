@@ -5,11 +5,13 @@ All notable changes to Beancount Ledger will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## In-progress
+## [2.0.0] - 2026-06-03
 
-- **Security: Replace Node.js 'fs' module usage with Obsidian native Vault APIs** — Replaced all direct filesystem access (`fs` and `fs/promises` imports) in `fileEditor.ts` and `directives.ts` with Obsidian's native `this.app.vault.adapter` APIs (`exists`, `read`, `write`, `remove`, `rename`, `copy`). Refactored `SystemDetector.ts` to locate and verify executables via shell environment lookup and process execution checks rather than direct filesystem scanning. This resolves Obsidian's auto-review tool warnings concerning direct filesystem access.
-- **Security: Migrate CLI command execution to safe parameterized spawn calls** — Replaced all shell execution (`exec` and `execAsync`) calls across `SystemDetector`, `queryRunner`, `price.service`, and `sidebar-view` with a secure utility `execSafe` that uses a parameterized arguments array and disables shell parsing (`shell: false`). Replaced shell-based OS detection with native Node APIs, added whitelist sanitization to user-configured price metadata, and documented permissions in the README. Closes [#204](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/204).
-- **Security: Replace direct filesystem access in plugin services** — Partially replaced Node `fs` read/write checks in `PriceService` with Obsidian Vault API calls to avoid direct filesystem access from renderer code; continuing migration of remaining file I/O helpers to Vault APIs. Closes [#203](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/203).
+### Changed ⚠️
+- **Security & Compatibility: Vault-only ledger requirement (Breaking Change)** — Replaced all direct filesystem access (`fs` and `fs/promises` imports) in `fileEditor.ts`, `directives.ts`, and `PriceService` with Obsidian's native Vault adapter APIs (`exists`, `read`, `write`, `remove`, `rename`, `copy`). Because the Obsidian Vault API is strictly scoped to files inside the vault, the plugin now requires your Beancount ledger and any included files to be stored inside the current vault. Absolute paths outside the vault are no longer supported. Closes [#203](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/203).
+
+### Security 🔒
+- **CLI Execution: Migrate to safe parameterized spawn calls** — Replaced all shell execution (`exec` and `execAsync`) calls across `SystemDetector`, `queryRunner`, `price.service`, and `sidebar-view` with a secure utility `execSafe` that runs commands directly as process spawns without shell invocation (`shell: false`). Replaced shell-based OS detection with native Node APIs, added whitelist sanitization to user-configured price metadata, and documented permissions in the README. Closes [#204](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/204).
 
 ## [1.6.0] - 2026-05-31
 
