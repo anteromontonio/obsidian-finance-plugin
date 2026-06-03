@@ -5,6 +5,7 @@ import { spawn } from 'child_process';
 import { requestUrl } from 'obsidian';
 import type BeancountPlugin from '../main';
 import { SystemDetector } from './SystemDetector';
+import { splitCommandLine } from './execSafe';
 
 /**
  * Validates a price source by executing bean-price command.
@@ -32,6 +33,11 @@ export async function validatePriceSource(
     }
 
     const source = priceMetadata.trim();
+    // Sanitize source input to prevent shell/command injection
+    const sourceRegex = /^[a-zA-Z0-9_\-/.:]+$/;
+    if (!sourceRegex.test(source)) {
+        return { success: false, error: 'Invalid characters in price metadata. Price metadata must only contain alphanumeric characters, underscores, hyphens, slashes, dots, and colons.' };
+    }
     const [command, ...baseArgs] = splitCommandLine(beanPriceCommand);
 
     if (!command) {
@@ -78,20 +84,7 @@ export async function validatePriceSource(
     });
 }
 
-/**
- * Split a command line string into executable and args while preserving quoted segments.
- */
-function splitCommandLine(commandLine: string): string[] {
-    const parts: string[] = [];
-    const regex = /[^\s"']+|"([^"]*)"|'([^']*)'/g;
-    let match: RegExpExecArray | null;
-
-    while ((match = regex.exec(commandLine)) !== null) {
-        parts.push(match[1] ?? match[2] ?? match[0]);
-    }
-
-    return parts;
-}
+// Removed local splitCommandLine as it is imported from execSafe.ts
 
 /**
  * Validates a logo URL by checking if it returns an image content-type.

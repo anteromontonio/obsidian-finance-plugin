@@ -14,6 +14,7 @@
 //   directives.ts   – all create/update/delete write operations + generateTransactionText + validateCommodityLocation
 
 export { runQuery, type BQLFormat } from './queryRunner';
+export { splitCommandLine, execSafe } from './execSafe';
 export { convertWindowsPathToWsl, convertWslPathToWindows, atomicFileWrite, createBackupFile } from './fileEditor';
 export {
 	parseSingleValue,

@@ -1,10 +1,8 @@
 // src/views/sidebar-view.ts
 import { ItemView, WorkspaceLeaf, Notice, MarkdownRenderer, TFile } from 'obsidian';
-import { exec } from 'child_process';
-import type { ExecException } from 'child_process';
 import type BeancountPlugin from '../../../main';
 import BeancountViewComponent from './SidebarView.svelte'; // Assuming this is the correct Svelte component for the sidebar
-import { runQuery, parseSingleValue, convertWslPathToWindows } from '../../../utils/index';
+import { runQuery, parseSingleValue, convertWslPathToWindows, execSafe } from '../../../utils/index';
 import * as queries from '../../../queries/index';
 import { parse as parseCsv } from 'csv-parse/sync';
 import { Logger } from '../../../utils/logger';
@@ -155,11 +153,11 @@ export class BeancountView extends ItemView {
 		}
 
 		// --- Use imported query function (uses ERRORS query) ---
-		const command = queries.getBeanCheckCommand(checkFilePath, commandBase);
-		Logger.log('[runBeanCheck] Executing command:', command);
+		const args = [checkFilePath, 'ERRORS'];
+		Logger.log('[runBeanCheck] Executing command (safe):', commandBase, args);
 
 		return new Promise((resolve) => {
-			exec(command, (error: ExecException | null, stdout: string, stderr: string) => {
+			const handleResult = (error: any, stdout: string, stderr: string) => {
 				Logger.log('[runBeanCheck] Command completed');
 				Logger.log('[runBeanCheck] Error object:', error ? error.message : 'null');
 				Logger.log('[runBeanCheck] Stdout length:', stdout?.length || 0);
@@ -217,7 +215,15 @@ export class BeancountView extends ItemView {
 						errorList: []
 					});
 				}
-			});
+			};
+
+			execSafe(commandBase, args)
+				.then(({ stdout, stderr }) => {
+					handleResult(null, stdout, stderr);
+				})
+				.catch((error) => {
+					handleResult(error, error.stdout || '', error.stderr || error.message || String(error));
+				});
 		});
 	}
 

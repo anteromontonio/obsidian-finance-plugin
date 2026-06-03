@@ -95,13 +95,23 @@ Beancount Ledger is a local-first plugin. It does not send ledger data, account 
 |---|---|---|
 | Vault file access | Reads/writes Beancount files stored inside the current Obsidian vault, including generated `prices.beancount` output. | Preferred path. New file I/O should use the Obsidian Vault API. |
 | Filesystem access (`fs`) | Legacy helpers may still exist for migration, backups, path conversion, or older outside-vault setups. | Being reduced. Users should keep ledger files inside the vault for community-plugin compatibility. |
-| Shell execution (`child_process`) | Runs local Beancount tools such as `bean-query`, `bean-check`, and `bean-price`. | Still required unless those tools are replaced by an Obsidian-native implementation. |
+| Shell execution (`child_process`) | Runs local Beancount tools such as `bean-query`, `bean-check`, and `bean-price`. | Required to run the local Python packages (`beancount`, `beanquery`, `beanprice`). These CLI commands are executed safely via parameterized `spawn` calls bypassing the shell, and all user input is strictly whitelisted and sanitized to eliminate shell injection vulnerabilities. |
 | Vault enumeration | Finds configured BQL/template files in the vault. | Required for plugin features. |
 | Clipboard access | Copies query results or transaction text when the user clicks a copy action. | User-initiated only. |
 
 ### Vault-only ledger recommendation
 
 For the Obsidian community plugin review path, keep your main ledger and included Beancount files inside the current vault. If your ledger currently lives outside the vault, move it into the vault and update plugin settings to point to the vault-local file. Future releases will prefer vault-local file access and may remove support for direct writes outside the vault.
+
+### Security and Command Execution
+
+Beancount is a Python library with no native JavaScript/WebAssembly counterpart. Therefore, to compute balances, render interactive charts, validate ledger files, and fetch prices, this plugin must interface with your local Python installation via `child_process.spawn`.
+
+To ensure maximum security and privacy:
+- **No shell parsing:** Commands are executed directly as process spawns without spawning shell instances (`shell: false`), which prevents shell-injection exploits.
+- **Strict Parameterization:** Query strings, file paths, and options are passed as raw array parameters to the executable and are never parsed as part of a shell command line.
+- **Input Sanitization:** User-configured parameters (such as price metadata sources) are whitelisted and sanitized using strict regular expressions before being processed.
+- **Zero Remote Access:** All operations execute completely locally on your machine.
 
 ---
 
