@@ -1,9 +1,40 @@
-// src/utils/fileEditor.ts
-// File I/O helpers: atomic writes, backups, path conversion (WSL ↔ Windows)
-
-import { writeFile, copyFile } from 'fs/promises';
-import { existsSync, unlinkSync, renameSync } from 'fs';
 import { Logger } from './logger';
+import type BeancountPlugin from '../main';
+import { resolve } from 'path';
+
+/**
+ * Converts an absolute path to a vault-relative path if it's within the vault.
+ * Normalized path uses forward slashes as required by Obsidian's adapter.
+ */
+export function getVaultRelativePath(plugin: BeancountPlugin, filePath: string): string {
+    const adapter = plugin.app.vault.adapter;
+    // @ts-ignore
+    if (typeof adapter.getBasePath === 'function') {
+        // @ts-ignore
+        const basePath = adapter.getBasePath();
+        const normalizedBase = resolve(basePath).replace(/\\/g, '/');
+        const normalizedFile = resolve(filePath).replace(/\\/g, '/');
+        
+        if (normalizedFile.startsWith(normalizedBase)) {
+            let relPath = normalizedFile.substring(normalizedBase.length);
+            if (relPath.startsWith('/')) {
+                relPath = relPath.substring(1);
+            }
+            return relPath;
+        }
+    }
+    // Fallback: if it's already a relative path, or we can't get the base path, return it normalized
+    return filePath.replace(/\\/g, '/');
+}
+
+/**
+ * Asynchronously reads the content of a file within the vault.
+ */
+export async function readFileContent(plugin: BeancountPlugin, filePath: string): Promise<string> {
+    const relativePath = getVaultRelativePath(plugin, filePath);
+    const adapter = plugin.app.vault.adapter;
+    return await adapter.read(relativePath);
+}
 
 /**
  * Converts a Windows path (C:\...) to a WSL path (/mnt/c/...).
@@ -73,23 +104,26 @@ class FileLock {
 
 export const fileLock = new FileLock();
 
-export async function atomicFileWrite(filePath: string, content: string): Promise<void> {
+export async function atomicFileWrite(plugin: BeancountPlugin, filePath: string, content: string): Promise<void> {
     const releaseLock = await fileLock.acquire(filePath);
     try {
-        const tempPath = `${filePath}.${Math.random().toString(36).substring(2, 15)}.tmp`;
-        await writeFile(tempPath, content, 'utf-8');
+        const relativePath = getVaultRelativePath(plugin, filePath);
+        const tempRelativePath = `${relativePath}.${Math.random().toString(36).substring(2, 15)}.tmp`;
+        const adapter = plugin.app.vault.adapter;
+
+        await adapter.write(tempRelativePath, content);
 
         try {
-            // On Windows, delete the target file before renaming
-            if (existsSync(filePath)) {
-                unlinkSync(filePath);
+            // Delete target file before rename
+            if (await adapter.exists(relativePath)) {
+                await adapter.remove(relativePath);
             }
-            renameSync(tempPath, filePath);
+            await adapter.rename(tempRelativePath, relativePath);
         } catch (renameError) {
             // Fallback: direct overwrite
-            await writeFile(filePath, content, 'utf-8');
-            if (existsSync(tempPath)) {
-                unlinkSync(tempPath);
+            await adapter.write(relativePath, content);
+            if (await adapter.exists(tempRelativePath)) {
+                await adapter.remove(tempRelativePath);
             }
         }
     } finally {
@@ -100,21 +134,29 @@ export async function atomicFileWrite(filePath: string, content: string): Promis
 /**
  * Creates a .bak backup of a file before modification.
  *
+ * @param {BeancountPlugin} plugin - The plugin instance.
  * @param {string}  filePath     - Path to back up.
  * @param {boolean} createBackup - Whether to actually create the backup.
  * @param {string}  functionName - Calling function name for log context.
  */
 export async function createBackupFile(
+    plugin: BeancountPlugin,
     filePath: string,
     createBackup: boolean,
     functionName: string
 ): Promise<void> {
     if (!createBackup) return;
 
-    const backupPath = `${filePath}.bak`;
+    const relativePath = getVaultRelativePath(plugin, filePath);
+    const backupRelativePath = `${relativePath}.bak`;
     try {
-        await copyFile(filePath, backupPath);
-        Logger.log(`[${functionName}] Created backup: ${backupPath}`);
+        const adapter = plugin.app.vault.adapter;
+        if (await adapter.exists(relativePath)) {
+            await adapter.copy(relativePath, backupRelativePath);
+            Logger.log(`[${functionName}] Created backup: ${backupRelativePath}`);
+        } else {
+            Logger.warn(`[${functionName}] Source file for backup does not exist: ${relativePath}`);
+        }
     } catch (backupError) {
         Logger.warn(`[${functionName}] Failed to create backup:`, backupError);
         // Continue anyway — backup failure should not block the save

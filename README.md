@@ -93,15 +93,15 @@ Beancount Ledger is a local-first plugin. It does not send ledger data, account 
 
 | Access | Current use | Direction |
 |---|---|---|
-| Vault file access | Reads/writes Beancount files stored inside the current Obsidian vault, including generated `prices.beancount` output. | Preferred path. New file I/O should use the Obsidian Vault API. |
-| Filesystem access (`fs`) | Legacy helpers may still exist for migration, backups, path conversion, or older outside-vault setups. | Being reduced. Users should keep ledger files inside the vault for community-plugin compatibility. |
+| Vault file access | Reads/writes Beancount files stored inside the current Obsidian vault, including generated `prices.beancount` output. | All file I/O operations (reading, writing, backups, migration) are fully migrated to use the Obsidian Vault API. |
+| Filesystem access (`fs`) | None. Direct filesystem access via the Node.js `fs` module has been completely eliminated from the codebase. | Eliminated. Resolves community-plugin security warnings regarding direct filesystem access. |
 | Shell execution (`child_process`) | Runs local Beancount tools such as `bean-query`, `bean-check`, and `bean-price`. | Required to run the local Python packages (`beancount`, `beanquery`, `beanprice`). These CLI commands are executed safely via parameterized `spawn` calls bypassing the shell, and all user input is strictly whitelisted and sanitized to eliminate shell injection vulnerabilities. |
 | Vault enumeration | Finds configured BQL/template files in the vault. | Required for plugin features. |
 | Clipboard access | Copies query results or transaction text when the user clicks a copy action. | User-initiated only. |
 
-### Vault-only ledger recommendation
+### Vault-only ledger requirement
 
-For the Obsidian community plugin review path, keep your main ledger and included Beancount files inside the current vault. If your ledger currently lives outside the vault, move it into the vault and update plugin settings to point to the vault-local file. Future releases will prefer vault-local file access and may remove support for direct writes outside the vault.
+For compatibility with Obsidian community plugin reviews and security standards, the plugin strictly requires your main ledger and included Beancount files to live inside the current vault. If your ledger currently lives outside the vault, move it into the vault and update the plugin settings to point to the vault-local file. The plugin strictly uses vault-local file access using the Obsidian Vault API, and direct filesystem writes outside the vault are not supported.
 
 ### Security and Command Execution
 

@@ -1,6 +1,3 @@
-// src/utils/SystemDetector.ts
-import { existsSync, accessSync, constants } from 'fs';
-import { access, readFile } from 'fs/promises';
 import { resolve, join, sep } from 'path';
 import { homedir, platform, arch, type, release } from 'os';
 import { execSafe } from './execSafe';
@@ -131,28 +128,25 @@ export class SystemDetector {
      */
     private async detectWSL(): Promise<boolean> {
         try {
-            // Method 1: Check for WSL in /proc/version
-            if (existsSync('/proc/version')) {
-                const content = await readFile('/proc/version', 'utf8');
-                if (content.toLowerCase().includes('microsoft') || content.toLowerCase().includes('wsl')) {
-                    return true;
-                }
-            }
-
-            // Method 2: Check WSL environment variables
+            // Method 1: Check WSL environment variables
             if (process.env.WSL_DISTRO_NAME || process.env.WSLENV) {
                 return true;
             }
 
-            // Method 3: Check for WSL specific paths
-            if (existsSync('/mnt/c') || existsSync('/mnt/wsl')) {
-                return true;
-            }
-
-            // Method 4: Check OS release info
+            // Method 2: Check OS release info
             const releaseInfo = release().toLowerCase();
             if (releaseInfo.includes('microsoft') || releaseInfo.includes('wsl')) {
                 return true;
+            }
+
+            // Method 3: Try running cat /proc/version
+            try {
+                const { stdout } = await execSafe('cat', ['/proc/version'], { timeout: 2000 });
+                if (stdout.toLowerCase().includes('microsoft') || stdout.toLowerCase().includes('wsl')) {
+                    return true;
+                }
+            } catch {
+                // Command failed or not found
             }
 
             return false;
@@ -242,8 +236,14 @@ export class SystemDetector {
             }
 
             // Fallback for Unix-like systems if SHELL is not set
-            if (existsSync('/bin/bash')) return 'Bash';
-            if (existsSync('/bin/zsh')) return 'Zsh';
+            try {
+                await execSafe('bash', ['-c', 'exit 0'], { timeout: 1000 });
+                return 'Bash';
+            } catch {}
+            try {
+                await execSafe('zsh', ['-c', 'exit 0'], { timeout: 1000 });
+                return 'Zsh';
+            } catch {}
             return 'sh';
 
         } catch (error) {
@@ -292,27 +292,32 @@ export class SystemDetector {
 
             const execPath = whichOutput.split('\n')[0].trim();
             
-            if (execPath && existsSync(execPath)) {
-                // Check if executable is accessible
+            if (execPath) {
+                // Try to get version
+                let version = null;
+                let accessible = false;
                 try {
-                    accessSync(execPath, constants.F_OK | constants.X_OK);
-                    
-                    // Try to get version
-                    let version = null;
+                    const { stdout: versionOutput } = await execSafe(execPath, ['--version'], { timeout: 5000 });
+                    version = versionOutput.trim();
+                    accessible = true;
+                } catch {
+                    // Try to execute with --help to verify it runs
                     try {
-                        const { stdout: versionOutput } = await execSafe(execPath, ['--version'], { timeout: 5000 });
-                        version = versionOutput.trim();
+                        await execSafe(execPath, ['--help'], { timeout: 3000 });
+                        accessible = true;
                     } catch {
-                        // Version check failed, but executable exists
+                        // Not accessible/runnable
                     }
+                }
 
+                if (accessible) {
                     return {
                         found: true,
                         path: execPath,
                         version,
                         accessible: true
                     };
-                } catch (accessError) {
+                } else {
                     return {
                         found: true,
                         path: execPath,
@@ -323,49 +328,7 @@ export class SystemDetector {
                 }
             }
         } catch (error) {
-            // Continue to manual search
-        }
-
-        // Manual search in common locations
-        const commonPaths = this.getCommonExecutablePaths();
-        const possibleNames = this.getExecutableVariations(executableName);
-
-        // Flatten paths to test them concurrently without nested loops
-        const fullPaths: string[] = [];
-        for (const basePath of commonPaths) {
-            for (const name of possibleNames) {
-                fullPaths.push(join(basePath, name));
-            }
-        }
-
-        // We still use existsSync as a fast-path filter to prevent the extremely
-        // slow V8 exception throwing overhead in fs.promises.access for missing files,
-        // while avoiding synchronous blocking accessSync calls.
-        const existingPaths = fullPaths.filter(p => existsSync(p));
-
-        if (existingPaths.length > 0) {
-            const accessChecks = existingPaths.map(async (fullPath) => {
-                try {
-                    await access(fullPath, constants.F_OK | constants.X_OK);
-                    return fullPath;
-                } catch {
-                    return null;
-                }
-            });
-
-            const results = await Promise.all(accessChecks);
-
-            // Find the first path that succeeded, preserving the original priority order
-            const foundPath = results.find(p => p !== null);
-
-            if (foundPath) {
-                return {
-                    found: true,
-                    path: foundPath,
-                    version: null,
-                    accessible: true
-                };
-            }
+            // Executable not found in PATH
         }
 
         return {
@@ -373,64 +336,8 @@ export class SystemDetector {
             path: null,
             version: null,
             accessible: false,
-            errorMessage: 'Executable not found in PATH or common locations'
+            errorMessage: 'Executable not found in PATH'
         };
-    }
-
-    /**
-     * Get common executable search paths for current platform
-     * @returns {string[]} List of common paths.
-     */
-    private getCommonExecutablePaths(): string[] {
-        const platformInfo = platform();
-        const paths = (process.env.PATH || '').split(platformInfo === 'win32' ? ';' : ':').filter(Boolean);
-
-        // Add common system paths
-        if (platformInfo === 'win32') {
-            paths.push(
-                'C:\\Windows\\System32',
-                'C:\\Windows',
-                'C:\\Python39',
-                'C:\\Python38',
-                'C:\\Python37',
-                'C:\\Program Files\\Python39',
-                'C:\\Program Files\\Python38',
-                'C:\\Program Files\\Python37',
-                join(homedir(), 'AppData', 'Local', 'Programs', 'Python'),
-                join(homedir(), 'AppData', 'Local', 'Microsoft', 'WindowsApps')
-            );
-        } else {
-            paths.push(
-                '/usr/bin',
-                '/usr/local/bin',
-                '/bin',
-                '/opt/homebrew/bin', // macOS Homebrew ARM
-                '/usr/local/homebrew/bin', // macOS Homebrew Intel
-                join(homedir(), '.local', 'bin'),
-                join(homedir(), 'bin')
-            );
-        }
-
-        return paths.filter(path => existsSync(path));
-    }
-
-    /**
-     * Get possible executable name variations for different platforms
-     * @param {string} baseName - The base name of the executable.
-     * @returns {string[]} List of variations (e.g. with .exe extension).
-     */
-    private getExecutableVariations(baseName: string): string[] {
-        const variations = [baseName];
-        
-        if (platform() === 'win32') {
-            variations.push(
-                `${baseName}.exe`,
-                `${baseName}.cmd`,
-                `${baseName}.bat`
-            );
-        }
-
-        return variations;
     }
 
     /**

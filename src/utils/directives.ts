@@ -2,11 +2,10 @@
 // All Beancount file write operations: create/update/delete for transactions, balances,
 // notes, commodities, prices, open/close directives, and commodity metadata.
 
-import { readFile } from 'fs/promises';
 import { parse as parseCsv } from 'csv-parse/sync';
 import type BeancountPlugin from '../main';
 import { getTargetFile, ensureYearFile } from './structuredLayout';
-import { atomicFileWrite, createBackupFile, convertWslPathToWindows, getNewlineCharacter } from './fileEditor';
+import { atomicFileWrite, createBackupFile, convertWslPathToWindows, getNewlineCharacter, readFileContent } from './fileEditor';
 import { runQuery } from './queryRunner';
 import { Logger } from './logger';
 
@@ -30,11 +29,11 @@ export async function saveOpenDirective(
         if (booking) parts.push(`"${booking}"`);
         const directiveText = parts.join(' ');
 
-        await createBackupFile(normalizedPath, createBackup, 'saveOpenDirective');
-        const content = await readFile(normalizedPath, 'utf-8');
+        await createBackupFile(plugin, normalizedPath, createBackup, 'saveOpenDirective');
+        const content = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(content);
         const newContent = content.endsWith(newline) ? `${content}${directiveText}${newline}` : `${content}${newline}${directiveText}${newline}`;
-        await atomicFileWrite(normalizedPath, newContent);
+        await atomicFileWrite(plugin, normalizedPath, newContent);
 
         Logger.log(`[saveOpenDirective] Saved open directive for ${account}`);
         return { success: true };
@@ -59,11 +58,11 @@ export async function saveCloseDirective(
         const normalizedPath = convertWslPathToWindows(filePath);
         const directiveText = `${date} close ${account}`;
 
-        await createBackupFile(normalizedPath, createBackup, 'saveCloseDirective');
-        const content = await readFile(normalizedPath, 'utf-8');
+        await createBackupFile(plugin, normalizedPath, createBackup, 'saveCloseDirective');
+        const content = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(content);
         const newContent = content.endsWith(newline) ? `${content}${directiveText}${newline}` : `${content}${newline}${directiveText}${newline}`;
-        await atomicFileWrite(normalizedPath, newContent);
+        await atomicFileWrite(plugin, normalizedPath, newContent);
 
         Logger.log(`[saveCloseDirective] Saved close directive for ${account}`);
         return { success: true };
@@ -92,11 +91,11 @@ export async function createBalanceAssertion(
         let directiveText = `${date} balance ${account}  ${amount} ${currency}`;
         if (tolerance) directiveText += ` ~ ${tolerance}`;
 
-        await createBackupFile(normalizedPath, createBackup, 'createBalanceAssertion');
-        const content = await readFile(normalizedPath, 'utf-8');
+        await createBackupFile(plugin, normalizedPath, createBackup, 'createBalanceAssertion');
+        const content = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(content);
         const newContent = content.endsWith(newline) ? `${content}${directiveText}${newline}` : `${content}${newline}${directiveText}${newline}`;
-        await atomicFileWrite(normalizedPath, newContent);
+        await atomicFileWrite(plugin, normalizedPath, newContent);
 
         Logger.log(`[createBalanceAssertion] Saved balance for ${account}`);
         return { success: true };
@@ -135,8 +134,8 @@ export async function updateBalance(
         const normalizedPath = convertWslPathToWindows(actualFilePath);
         Logger.log(`[updateBalance] ${actualFilePath} → ${normalizedPath}, line ${lineno}`);
 
-        await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'updateBalance');
-        const _rawContent = await readFile(normalizedPath, 'utf-8');
+        await createBackupFile(plugin, normalizedPath, plugin.settings.createBackups ?? true, 'updateBalance');
+        const _rawContent = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(_rawContent);
         const lines = _rawContent.split(/\r?\n/);
 
@@ -147,7 +146,7 @@ export async function updateBalance(
         if (balanceData.tolerance) newBalanceText += ` ~ ${balanceData.tolerance}`;
 
         lines[lineno - 1] = newBalanceText;
-        await atomicFileWrite(normalizedPath, lines.join(newline));
+        await atomicFileWrite(plugin, normalizedPath, lines.join(newline));
         Logger.log(`[updateBalance] Updated ${balanceId}`);
         return { success: true };
     } catch (error) {
@@ -184,8 +183,8 @@ export async function deleteBalance(
         const normalizedPath = convertWslPathToWindows(actualFilePath);
         Logger.log(`[deleteBalance] ${actualFilePath} → ${normalizedPath}, line ${lineno}`);
 
-        await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'deleteBalance');
-        const _rawContent = await readFile(normalizedPath, 'utf-8');
+        await createBackupFile(plugin, normalizedPath, plugin.settings.createBackups ?? true, 'deleteBalance');
+        const _rawContent = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(_rawContent);
         const lines = _rawContent.split(/\r?\n/);
 
@@ -193,7 +192,7 @@ export async function deleteBalance(
             return { success: false, error: `Invalid line number ${lineno}` };
 
         lines.splice(lineno - 1, 1);
-        await atomicFileWrite(normalizedPath, lines.join(newline));
+        await atomicFileWrite(plugin, normalizedPath, lines.join(newline));
         Logger.log(`[deleteBalance] Deleted ${balanceId}`);
         return { success: true };
     } catch (error) {
@@ -223,11 +222,11 @@ export async function createNote(
         if (links) for (const l of links) parts.push(`^${l}`);
         const directiveText = parts.join(' ');
 
-        await createBackupFile(normalizedPath, createBackup, 'createNote');
-        const content = await readFile(normalizedPath, 'utf-8');
+        await createBackupFile(plugin, normalizedPath, createBackup, 'createNote');
+        const content = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(content);
         const newContent = content.endsWith(newline) ? `${content}${directiveText}${newline}` : `${content}${newline}${directiveText}${newline}`;
-        await atomicFileWrite(normalizedPath, newContent);
+        await atomicFileWrite(plugin, normalizedPath, newContent);
 
         Logger.log(`[createNote] Saved note for ${account}`);
         return { success: true };
@@ -266,8 +265,8 @@ export async function updateNote(
         const normalizedPath = convertWslPathToWindows(actualFilePath);
         Logger.log(`[updateNote] ${actualFilePath} → ${normalizedPath}, line ${lineno}`);
 
-        await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'updateNote');
-        const _rawContent = await readFile(normalizedPath, 'utf-8');
+        await createBackupFile(plugin, normalizedPath, plugin.settings.createBackups ?? true, 'updateNote');
+        const _rawContent = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(_rawContent);
         const lines = _rawContent.split(/\r?\n/);
 
@@ -279,7 +278,7 @@ export async function updateNote(
         if (noteData.links) for (const l of noteData.links) noteParts.push(`^${l}`);
 
         lines[lineno - 1] = noteParts.join(' ');
-        await atomicFileWrite(normalizedPath, lines.join(newline));
+        await atomicFileWrite(plugin, normalizedPath, lines.join(newline));
         Logger.log(`[updateNote] Updated ${noteId}`);
         return { success: true };
     } catch (error) {
@@ -316,8 +315,8 @@ export async function deleteNote(
         const normalizedPath = convertWslPathToWindows(actualFilePath);
         Logger.log(`[deleteNote] ${actualFilePath} → ${normalizedPath}, line ${lineno}`);
 
-        await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'deleteNote');
-        const _rawContent = await readFile(normalizedPath, 'utf-8');
+        await createBackupFile(plugin, normalizedPath, plugin.settings.createBackups ?? true, 'deleteNote');
+        const _rawContent = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(_rawContent);
         const lines = _rawContent.split(/\r?\n/);
 
@@ -325,7 +324,7 @@ export async function deleteNote(
             return { success: false, error: `Invalid line number ${lineno}` };
 
         lines.splice(lineno - 1, 1);
-        await atomicFileWrite(normalizedPath, lines.join(newline));
+        await atomicFileWrite(plugin, normalizedPath, lines.join(newline));
         Logger.log(`[deleteNote] Deleted ${noteId}`);
         return { success: true };
     } catch (error) {
@@ -357,12 +356,12 @@ export async function createCommodity(
         if (priceMetadata) metadataLines.push(`  price: "${priceMetadata}"`);
         if (logoUrl) metadataLines.push(`  logo: "${logoUrl}"`);
 
-        await createBackupFile(normalizedPath, createBackup, 'createCommodity');
-        const content = await readFile(normalizedPath, 'utf-8');
+        await createBackupFile(plugin, normalizedPath, createBackup, 'createCommodity');
+        const content = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(content);
         if (metadataLines.length > 0) directiveText += newline + metadataLines.join(newline);
         const newContent = content.endsWith(newline) ? `${content}${directiveText}${newline}` : `${content}${newline}${directiveText}${newline}`;
-        await atomicFileWrite(normalizedPath, newContent);
+        await atomicFileWrite(plugin, normalizedPath, newContent);
 
         Logger.log(`[createCommodity] Created commodity ${symbol}`);
         return { success: true };
@@ -373,6 +372,7 @@ export async function createCommodity(
 }
 
 export async function saveCommodityMetadata(
+    plugin: BeancountPlugin,
     symbol: string,
     metadata: Record<string, any>,
     filename: string,
@@ -381,9 +381,9 @@ export async function saveCommodityMetadata(
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const normalizedPath = convertWslPathToWindows(filename);
-        await createBackupFile(normalizedPath, createBackup, 'saveCommodityMetadata');
+        await createBackupFile(plugin, normalizedPath, createBackup, 'saveCommodityMetadata');
 
-        const _rawContent = await readFile(normalizedPath, 'utf-8');
+        const _rawContent = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(_rawContent);
         const lines = _rawContent.split(/\r?\n/);
 
@@ -408,7 +408,7 @@ export async function saveCommodityMetadata(
             .map(([key, value]) => `  ${key}: "${value}"`);
 
         lines.splice(lineIndex + 1, endIndex - lineIndex - 1, ...newMetadataLines);
-        await atomicFileWrite(normalizedPath, lines.join(newline));
+        await atomicFileWrite(plugin, normalizedPath, lines.join(newline));
 
         Logger.log(`[saveCommodityMetadata] Saved metadata for ${symbol}`);
         return { success: true };
@@ -419,6 +419,7 @@ export async function saveCommodityMetadata(
 }
 
 export async function deleteCommodityDirective(
+    plugin: BeancountPlugin,
     symbol: string,
     filename: string,
     lineno: number,
@@ -426,9 +427,9 @@ export async function deleteCommodityDirective(
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const normalizedPath = convertWslPathToWindows(filename);
-        await createBackupFile(normalizedPath, createBackup, 'deleteCommodityDirective');
+        await createBackupFile(plugin, normalizedPath, createBackup, 'deleteCommodityDirective');
 
-        const _rawContent = await readFile(normalizedPath, 'utf-8');
+        const _rawContent = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(_rawContent);
         const lines = _rawContent.split(/\r?\n/);
 
@@ -454,7 +455,7 @@ export async function deleteCommodityDirective(
         }
 
         lines.splice(startIndex, endIndex - startIndex);
-        await atomicFileWrite(normalizedPath, lines.join(newline));
+        await atomicFileWrite(plugin, normalizedPath, lines.join(newline));
 
         Logger.log(`[deleteCommodityDirective] Deleted commodity directive for ${symbol}`);
         return { success: true };
@@ -486,11 +487,11 @@ export async function createPriceDirective(
         const normalizedPath = convertWslPathToWindows(filePath);
         const directiveText = `${date} price ${commodity.toUpperCase()} ${amount.toFixed(2)} ${currency.toUpperCase()}`;
 
-        await createBackupFile(normalizedPath, createBackup, 'createPriceDirective');
-        const content = await readFile(normalizedPath, 'utf-8');
+        await createBackupFile(plugin, normalizedPath, createBackup, 'createPriceDirective');
+        const content = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(content);
         const newContent = content.endsWith(newline) ? `${content}${directiveText}${newline}` : `${content}${newline}${directiveText}${newline}`;
-        await atomicFileWrite(normalizedPath, newContent);
+        await atomicFileWrite(plugin, normalizedPath, newContent);
 
         Logger.log(`[createPriceDirective] Created price directive for ${commodity}`);
         return { success: true, filePath: normalizedPath };
@@ -584,10 +585,10 @@ export async function createTransaction(
         const normalizedPath = convertWslPathToWindows(beancountFilePath);
         Logger.log(`[createTransaction] ${beancountFilePath} → ${normalizedPath}`);
 
-        await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'createTransaction');
-        const currentContent = await readFile(normalizedPath, 'utf-8');
+        await createBackupFile(plugin, normalizedPath, plugin.settings.createBackups ?? true, 'createTransaction');
+        const currentContent = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(currentContent);
-        await atomicFileWrite(normalizedPath, currentContent + newline + generateTransactionText(transactionData, newline) + newline);
+        await atomicFileWrite(plugin, normalizedPath, currentContent + newline + generateTransactionText(transactionData, newline) + newline);
 
         Logger.log(`[createTransaction] Created transaction in ${normalizedPath}`);
         return { success: true };
@@ -659,8 +660,8 @@ export async function updateTransaction(
         const normalizedPath = convertWslPathToWindows(actualFilePath);
         Logger.log(`[updateTransaction] ${actualFilePath} → ${normalizedPath}, line ${lineno}`);
 
-        await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'updateTransaction');
-        const currentContent = await readFile(normalizedPath, 'utf-8');
+        await createBackupFile(plugin, normalizedPath, plugin.settings.createBackups ?? true, 'updateTransaction');
+        const currentContent = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(currentContent);
         const lines = currentContent.split(/\r?\n/);
 
@@ -671,7 +672,7 @@ export async function updateTransaction(
         Logger.log(`[updateTransaction] Block: lines ${startIndex + 1}–${endIndex + 1}`);
 
         const newLines = [...lines.slice(0, startIndex), generateTransactionText(transactionData, newline), ...lines.slice(endIndex + 1)];
-        await atomicFileWrite(normalizedPath, newLines.join(newline));
+        await atomicFileWrite(plugin, normalizedPath, newLines.join(newline));
         Logger.log(`[updateTransaction] Updated ${transactionId}`);
         return { success: true };
     } catch (error) {
@@ -700,8 +701,8 @@ export async function deleteTransaction(
         const normalizedPath = convertWslPathToWindows(actualFilePath);
         Logger.log(`[deleteTransaction] ${actualFilePath} → ${normalizedPath}, line ${lineno}`);
 
-        await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'deleteTransaction');
-        const currentContent = await readFile(normalizedPath, 'utf-8');
+        await createBackupFile(plugin, normalizedPath, plugin.settings.createBackups ?? true, 'deleteTransaction');
+        const currentContent = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(currentContent);
         const lines = currentContent.split(/\r?\n/);
 
@@ -714,7 +715,7 @@ export async function deleteTransaction(
 
         Logger.log(`[deleteTransaction] Block: lines ${startIndex + 1}–${endIndex + 1}`);
         const newLines = [...lines.slice(0, startIndex), ...lines.slice(endIndex + 1)];
-        await atomicFileWrite(normalizedPath, newLines.join(newline));
+        await atomicFileWrite(plugin, normalizedPath, newLines.join(newline));
         Logger.log(`[deleteTransaction] Deleted ${transactionId}`);
         return { success: true };
     } catch (error) {
@@ -746,9 +747,9 @@ export async function updateOperatingCurrency(
         if (!ledgerPath) return { success: false, error: 'Main ledger path not set' };
 
         const normalizedPath = convertWslPathToWindows(ledgerPath);
-        await createBackupFile(normalizedPath, createBackup, 'updateOperatingCurrency');
+        await createBackupFile(plugin, normalizedPath, createBackup, 'updateOperatingCurrency');
 
-        const content = await readFile(normalizedPath, 'utf-8');
+        const content = await readFileContent(plugin, normalizedPath);
         const pattern = /^(option\s+"operating_currency"\s+)"[^"]*"/m;
 
         if (!pattern.test(content)) {
@@ -756,7 +757,7 @@ export async function updateOperatingCurrency(
         }
 
         const updated = content.replace(pattern, `$1"${currency}"`);
-        await atomicFileWrite(normalizedPath, updated);
+        await atomicFileWrite(plugin, normalizedPath, updated);
 
         Logger.log(`[updateOperatingCurrency] Updated operating_currency to ${currency}`);
         return { success: true };
@@ -767,13 +768,14 @@ export async function updateOperatingCurrency(
 }
 
 export async function validateCommodityLocation(
+    plugin: BeancountPlugin,
     filename: string,
     lineno: number,
     symbol: string
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const normalizedPath = convertWslPathToWindows(filename);
-        const _rawContent = await readFile(normalizedPath, 'utf-8');
+        const _rawContent = await readFileContent(plugin, normalizedPath);
         const newline = getNewlineCharacter(_rawContent);
         const lines = _rawContent.split(/\r?\n/);
 
@@ -830,12 +832,12 @@ export async function createQueryDirective(
         const escapedSql = sql.replace(/"/g, '\\"');
         const directiveText = `${date} query "${name}" "${escapedSql}"`;
 
-        await createBackupFile(normalizedPath, createBackup, 'createQueryDirective');
+        await createBackupFile(plugin, normalizedPath, createBackup, 'createQueryDirective');
 
         // Ensure file exists; if not, create it with a header
         let content: string;
         try {
-            content = await readFile(normalizedPath, 'utf-8');
+            content = await readFileContent(plugin, normalizedPath);
         } catch {
             content = `;; Named Queries\n;; Managed by Beancount for Obsidian\n\n`;
         }
@@ -844,7 +846,7 @@ export async function createQueryDirective(
             ? `${content}${directiveText}\n`
             : `${content}\n${directiveText}\n`;
 
-        await atomicFileWrite(normalizedPath, newContent);
+        await atomicFileWrite(plugin, normalizedPath, newContent);
         Logger.log(`[createQueryDirective] Saved query directive "${name}"`);
         return { success: true };
     } catch (error) {
@@ -865,15 +867,15 @@ export async function deleteQueryDirective(
         if (!filePath) return { success: false, error: 'Beancount file path not set' };
 
         const normalizedPath = convertWslPathToWindows(filePath);
-        await createBackupFile(normalizedPath, plugin.settings.createBackups ?? true, 'deleteQueryDirective');
+        await createBackupFile(plugin, normalizedPath, plugin.settings.createBackups ?? true, 'deleteQueryDirective');
 
-        const content = await readFile(normalizedPath, 'utf-8');
+        const content = await readFileContent(plugin, normalizedPath);
         // Remove lines that declare this query name
         const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const linePattern = new RegExp(`^\\d{4}-\\d{2}-\\d{2}\\s+query\\s+"${escapedName}"[^\n]*\n?`, 'gm');
         const newContent = content.replace(linePattern, '');
 
-        await atomicFileWrite(normalizedPath, newContent);
+        await atomicFileWrite(plugin, normalizedPath, newContent);
         Logger.log(`[deleteQueryDirective] Deleted query directive "${name}"`);
         return { success: true };
     } catch (error) {
@@ -931,12 +933,12 @@ export async function createIndicatorDirective(
         }
         const directiveText = lines.join('\n');
 
-        await createBackupFile(normalizedPath, createBackup, 'createIndicatorDirective');
-        const content = await readFile(normalizedPath, 'utf-8');
+        await createBackupFile(plugin, normalizedPath, createBackup, 'createIndicatorDirective');
+        const content = await readFileContent(plugin, normalizedPath);
         const newContent = content.endsWith('\n')
             ? `${content}${directiveText}\n`
             : `${content}\n${directiveText}\n`;
-        await atomicFileWrite(normalizedPath, newContent);
+        await atomicFileWrite(plugin, normalizedPath, newContent);
 
         Logger.log(`[createIndicatorDirective] Saved ${params.type} indicator "${params.name}"`);
         return { success: true };
@@ -958,7 +960,7 @@ export async function getQueryDirectives(
         if (!filePath) return {};
 
         const normalizedPath = convertWslPathToWindows(filePath);
-        const content = await readFile(normalizedPath, 'utf-8');
+        const content = await readFileContent(plugin, normalizedPath);
         return parseQueryDirectives(content);
     } catch {
         return {};
