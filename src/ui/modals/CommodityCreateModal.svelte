@@ -174,7 +174,7 @@
                 type="url"
                 bind:value={logoUrl}
                 on:input={handleLogoInput}
-                placeholder="https://logo.clearbit.com/bitcoin.org"
+                placeholder="https://logos.hunter.io/bitcoin.org"
             />
             <button
                 on:click={testLogo}
