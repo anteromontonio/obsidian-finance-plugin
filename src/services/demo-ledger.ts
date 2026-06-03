@@ -23,18 +23,18 @@ option "operating_currency" "USD"
   asset-class: "cash"
 2020-01-01 commodity AAPL
   name: "Apple Inc."
-  price: "yahoo/AAPL"
-  logo: "https://logo.clearbit.com/apple.com"
+  price: "USD:yahoo/AAPL"
+  logo: "https://logos.hunter.io/apple.com"
   asset-class: "stock"
 2020-01-01 commodity GOOGL
   name: "Alphabet Inc."
-  price: "yahoo/GOOGL"
-  logo: "https://logo.clearbit.com/google.com"
+  price: "USD:yahoo/GOOGL"
+  logo: "https://logos.hunter.io/google.com"
   asset-class: "stock"
 2020-01-01 commodity MSFT
   name: "Microsoft Corporation"
-  price: "yahoo/MSFT"
-  logo: "https://logo.clearbit.com/microsoft.com"
+  price: "USD:yahoo/MSFT"
+  logo: "https://logos.hunter.io/microsoft.com"
   asset-class: "stock"
 
 ;; ============================================================================

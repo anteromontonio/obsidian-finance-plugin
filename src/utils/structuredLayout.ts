@@ -5,7 +5,6 @@ import { Notice, TFile } from 'obsidian';
 import { Logger } from './logger';
 import { runQuery } from './index';
 import * as path from 'path';
-import * as fs from 'fs';
 
 /**
  * File types in the structured layout.

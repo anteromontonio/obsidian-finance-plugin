@@ -1,12 +1,6 @@
-// src/utils/SystemDetector.ts
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import { existsSync, accessSync, constants } from 'fs';
-import { access } from 'fs/promises';
 import { resolve, join, sep } from 'path';
 import { homedir, platform, arch, type, release } from 'os';
-
-const execAsync = promisify(exec);
+import { execSafe } from './execSafe';
 
 /**
  * Interface representing system information detected by the SystemDetector.
@@ -134,22 +128,25 @@ export class SystemDetector {
      */
     private async detectWSL(): Promise<boolean> {
         try {
-            // Method 1: Check for WSL in /proc/version
-            if (existsSync('/proc/version')) {
-                const { stdout } = await execAsync('cat /proc/version', { timeout: 2000 });
-                if (stdout.toLowerCase().includes('microsoft') || stdout.toLowerCase().includes('wsl')) {
-                    return true;
-                }
-            }
-
-            // Method 2: Check WSL environment variables
+            // Method 1: Check WSL environment variables
             if (process.env.WSL_DISTRO_NAME || process.env.WSLENV) {
                 return true;
             }
 
-            // Method 3: Check for WSL specific paths
-            if (existsSync('/mnt/c') || existsSync('/mnt/wsl')) {
+            // Method 2: Check OS release info
+            const releaseInfo = release().toLowerCase();
+            if (releaseInfo.includes('microsoft') || releaseInfo.includes('wsl')) {
                 return true;
+            }
+
+            // Method 3: Try running cat /proc/version
+            try {
+                const { stdout } = await execSafe('cat', ['/proc/version'], { timeout: 2000 });
+                if (stdout.toLowerCase().includes('microsoft') || stdout.toLowerCase().includes('wsl')) {
+                    return true;
+                }
+            } catch {
+                // Command failed or not found
             }
 
             return false;
@@ -171,7 +168,7 @@ export class SystemDetector {
             }
 
             // Test if wsl command is available and working
-            await execAsync('wsl --list --quiet', { timeout: 5000 });
+            await execSafe('wsl', ['--list', '--quiet'], { timeout: 5000 });
             
             // If we get output without error, WSL is available
             // Even if no distributions are installed, the command should work
@@ -179,7 +176,7 @@ export class SystemDetector {
         } catch (error: any) {
             try {
                 // Fallback: try simpler wsl command
-                await execAsync('wsl --help', { timeout: 3000 });
+                await execSafe('wsl', ['--help'], { timeout: 3000 });
                 return true;
             } catch (fallbackError) {
                 // WSL not available
@@ -238,17 +235,16 @@ export class SystemDetector {
                 return process.env.SHELL;
             }
 
-            // Try to detect from process
+            // Fallback for Unix-like systems if SHELL is not set
             try {
-                const { stdout } = await execAsync('echo $0', { timeout: 2000 });
-                const shell = stdout.trim();
-                if (shell.includes('bash')) return 'Bash';
-                if (shell.includes('zsh')) return 'Zsh';
-                if (shell.includes('fish')) return 'Fish';
-                return shell || 'sh';
-            } catch {
-                return 'sh';
-            }
+                await execSafe('bash', ['-c', 'exit 0'], { timeout: 1000 });
+                return 'Bash';
+            } catch {}
+            try {
+                await execSafe('zsh', ['-c', 'exit 0'], { timeout: 1000 });
+                return 'Zsh';
+            } catch {}
+            return 'sh';
 
         } catch (error) {
             return platform() === 'win32' ? 'Unknown Windows Shell' : 'Unknown Unix Shell';
@@ -264,8 +260,8 @@ export class SystemDetector {
         
         for (const cmd of pythonCommands) {
             try {
-                const { stdout: versionOutput } = await execAsync(`${cmd} --version`, { timeout: 5000 });
-                const { stdout: pathOutput } = await execAsync(`${cmd} -c "import sys; print(sys.executable)"`, { timeout: 5000 });
+                const { stdout: versionOutput } = await execSafe(cmd, ['--version'], { timeout: 5000 });
+                const { stdout: pathOutput } = await execSafe(cmd, ['-c', 'import sys; print(sys.executable)'], { timeout: 5000 });
                 
                 return {
                     path: pathOutput.trim(),
@@ -287,34 +283,41 @@ export class SystemDetector {
     async findExecutable(executableName: string): Promise<ExecutableInfo> {
         try {
             // Try direct execution first
-            const { stdout: whichOutput } = await execAsync(
-                platform() === 'win32' ? `where ${executableName}` : `which ${executableName}`,
+            const isWindows = platform() === 'win32';
+            const { stdout: whichOutput } = await execSafe(
+                isWindows ? 'where' : 'which',
+                [executableName],
                 { timeout: 5000 }
             );
 
             const execPath = whichOutput.split('\n')[0].trim();
             
-            if (execPath && existsSync(execPath)) {
-                // Check if executable is accessible
+            if (execPath) {
+                // Try to get version
+                let version = null;
+                let accessible = false;
                 try {
-                    accessSync(execPath, constants.F_OK | constants.X_OK);
-                    
-                    // Try to get version
-                    let version = null;
+                    const { stdout: versionOutput } = await execSafe(execPath, ['--version'], { timeout: 5000 });
+                    version = versionOutput.trim();
+                    accessible = true;
+                } catch {
+                    // Try to execute with --help to verify it runs
                     try {
-                        const { stdout: versionOutput } = await execAsync(`"${execPath}" --version`, { timeout: 5000 });
-                        version = versionOutput.trim();
+                        await execSafe(execPath, ['--help'], { timeout: 3000 });
+                        accessible = true;
                     } catch {
-                        // Version check failed, but executable exists
+                        // Not accessible/runnable
                     }
+                }
 
+                if (accessible) {
                     return {
                         found: true,
                         path: execPath,
                         version,
                         accessible: true
                     };
-                } catch (accessError) {
+                } else {
                     return {
                         found: true,
                         path: execPath,
@@ -325,49 +328,7 @@ export class SystemDetector {
                 }
             }
         } catch (error) {
-            // Continue to manual search
-        }
-
-        // Manual search in common locations
-        const commonPaths = this.getCommonExecutablePaths();
-        const possibleNames = this.getExecutableVariations(executableName);
-
-        // Flatten paths to test them concurrently without nested loops
-        const fullPaths: string[] = [];
-        for (const basePath of commonPaths) {
-            for (const name of possibleNames) {
-                fullPaths.push(join(basePath, name));
-            }
-        }
-
-        // We still use existsSync as a fast-path filter to prevent the extremely
-        // slow V8 exception throwing overhead in fs.promises.access for missing files,
-        // while avoiding synchronous blocking accessSync calls.
-        const existingPaths = fullPaths.filter(p => existsSync(p));
-
-        if (existingPaths.length > 0) {
-            const accessChecks = existingPaths.map(async (fullPath) => {
-                try {
-                    await access(fullPath, constants.F_OK | constants.X_OK);
-                    return fullPath;
-                } catch {
-                    return null;
-                }
-            });
-
-            const results = await Promise.all(accessChecks);
-
-            // Find the first path that succeeded, preserving the original priority order
-            const foundPath = results.find(p => p !== null);
-
-            if (foundPath) {
-                return {
-                    found: true,
-                    path: foundPath,
-                    version: null,
-                    accessible: true
-                };
-            }
+            // Executable not found in PATH
         }
 
         return {
@@ -375,64 +336,8 @@ export class SystemDetector {
             path: null,
             version: null,
             accessible: false,
-            errorMessage: 'Executable not found in PATH or common locations'
+            errorMessage: 'Executable not found in PATH'
         };
-    }
-
-    /**
-     * Get common executable search paths for current platform
-     * @returns {string[]} List of common paths.
-     */
-    private getCommonExecutablePaths(): string[] {
-        const platformInfo = platform();
-        const paths = (process.env.PATH || '').split(platformInfo === 'win32' ? ';' : ':').filter(Boolean);
-
-        // Add common system paths
-        if (platformInfo === 'win32') {
-            paths.push(
-                'C:\\Windows\\System32',
-                'C:\\Windows',
-                'C:\\Python39',
-                'C:\\Python38',
-                'C:\\Python37',
-                'C:\\Program Files\\Python39',
-                'C:\\Program Files\\Python38',
-                'C:\\Program Files\\Python37',
-                join(homedir(), 'AppData', 'Local', 'Programs', 'Python'),
-                join(homedir(), 'AppData', 'Local', 'Microsoft', 'WindowsApps')
-            );
-        } else {
-            paths.push(
-                '/usr/bin',
-                '/usr/local/bin',
-                '/bin',
-                '/opt/homebrew/bin', // macOS Homebrew ARM
-                '/usr/local/homebrew/bin', // macOS Homebrew Intel
-                join(homedir(), '.local', 'bin'),
-                join(homedir(), 'bin')
-            );
-        }
-
-        return paths.filter(path => existsSync(path));
-    }
-
-    /**
-     * Get possible executable name variations for different platforms
-     * @param {string} baseName - The base name of the executable.
-     * @returns {string[]} List of variations (e.g. with .exe extension).
-     */
-    private getExecutableVariations(baseName: string): string[] {
-        const variations = [baseName];
-        
-        if (platform() === 'win32') {
-            variations.push(
-                `${baseName}.exe`,
-                `${baseName}.cmd`,
-                `${baseName}.bat`
-            );
-        }
-
-        return variations;
     }
 
     /**
@@ -552,13 +457,14 @@ export class SystemDetector {
 
     /**
      * Test if a command works with proper error handling
-     * @param {string} command - The command to test.
+     * @param {string} command - The command/executable to test.
+     * @param {string[]} [args=[]] - Arguments to pass.
      * @param {number} [timeout=5000] - Timeout in milliseconds.
      * @returns {Promise<{ success: boolean; output?: string; error?: string }>} The result.
      */
-    async testCommand(command: string, timeout = 5000): Promise<{ success: boolean; output?: string; error?: string }> {
+    async testCommand(command: string, args: string[] = [], timeout = 5000): Promise<{ success: boolean; output?: string; error?: string }> {
         try {
-            const { stdout, stderr } = await execAsync(command, { timeout });
+            const { stdout, stderr } = await execSafe(command, args, { timeout });
             return { success: true, output: stdout, error: stderr };
         } catch (error: any) {
             return { 
@@ -600,7 +506,7 @@ export class SystemDetector {
         for (const pythonCmd of pythonCommands) {
             try {
                 // Test 1: Check if Python command exists and get version
-                const versionResult = await this.testCommand(`${pythonCmd} --version`);
+                const versionResult = await this.testCommand(pythonCmd, ['--version']);
                 if (!versionResult.success) {
                     continue;
                 }
@@ -688,10 +594,10 @@ export class SystemDetector {
         for (const beanQueryCmd of beanQueryCommands) {
             try {
                 // Test 1: Check if bean-query command exists and get version
-                const versionResult = await this.testCommand(`${beanQueryCmd} --version`);
+                const versionResult = await this.testCommand(beanQueryCmd, ['--version']);
                 if (!versionResult.success) {
                     // Try help command as fallback for version detection
-                    const helpResult = await this.testCommand(`${beanQueryCmd} --help`);
+                    const helpResult = await this.testCommand(beanQueryCmd, ['--help']);
                     if (!helpResult.success) {
                         result.errors.push(`${beanQueryCmd}: Command not found or not accessible`);
                         continue;
@@ -722,7 +628,7 @@ export class SystemDetector {
                 // Test 2: Verify bean-query can run basic queries (if file is provided)
                 if (beancountFilePath) {
                     const testQuery = 'SELECT TRUE LIMIT 1';
-                    const queryResult = await this.testCommand(`${beanQueryCmd} -f csv "${beancountFilePath}" "${testQuery}"`);
+                    const queryResult = await this.testCommand(beanQueryCmd, ['-f', 'csv', beancountFilePath, testQuery]);
                     if (!queryResult.success) {
                         result.errors.push(`${beanQueryCmd}: Cannot execute test query against beancount file`);
                         continue;
@@ -779,10 +685,10 @@ export class SystemDetector {
         for (const beanPriceCmd of beanPriceCommands) {
             try {
                 // Test 1: Check if bean-price command exists and get version
-                const versionResult = await this.testCommand(`${beanPriceCmd} --version`);
+                const versionResult = await this.testCommand(beanPriceCmd, ['--version']);
                 if (!versionResult.success) {
                     // Try help command as fallback for version detection
-                    const helpResult = await this.testCommand(`${beanPriceCmd} --help`);
+                    const helpResult = await this.testCommand(beanPriceCmd, ['--help']);
                     if (!helpResult.success) {
                         result.errors.push(`${beanPriceCmd}: Command not found or not accessible`);
                         continue;
@@ -935,7 +841,7 @@ export class SystemDetector {
             
             // Fallback: try the old simple detection for compatibility
             for (const pythonCmd of commandVariations.python) {
-                const testResult = await this.testCommand(`${pythonCmd} --version`);
+                const testResult = await this.testCommand(pythonCmd, ['--version']);
                 results.testResults[`${pythonCmd}_version`] = testResult.success;
                 
                 if (testResult.success && !results.python) {

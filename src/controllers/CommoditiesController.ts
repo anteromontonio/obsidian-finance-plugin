@@ -300,7 +300,7 @@ export class CommoditiesController {
 
             // Use native TypeScript save function (no backend needed!)
             const createBackup = this.plugin.settings.createBackups ?? true;
-            const result = await saveCommodityMetadata(symbol, metadata, filename, lineno, createBackup);
+            const result = await saveCommodityMetadata(this.plugin, symbol, metadata, filename, lineno, createBackup);
 
             Logger.log('[CommoditiesController] saveMetadata: result ->', result);
 
@@ -493,7 +493,7 @@ export class CommoditiesController {
 
             const { deleteCommodityDirective } = await import('../utils/index');
             const createBackup = this.plugin.settings.createBackups ?? true;
-            const result = await deleteCommodityDirective(symbol, filename, lineno, createBackup);
+            const result = await deleteCommodityDirective(this.plugin, symbol, filename, lineno, createBackup);
 
             if (!result.success) {
                 throw new Error(result.error || 'Failed to delete commodity');

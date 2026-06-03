@@ -1,16 +1,11 @@
-// src/services/price.service.ts
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import { readFile, writeFile } from 'fs/promises';
-import { existsSync } from 'fs';
+import * as path from 'path';
+import { TFile } from 'obsidian';
 import type BeancountPlugin from '../main';
 import type { PriceFetchResult } from '../types';
 import { getTargetFile, getMainLedgerPath } from '../utils/structuredLayout';
-import { convertWslPathToWindows } from '../utils';
+import { convertWslPathToWindows, execSafe } from '../utils';
 import { Logger } from '../utils/logger';
 import { SystemDetector } from '../utils/SystemDetector';
-
-const execAsync = promisify(exec);
 
 /**
  * PriceService
@@ -54,8 +49,17 @@ export class PriceService {
 
 		// 2. Resolve the main ledger path
 		const ledgerPath = getMainLedgerPath(this.plugin);
-		if (!ledgerPath || !existsSync(ledgerPath)) {
+		if (!ledgerPath) {
 			return this.failResult(`Ledger file not found: ${ledgerPath}`);
+		}
+		// Ensure ledger exists inside the vault
+		// Convert absolute path to vault-relative path
+		// @ts-ignore adapter has getBasePath
+		const vaultRoot = this.plugin.app.vault.adapter.getBasePath();
+		const ledgerRel = path.relative(vaultRoot, ledgerPath).replace(/\\/g, '/');
+		const ledgerFile = this.plugin.app.vault.getAbstractFileByPath(ledgerRel) as TFile | null;
+		if (!ledgerFile) {
+			return this.failResult(`Ledger file not found in vault: ${ledgerRel}`);
 		}
 
 		// 3. Resolve prices.beancount path
@@ -65,14 +69,14 @@ export class PriceService {
 		}
 
 		// 4. Run bean-price on the entire ledger (one command, all commodities)
-		const command = `${beanPriceCommand} "${ledgerPath}"`;
-		Logger.log(`[PriceService] Executing: ${command}`);
+		const args = [ledgerPath];
+		Logger.log(`[PriceService] Executing (safe): ${beanPriceCommand} ${args.join(' ')}`);
 
 		let stdout = '';
 		let stderr = '';
 		try {
 			const result = await Promise.race([
-				execAsync(command, { maxBuffer: 20 * 1024 * 1024 }),
+				execSafe(beanPriceCommand, args, { maxBuffer: 20 * 1024 * 1024 }),
 				new Promise<never>((_, reject) =>
 					setTimeout(() => reject(new Error('Timeout: bean-price took longer than 60 seconds')), 60_000)
 				),
@@ -105,9 +109,10 @@ export class PriceService {
 		}
 
 		// 6. Deduplicate: skip any directive that is already in prices.beancount
-		const existingContent = existsSync(pricesFilePath)
-			? await readFile(pricesFilePath, 'utf-8')
-			: '';
+		// Convert prices file path to vault-relative path and read via vault API
+		const pricesRel = path.relative(vaultRoot, pricesFilePath).replace(/\\/g, '/');
+		const pricesFile = this.plugin.app.vault.getAbstractFileByPath(pricesRel) as TFile | null;
+		const existingContent = pricesFile ? await this.plugin.app.vault.read(pricesFile) : '';
 
 		const toAppend = newDirectives.filter(line => !existingContent.includes(line));
 		Logger.log(`[PriceService] ${toAppend.length} new directive(s) to append (${newDirectives.length - toAppend.length} already present)`);
@@ -117,7 +122,11 @@ export class PriceService {
 		if (toAppend.length > 0) {
 			const separator = existingContent.endsWith('\n') ? '' : '\n';
 			const appendText = separator + toAppend.join('\n') + '\n';
-			await writeFile(pricesFilePath, existingContent + appendText, 'utf-8');
+			if (pricesFile) {
+				await this.plugin.app.vault.modify(pricesFile, existingContent + appendText);
+			} else {
+				await this.plugin.app.vault.create(pricesRel, existingContent + appendText);
+			}
 			savedCount = toAppend.length;
 			Logger.log(`[PriceService] Appended ${savedCount} directive(s) to ${pricesFilePath}`);
 		}

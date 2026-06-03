@@ -1,12 +1,11 @@
 // src/utils/queryRunner.ts
 // BQL query execution — the foundational utility that all other utils depend on.
 
-import { exec } from 'child_process';
-import type { ExecException } from 'child_process';
 import type BeancountPlugin from '../main';
 import { getMainLedgerPath } from './structuredLayout';
 import { convertWindowsPathToWsl } from './fileEditor';
 import { Logger } from './logger';
+import { execSafe } from './execSafe';
 
 /** Output formats supported by bean-query's `-f` flag. */
 export type BQLFormat = 'csv' | 'text' | 'beancount';
@@ -39,36 +38,36 @@ export function runQuery(plugin: BeancountPlugin, query: string, filepath?: stri
             queryFilePath = convertWindowsPathToWsl(filePath);
         }
 
-        // Escape double-quotes in query for shell execution
-        const escapedQuery = query.replace(/"/g, '\\"');
-        const command = `${commandName} -q -f ${format} "${queryFilePath}" "${escapedQuery}"`;
-        Logger.log(`[runQuery] Executing: ${command}`);
+        // Pass arguments as a parameterized array to avoid shell injection entirely.
+        const args = ['-q', '-f', format, queryFilePath, query];
+        Logger.log(`[runQuery] Executing (safe): ${commandName} ${args.join(' ')}`);
 
         // 50 MB buffer – large ledgers can produce significant CSV output
-        exec(command, { maxBuffer: 50 * 1024 * 1024 }, (error: ExecException | null, stdout: string, stderr: string) => {
-            if (error) return reject(error);
-            if (stderr) return reject(new Error(stderr));
+        execSafe(commandName, args, { maxBuffer: 50 * 1024 * 1024 })
+            .then(({ stdout, stderr }) => {
+                if (stderr) return reject(new Error(stderr));
 
-            // Strip lines that are exact query echoes (bean-query sometimes echoes the query back).
-            // Only match lines that are identical to the full query — NOT pattern-based filters
-            // like 'convert(' or 'sum(', which also appear as column headers in CSV output and
-            // would incorrectly strip the header row, causing parseSingleValue to return 0.
-            const lines = stdout.split('\n');
-            const filteredLines = lines.filter(line => {
-                const trimmed = line.trim();
-                if (!trimmed) return false;
-                if (trimmed === query.trim()) {
-                    return false;
-                }
-                return true;
-            });
+                // Strip lines that are exact query echoes (bean-query sometimes echoes the query back).
+                // Only match lines that are identical to the full query — NOT pattern-based filters
+                // like 'convert(' or 'sum(', which also appear as column headers in CSV output and
+                // would incorrectly strip the header row, causing parseSingleValue to return 0.
+                const lines = stdout.split('\n');
+                const filteredLines = lines.filter(line => {
+                    const trimmed = line.trim();
+                    if (!trimmed) return false;
+                    if (trimmed === query.trim()) {
+                        return false;
+                    }
+                    return true;
+                });
 
-            const cleanOutput =
-                filteredLines.length < lines.length && filteredLines.length > 0
-                    ? filteredLines.join('\n')
-                    : stdout;
+                const cleanOutput =
+                    filteredLines.length < lines.length && filteredLines.length > 0
+                        ? filteredLines.join('\n')
+                        : stdout;
 
-            resolve(cleanOutput);
-        });
+                resolve(cleanOutput);
+            })
+            .catch(reject);
     });
 }

@@ -38,7 +38,7 @@ A comprehensive Beancount integration for [Obsidian](https://obsidian.md) that t
 - 📝 Inline BQL queries with named query directives (`bql-q:name`)
 - 💰 Complete transaction, balance, and commodity management
 - 💹 **Automated Price Fetching** — runs `bean-price` on a schedule; new prices are deduplicated and appended to `prices.beancount` automatically
-- 🔄 Direct Beancount file integration—no separate database
+- 🔄 Vault-local Beancount file integration — no separate database
 
 ---
 
@@ -89,16 +89,29 @@ BRAT will automatically check for updates and notify you of new versions. This i
 
 ## 🔒 Permissions & Privacy
 
-This plugin requires elevated system access to integrate with your Beancount setup. The following is disclosed in accordance with the [Obsidian Developer policies](https://docs.obsidian.md/Developer+policies):
+Beancount Ledger is a local-first plugin. It does not send ledger data, account names, query results, or prices to a project server.
 
-| Permission | Why it's needed |
-|---|---|
-| **Filesystem access** (`fs`) | Reads and writes your `.beancount` ledger file(s) directly. These files typically live outside the Obsidian vault, so the standard Vault API cannot be used. |
-| **Shell execution** (`child_process`) | Runs `bean-query`, `bean-check`, and `bean-price` — external CLI tools that are part of your Beancount installation. There is no Obsidian-native way to execute external processes. |
-| **Vault enumeration** | Scans vault files to locate BQL shorthand template files configured in settings. |
-| **Clipboard access** | Copies query results or transaction data to the clipboard when you use the copy action in the UI. |
+| Access | Current use | Direction |
+|---|---|---|
+| Vault file access | Reads/writes Beancount files stored inside the current Obsidian vault, including generated `prices.beancount` output. | All file I/O operations (reading, writing, backups, migration) are fully migrated to use the Obsidian Vault API. |
+| Filesystem access (`fs`) | None. Direct filesystem access via the Node.js `fs` module has been completely eliminated from the codebase. | Eliminated. Resolves community-plugin security warnings regarding direct filesystem access. |
+| Shell execution (`child_process`) | Runs local Beancount tools such as `bean-query`, `bean-check`, and `bean-price`. | Required to run the local Python packages (`beancount`, `beanquery`, `beanprice`). These CLI commands are executed safely via parameterized `spawn` calls bypassing the shell, and all user input is strictly whitelisted and sanitized to eliminate shell injection vulnerabilities. |
+| Vault enumeration | Finds configured BQL/template files in the vault. | Required for plugin features. |
+| Clipboard access | Copies query results or transaction text when the user clicks a copy action. | User-initiated only. |
 
-No data is ever sent to external servers. All operations are local to your machine.
+### Vault-only ledger requirement
+
+For compatibility with Obsidian community plugin reviews and security standards, the plugin strictly requires your main ledger and included Beancount files to live inside the current vault. If your ledger currently lives outside the vault, move it into the vault and update the plugin settings to point to the vault-local file. The plugin strictly uses vault-local file access using the Obsidian Vault API, and direct filesystem writes outside the vault are not supported.
+
+### Security and Command Execution
+
+Beancount is a Python library with no native JavaScript/WebAssembly counterpart. Therefore, to compute balances, render interactive charts, validate ledger files, and fetch prices, this plugin must interface with your local Python installation via `child_process.spawn`.
+
+To ensure maximum security and privacy:
+- **No shell parsing:** Commands are executed directly as process spawns without spawning shell instances (`shell: false`), which prevents shell-injection exploits.
+- **Strict Parameterization:** Query strings, file paths, and options are passed as raw array parameters to the executable and are never parsed as part of a shell command line.
+- **Input Sanitization:** User-configured parameters (such as price metadata sources) are whitelisted and sanitized using strict regular expressions before being processed.
+- **Zero Remote Access:** All operations execute completely locally on your machine.
 
 ---
 
