@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
 	import type { AccountNode } from '../../../models/account';
-	import { parseAmount, debounce } from '../../../utils/index';
+	import { debounce } from '../../../utils/index';
 	import type { TransactionController } from '../../../controllers/TransactionController'; // Import controller type
 
 	// --- PROPS ---
@@ -42,6 +42,12 @@
 
 	// --- REMOVED onMount data fetching ---
 
+	function parseAmountNum(str: string): number {
+		if (!str) return 0;
+		const match = str.match(/(-?[\d,]+(?:\.\d+)?)/);
+		return match ? parseFloat(match[1].replace(/,/g, '')) || 0 : 0;
+	}
+
 	// --- Sorting logic (remains local) ---
 	function sortTransactions(transactions: string[][]) {
 		const headers = ['date', 'payee', 'narration', 'amount', 'balance']; // Added balance column
@@ -53,8 +59,8 @@
 			const valA = a.length > columnIndex ? a[columnIndex] : '';
 			const valB = b.length > columnIndex ? b[columnIndex] : '';
 			if (sortColumn === 'amount') {
-				const numA = parseAmount(valA).amount;
-				const numB = parseAmount(valB).amount;
+				const numA = parseAmountNum(valA);
+				const numB = parseAmountNum(valB);
 				return sortDirection === 'asc' ? numA - numB : numB - numA;
 			}
 			const comparison = valA.toLowerCase().localeCompare(valB.toLowerCase()); return sortDirection === 'asc' ? comparison : -comparison;

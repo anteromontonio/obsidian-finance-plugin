@@ -4,7 +4,7 @@ import { writable, type Writable, get } from 'svelte/store';
 import type BeancountPlugin from '../main';
 import * as queries from '../queries/index';
 import { parse as parseCsv } from 'csv-parse/sync';
-import { extractConvertedAmount, extractNonReportingCurrencies, parseAmount } from '../utils/index';
+import { extractConvertedAmountNumber, extractNonReportingCurrencies } from '../utils/index';
 import type { ChartConfiguration } from 'chart.js/auto';
 import { Logger } from '../utils/logger';
 
@@ -119,14 +119,9 @@ export class BalanceSheetController {
 
 		// Group accounts by their hierarchy levels
 		for (const [fullAccount, rawAmount] of accounts) {
-			let convertedAmount: string;
-			let otherCurrencies: string;
-			
-			// For all valuation methods, separate operating currency from other currencies
-			convertedAmount = extractConvertedAmount(rawAmount, reportingCurrency);
-			otherCurrencies = extractNonReportingCurrencies(rawAmount, reportingCurrency);
-			
-			const amountNumber = parseFloat(convertedAmount.split(' ')[0].replace(/,/g, '')) || 0;
+			const amountNumber = extractConvertedAmountNumber(rawAmount, reportingCurrency);
+			const convertedAmount = `${amountNumber.toFixed(2)} ${reportingCurrency}`;
+			const otherCurrencies = extractNonReportingCurrencies(rawAmount, reportingCurrency);
 
 			const parts = fullAccount.split(':');
 			let currentPath = '';
@@ -274,8 +269,8 @@ export class BalanceSheetController {
 					if (row.length < 3) continue;
 					const year = parseInt(row[0].trim());
 					const monthNum = parseInt(row[1].trim());
-					const nw = parseAmount(extractConvertedAmount(row[2].trim(), reportingCurrency));
-					dataMap.set(`${year}-${monthNum.toString().padStart(2, '0')}`, nw.amount);
+					const nw = extractConvertedAmountNumber(row[2].trim(), reportingCurrency);
+					dataMap.set(`${year}-${monthNum.toString().padStart(2, '0')}`, nw);
 					if (year < minYear || (year === minYear && monthNum < minMonth)) { minYear = year; minMonth = monthNum; }
 					if (year > maxYear || (year === maxYear && monthNum > maxMonth)) { maxYear = year; maxMonth = monthNum; }
 				}
@@ -293,8 +288,8 @@ export class BalanceSheetController {
 					const dateStr = row[0].trim();
 					const d = new Date(dateStr + 'T00:00:00');
 					if (isNaN(d.getTime())) continue;
-					const nw = parseAmount(extractConvertedAmount(row[1].trim(), reportingCurrency));
-					dataMap.set(dateStr, nw.amount);
+					const nw = extractConvertedAmountNumber(row[1].trim(), reportingCurrency);
+					dataMap.set(dateStr, nw);
 					dates.push(d);
 				}
 				if (dates.length === 0) throw new Error('No weekly data.');

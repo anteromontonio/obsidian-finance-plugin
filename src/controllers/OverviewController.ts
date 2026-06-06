@@ -3,7 +3,6 @@
 import { writable, type Writable, get } from 'svelte/store';
 import type BeancountPlugin from '../main';
 import * as queries from '../queries/index';
-import { parseSingleValue } from '../utils/index'; // Import helpers
 import { Logger } from '../utils/logger';
 
 /**
@@ -84,12 +83,17 @@ export class OverviewController {
 
 			// Process KPI Data
 			Logger.log("OverviewController: Net Worth Result:", netWorthResult);
-			const netWorthNum = parseFloat(parseSingleValue(netWorthResult)) || 0;
+			const parseNumericResult = (csv: string): number => {
+				const lines = csv.split('\n').map(line => line.trim()).filter(Boolean);
+				return parseFloat(lines[1]) || 0;
+			};
+
+			const netWorthNum = parseNumericResult(netWorthResult);
 			Logger.log("OverviewController: Parsed Net Worth:", netWorthNum);
 
-			const incomeAmount = parseFloat(parseSingleValue(incomeResult)) || 0;
-			const expensesAmount = parseFloat(parseSingleValue(expensesResult)) || 0;
-			const savingsNum = parseFloat(parseSingleValue(savingsResult)) || 0;
+			const incomeAmount = parseNumericResult(incomeResult);
+			const expensesAmount = parseNumericResult(expensesResult);
+			const savingsNum = parseNumericResult(savingsResult);
 
 			const newState: Partial<OverviewState> = {
 				netWorth: `${netWorthNum.toFixed(2)} ${reportingCurrency}`,
