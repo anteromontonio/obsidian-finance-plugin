@@ -1,5 +1,5 @@
 ---
-sidebar_position: 7
+sidebar_position: 6
 ---
 
 # Commodities Tab
@@ -21,7 +21,28 @@ View all commodities declared in your ledger with:
     *   ⚪ **Manual**: No automated source configured.
     *   ❌ **Error**: Price fetcher failed.
 
-### Metadata Management
+### 🔍 Search and Filters
+
+The top control bar allows you to quickly query and filter down your list of commodities:
+*   **Search Input**: Filter commodities by typing their symbol.
+*   **Filter Toggle Buttons**:
+    *   **All**: Shows every commodity declared in the ledger.
+    *   **Has Holding**: Displays only commodities that have a positive holdings balance (plus the operating currency).
+    *   **Has Price**: Displays only commodities that have recorded price data.
+    *   **Has Both**: Displays only commodities with active holdings AND available price data.
+
+### 💰 Updating Prices & Adding Commodities
+
+*   **💰 Update Prices Button**: Instantly triggers the price fetcher (`bean-price`) to retrieve and update the latest market values for all commodities configured with automated price sources.
+*   **+ Add Commodity Button**: Open a form to declare new commodities, define their metadata, and configure automated price fetching sources (e.g., Yahoo Finance).
+
+### 💳 Operating Currency Card
+
+The operating currency defined in your ledger (e.g., `USD` or `INR`) is highlighted with a distinct accent border and displays a helper message: *"Base currency for all conversions in this ledger"*.
+
+---
+
+## ⚙️ Metadata Management
 
 ![Commodity Card](/img/CommoditiesTab-CommodityCard.png)
 ![Commodity Details Modal](/img/CommoditiesTab-CommodityDetailsModal.png)
@@ -37,5 +58,3 @@ For each commodity, you can configure:
 *   **Test Price Source**: Verify your price fetcher configuration works correctly.
 *   **Validate Format**: Ensures the price source string is valid.
 *   **Live Testing**: Runs `bean-price` to check if the source can actually fetch prices.
-
-

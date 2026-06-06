@@ -40,6 +40,6 @@ This plugin bridges the gap between powerful plain-text accounting and the conve
 *   **💸 Transaction Management**: A friendly entry modal that lets you add transactions, balance assertions, and notes in seconds without manually writing plain text.
 *   **⚙️ Smart Connection**: Automatic detection of Python, Beancount, bean-query, and bean-price, including support for Windows Subsystem for Linux (WSL).
 *   **🔍 Live BQL Queries**: Run Beancount Query Language (BQL) statements directly in your markdown notes using custom code blocks or inline queries.
-*   **🪙 Yahoo Finance Integration**: Automated market value updates and symbol lookup for stocks, mutual funds, ETFs, and cryptocurrencies.
+*   **🪙 Bean Price Integration**: Automated market value updates for stocks, mutual funds, ETFs, and cryptocurrencies.
 *   **📁 Structured Layout**: Automatically split large journals into clean, organized files (e.g., separating accounts, prices, and transactions by year).
 *   **📝 Pro-grade File Editor**: A complete `.beancount` editor view featuring live syntax highlighting, diagnostics/linting, smart auto-indentation, and autocompletion.

@@ -42,7 +42,6 @@ const sidebars: SidebarsConfig = {
         'dashboards/overview',
         'dashboards/transactions',
         'dashboards/journal',
-        'dashboards/balance-sheet',
         'dashboards/accounts-balances',
         'dashboards/income-statement',
         'dashboards/commodities',

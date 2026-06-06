@@ -14,34 +14,6 @@ A comprehensive Beancount integration for [Obsidian](https://obsidian.md) that t
 
 ---
 
-## ✨ Key Features
-
-![Unified Dashboard](docs/assets/overview.png)
-<p align="center"><em>📊 Unified Dashboard - Net worth tracking, balance sheets, and interactive charts in one view</em></p>
-
-<details>
-<summary><strong>🔍 Live BQL Queries</strong> - Click to see</summary>
-<br/>
-<img src="docs/assets/bql-query.png" alt="BQL Queries"/>
-<p align="center"><em>Embed dynamic financial data directly in your notes using named query directives</em></p>
-</details>
-
-<details>
-<summary><strong>⚡ Smart Transaction Entry</strong> - Click to see</summary>
-<br/>
-<img src="docs/assets/adding-transaction.png" alt="Transactions"/>
-<p align="center"><em>Quick transaction creation with account autocomplete and validation</em></p>
-</details>
-
-**Highlights:**
-- 📈 Real-time financial metrics and trend visualization
-- 📝 Inline BQL queries with named query directives (`bql-q:name`)
-- 💰 Complete transaction, balance, and commodity management
-- 💹 **Automated Price Fetching** — runs `bean-price` on a schedule; new prices are deduplicated and appended to `prices.beancount` automatically
-- 🔄 Vault-local Beancount file integration — no separate database
-
----
-
 ## 🔧 Requirements
 
 This plugin integrates with your existing Beancount setup:
