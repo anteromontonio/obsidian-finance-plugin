@@ -113,9 +113,6 @@
 					<span class="symbol-text"
 						>{commodity?.symbol || `UNKNOWN_${index}`}</span
 					>
-					{#if commodity?.isOperatingCurrency}
-						<span class="operating-badge" title="Operating currency for this ledger">Operating</span>
-					{/if}
 				</div>
 			</div>
 
@@ -506,6 +503,10 @@
 	}
 	.commodity-card-wrapper.is-operating::after {
 		opacity: 1;
+	}
+
+	.commodity-card-wrapper.is-operating .value-container {
+		justify-content: center;
 	}
 
 	.operating-badge {
