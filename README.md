@@ -6,7 +6,7 @@
 
 -------------------------------------------------
 
-![Plugin Logo](docs/assets/Primary_horizontal_logo.png)
+![Plugin Logo](docs-site/static/img/Primary_horizontal_logo.png)
 
 A comprehensive Beancount integration for [Obsidian](https://obsidian.md) that transforms your vault into a powerful plain-text accounting dashboard.
 
