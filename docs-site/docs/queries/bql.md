@@ -4,6 +4,8 @@ sidebar_position: 1
 
 # BQL Queries
 
+![BQL Queries and Inline Results](/img/Query.png)
+
 The plugin brings the full power of **Beancount Query Language (BQL)** directly into Obsidian. You can execute SQL-like queries against your financial data and display the results in your notes.
 
 The plugin supports two distinct modes:

@@ -4,6 +4,8 @@ sidebar_position: 2
 
 # Transactions Tab
 
+![Transactions Tab](/img/TransactionsTab.png)
+
 The **Transactions Tab** allows you to explore and search through your entire posting history with interactive, dynamic filtering capabilities.
 
 ---

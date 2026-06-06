@@ -11,22 +11,19 @@ The **Overview Tab** is the landing page of the Unified Dashboard. It answers th
 ## 📊 Visual Analytics
 
 ### Key Performance Indicators (KPIs)
+
+![Key Performance Indicators](/img/Overview-KPI.png)
+
 At-a-glance metrics displayed at the top:
 *   **Net Worth**: Your total wealth (Assets + Liabilities) in your Operating Currency.
 *   **Monthly Income**: Total income accrued this calendar month.
 *   **Monthly Expenses**: Total expenses incurred this calendar month.
 *   **Savings Rate**: Your savings efficiency percentage: `Savings / Income × 100`.
-
-### Net Worth Chart
-*   **Chart Type**: Interactive line chart showing your financial trajectory.
-*   **Time Period**: Historical net worth from your earliest transaction to today.
-*   **Data Source**: Cumulative balance of all Assets and Liabilities accounts per month or week.
-*   **Interactivity**: Hover over points to see exact values with dates.
-*   **Requirements**: Needs at least 2 data points to render.
-
 ---
 
 ## 🎯 Financial Indicators
+
+![Financial Indicators](/img/Overview-Indicators.png)
 
 Below the KPI cards, the **Financial Indicators** section lets you define and track Budgets and Savings Targets backed by live BQL data.
 
@@ -42,6 +39,9 @@ Each budget card shows:
 **Rollover budgets** accumulate unspent amounts across cycles. For example, if you budget $120/month and only spend $110, the extra $10 rolls forward and the next month's available budget becomes $130.
 
 #### Adding a Budget
+
+![Add Budget Modal](/img/Overview-AddBudgetModal.png)
+
 Click **+ Add Budget** and fill in:
 
 | Field | Description |
@@ -53,6 +53,8 @@ Click **+ Add Budget** and fill in:
 | Currency | Tracking currency (defaults to Operating Currency) |
 | Enable Rollover | Roll unspent budget into next cycle |
 | Start Date | When the budget begins (only shown when rollover is off) |
+| Tag | Optional tag to filter transactions (e.g. `dining` or `vacation`) |
+| Tag Mode | Match strategy: `has` (must contain tag) or `not_has` (must exclude tag) |
 
 This writes an `event "Indicator" "Budget"` directive to `events.beancount`:
 ```beancount
@@ -63,6 +65,8 @@ This writes an `event "Indicator" "Budget"` directive to `events.beancount`:
   target: 500.00
   currency: "USD"
   isRollover: 1
+  tag: "groceries"
+  tagMode: "has"
 ```
 
 ### Targets
@@ -73,6 +77,6 @@ Each target card shows:
 *   **Stats row**: Goal · Saved so far · Still needed.
 
 #### Adding a Target
-Click **+ Add Target** and fill in the same fields as a budget, but select an `Assets:*` account. This writes an `event "Indicator" "Target"` directive to `events.beancount`.
+Click **+ Add Target** and fill in the same fields as a budget (including optional Tag filters), but select an `Assets:*` account. This writes an `event "Indicator" "Target"` directive to `events.beancount`.
 
 

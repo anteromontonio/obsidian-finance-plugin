@@ -141,11 +141,11 @@ export function getHistoricalIncomeDataQuery(interval: 'month' | 'week' = 'month
 }
 // --- List Budget/Target Quries ---	
 export function getBudgetListQuery(): string {
-	return `SELECT date AS _startDate, meta('name') AS _name, meta('accountQuery') AS _accountString, meta('cycle') AS _period, bool(meta('isRollover')) AS _isRollOver, meta('target') AS _budgetAmount, meta('currency') AS _currency, meta('tag') AS _tag, meta('tagMode') AS _tagMode FROM events WHERE type='Indicator' AND description='Budget'`;
+	return `SELECT date AS _startDate, meta('name') AS _name, meta('accountQuery') AS _accountString, meta('cycle') AS _period, bool(meta('isRollover')) AS _isRollOver, meta('target') AS _budgetAmount, meta('currency') AS _currency, meta('tag') AS _tag, meta('tagMode') AS _tagMode, meta('filename') AS _filename, meta('lineno') AS _lineno FROM events WHERE type='Indicator' AND description='Budget'`;
 }
 
 export function getTargetListQuery(): string {
-	return `SELECT date AS _startDate, meta('name') AS _name, meta('accountQuery') AS _accountString, meta('cycle') AS _period, bool(meta('isRollover')) AS _isRollOver, meta('target') AS _targetAmount, meta('currency') AS _currency, meta('tag') AS _tag, meta('tagMode') AS _tagMode FROM events WHERE type='Indicator' AND description='Target'`;
+	return `SELECT date AS _startDate, meta('name') AS _name, meta('accountQuery') AS _accountString, meta('cycle') AS _period, bool(meta('isRollover')) AS _isRollOver, meta('target') AS _targetAmount, meta('currency') AS _currency, meta('tag') AS _tag, meta('tagMode') AS _tagMode, meta('filename') AS _filename, meta('lineno') AS _lineno FROM events WHERE type='Indicator' AND description='Target'`;
 }
 
 

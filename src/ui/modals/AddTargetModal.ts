@@ -3,7 +3,7 @@
 import { App, Modal, Notice } from 'obsidian';
 import type BeancountPlugin from '../../main';
 import AddTargetModalComponent from './AddTargetModal.svelte';
-import { getOpenAccounts, runQuery, createIndicatorDirective } from '../../utils';
+import { getOpenAccounts, runQuery, createIndicatorDirective, updateIndicatorDirective } from '../../utils';
 import { getAllCurrenciesQuery } from '../../queries';
 import { parse as parseCsv } from 'csv-parse/sync';
 import { Logger } from '../../utils/logger';
@@ -11,11 +11,13 @@ import { Logger } from '../../utils/logger';
 export class AddTargetModal extends Modal {
     plugin: BeancountPlugin;
     private component: any;
+    private editingIndicator?: any;
     private onSuccess?: () => void;
 
-    constructor(app: App, plugin: BeancountPlugin, onSuccess?: () => void) {
+    constructor(app: App, plugin: BeancountPlugin, editingIndicator?: any, onSuccess?: () => void) {
         super(app);
         this.plugin = plugin;
+        this.editingIndicator = editingIndicator;
         this.onSuccess = onSuccess;
     }
 
@@ -24,7 +26,7 @@ export class AddTargetModal extends Modal {
         contentEl.empty();
         this.modalEl.style.maxWidth = '560px';
         this.modalEl.style.width = '90vw';
-        this.setTitle('Add Target');
+        this.setTitle(this.editingIndicator ? 'Edit Target' : 'Add Target');
 
         const operatingCurrency = this.plugin.settings.operatingCurrency || 'USD';
         // Fetch accounts and currencies from the ledger, fall back silently on error
@@ -53,6 +55,7 @@ export class AddTargetModal extends Modal {
                 accounts,
                 currencies,
                 defaultCurrency: operatingCurrency,
+                editingIndicator: this.editingIndicator,
             },
         });
 
@@ -61,28 +64,44 @@ export class AddTargetModal extends Modal {
             Logger.log('[AddTargetModal] save event', e.detail);
 
             try {
-                const result = await createIndicatorDirective(this.plugin, {
-                    type: 'Target',
-                    name,
-                    accountQuery,
-                    cycle,
-                    target,
-                    currency,
-                    isRollover,
-                    startDate,
-                    tag,
-                    tagMode,
-                });
+                let result;
+                if (this.editingIndicator) {
+                    result = await updateIndicatorDirective(this.plugin, this.editingIndicator.filename, this.editingIndicator.lineno, {
+                        type: 'Target',
+                        name,
+                        accountQuery,
+                        cycle,
+                        target,
+                        currency,
+                        isRollover,
+                        startDate,
+                        tag,
+                        tagMode,
+                    });
+                } else {
+                    result = await createIndicatorDirective(this.plugin, {
+                        type: 'Target',
+                        name,
+                        accountQuery,
+                        cycle,
+                        target,
+                        currency,
+                        isRollover,
+                        startDate,
+                        tag,
+                        tagMode,
+                    });
+                }
 
                 if (result.success) {
-                    new Notice(`Target "${name}" created successfully`);
+                    new Notice(this.editingIndicator ? `Target "${name}" updated successfully` : `Target "${name}" created successfully`);
                     this.close();
                     if (this.onSuccess) this.onSuccess();
                 } else {
-                    new Notice(`Failed to create target: ${result.error || 'Unknown error'}`);
+                    new Notice(`Failed to save target: ${result.error || 'Unknown error'}`);
                 }
             } catch (error) {
-                Logger.error('[AddTargetModal] Error creating target:', error);
+                Logger.error('[AddTargetModal] Error saving target:', error);
                 new Notice(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
         });

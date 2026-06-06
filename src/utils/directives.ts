@@ -890,7 +890,7 @@ export interface IndicatorDirectiveParams {
     type: 'Budget' | 'Target';
     name: string;
     accountQuery: string;
-    cycle: 'Monthly' | 'Weekly';
+    cycle: 'Monthly' | 'Weekly' | 'Quarterly' | 'Yearly' | string;
     target: number;
     currency: string;
     isRollover: boolean;
@@ -947,6 +947,115 @@ export async function createIndicatorDirective(
         return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }
+
+/**
+ * Updates an existing event "Indicator" directive in events.beancount.
+ */
+export async function updateIndicatorDirective(
+    plugin: BeancountPlugin,
+    filename: string,
+    lineno: number,
+    params: IndicatorDirectiveParams,
+    createBackup: boolean = true
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const normalizedPath = convertWslPathToWindows(filename);
+        await createBackupFile(plugin, normalizedPath, createBackup, 'updateIndicatorDirective');
+
+        const _rawContent = await readFileContent(plugin, normalizedPath);
+        const newline = getNewlineCharacter(_rawContent);
+        const lines = _rawContent.split(/\r?\n/);
+
+        if (isNaN(lineno) || lineno < 1 || lineno > lines.length)
+            return { success: false, error: `Invalid line number ${lineno}` };
+
+        const lineIndex = lineno - 1;
+        const startLine = lines[lineIndex];
+
+        if (!startLine.includes('event') || !startLine.includes('"Indicator"'))
+            return { success: false, error: `Line ${lineno} does not appear to be an Indicator event directive` };
+
+        // Find the extent: event line + all following indented metadata lines
+        let endIndex = lineIndex + 1;
+        while (endIndex < lines.length && (lines[endIndex].startsWith('  ') || lines[endIndex].startsWith('\t'))) {
+            endIndex++;
+        }
+
+        // Build the new indicator directive text
+        const newDirectiveLines = [
+            `${params.startDate} event "Indicator" "${params.type}"`,
+            `\taccountQuery: "${params.accountQuery}"`,
+            `\tname: "${params.name}"`,
+            `\tcycle: "${params.cycle}"`,
+            `\tisRollover: ${params.isRollover ? 1 : 0}`,
+            `\ttarget: ${params.target.toFixed(2)}`,
+            `\tcurrency: "${params.currency}"`,
+        ];
+        if (params.tag && params.tag.trim()) {
+            newDirectiveLines.push(`\ttag: "${params.tag.trim()}"`);
+            newDirectiveLines.push(`\ttagMode: "${params.tagMode || 'has'}"`);
+        }
+
+        lines.splice(lineIndex, endIndex - lineIndex, ...newDirectiveLines);
+        await atomicFileWrite(plugin, normalizedPath, lines.join(newline));
+
+        Logger.log(`[updateIndicatorDirective] Updated indicator directive at line ${lineno}`);
+        return { success: true };
+    } catch (error) {
+        Logger.error('[updateIndicatorDirective] Error:', error);
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+}
+
+/**
+ * Deletes an existing event "Indicator" directive in events.beancount.
+ */
+export async function deleteIndicatorDirective(
+    plugin: BeancountPlugin,
+    filename: string,
+    lineno: number,
+    createBackup: boolean = true
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const normalizedPath = convertWslPathToWindows(filename);
+        await createBackupFile(plugin, normalizedPath, createBackup, 'deleteIndicatorDirective');
+
+        const _rawContent = await readFileContent(plugin, normalizedPath);
+        const newline = getNewlineCharacter(_rawContent);
+        const lines = _rawContent.split(/\r?\n/);
+
+        if (isNaN(lineno) || lineno < 1 || lineno > lines.length)
+            return { success: false, error: `Invalid line number ${lineno}` };
+
+        const lineIndex = lineno - 1;
+        const startLine = lines[lineIndex];
+
+        if (!startLine.includes('event') || !startLine.includes('"Indicator"'))
+            return { success: false, error: `Line ${lineno} does not appear to be an Indicator event directive` };
+
+        // Find the extent: event line + all following indented metadata lines
+        let endIndex = lineIndex + 1;
+        while (endIndex < lines.length && (lines[endIndex].startsWith('  ') || lines[endIndex].startsWith('\t'))) {
+            endIndex++;
+        }
+
+        // Remove blank line before if present
+        let startIndex = lineIndex;
+        if (startIndex > 0 && lines[startIndex - 1].trim() === '') {
+            startIndex--;
+        }
+
+        lines.splice(startIndex, endIndex - startIndex);
+        await atomicFileWrite(plugin, normalizedPath, lines.join(newline));
+
+        Logger.log(`[deleteIndicatorDirective] Deleted indicator directive at line ${lineno}`);
+        return { success: true };
+    } catch (error) {
+        Logger.error('[deleteIndicatorDirective] Error:', error);
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+}
+
 
 /**
  * Read all query directives from queries.beancount.

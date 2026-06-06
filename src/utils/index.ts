@@ -51,6 +51,8 @@ export {
 	createQueryDirective,
 	getQueryDirectives,
 	createIndicatorDirective,
+	updateIndicatorDirective,
+	deleteIndicatorDirective,
 } from './directives';
 
 // Re-export structuredLayout helpers that some callers pull from utils/index

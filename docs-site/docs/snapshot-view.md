@@ -6,6 +6,8 @@ sidebar_position: 5
 
 The **Snapshot View** is a persistent sidebar widget that gives you at-a-glance financial awareness while you work in your notes.
 
+![Snapshot View](/img/Snapshot.png)
+
 ---
 
 ## 👁 Features

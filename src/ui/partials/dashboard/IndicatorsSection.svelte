@@ -2,12 +2,15 @@
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { parse as parseCsv } from 'csv-parse/sync';
-	import { runQuery } from '../../../utils';
+	import { runQuery, deleteIndicatorDirective } from '../../../utils';
 	// `getIndicatorStatusQuery`  → current-cycle expense (single aggregated row).
 	// `getIndicatorBalanceQuery` → cumulative balance since the indicator's startDate.
 	// Both are needed for rollover indicators so we can recompute `remaining`
 	// client-side: `remaining = elapsedCycles * targetAmount - balance`.
 	import { getBudgetListQuery, getTargetListQuery, getIndicatorStatusQuery, getIndicatorBalanceQuery } from '../../../queries';
+	import { AddBudgetModal } from '../../modals/AddBudgetModal';
+	import { AddTargetModal } from '../../modals/AddTargetModal';
+	import { Notice } from 'obsidian';
 
 	export let plugin: any = null;
 
@@ -27,6 +30,8 @@
 		remaining: number;
 		loading: boolean;
 		error: string | null;
+		filename?: string;
+		lineno?: number;
 	}
 
 	type IndicatorView = 'Budgets' | 'Targets';
@@ -191,6 +196,8 @@
 			remaining: 0,
 			loading: true,
 			error: null,
+			filename: col(r, '_filename') || '',
+			lineno: parseNumericValue(col(r, '_lineno')) || 0,
 		}));
 		budgets = items;
 		await Promise.all(items.map((_: any, i: number) => loadBudgetStatus(i)));
@@ -286,6 +293,8 @@
 			remaining: 0,
 			loading: true,
 			error: null,
+			filename: col(r, '_filename') || '',
+			lineno: parseNumericValue(col(r, '_lineno')) || 0,
 		}));
 		targets = items;
 		await Promise.all(items.map((_: any, i: number) => loadTargetStatus(i)));
@@ -358,6 +367,38 @@
 	function setView(view: IndicatorView) { activeView = view; }
 	function handleAddBudget() { dispatch('add-budget'); }
 	function handleAddTarget() { dispatch('add-target'); }
+
+	function handleEdit(item: IndicatorItem) {
+		if (!plugin) return;
+		if (activeView === 'Budgets') {
+			new AddBudgetModal(plugin.app, plugin, item, () => loadAll()).open();
+		} else {
+			new AddTargetModal(plugin.app, plugin, item, () => loadAll()).open();
+		}
+	}
+
+	async function handleDelete(item: IndicatorItem) {
+		if (!plugin) return;
+		if (!item.filename || !item.lineno) {
+			new Notice('Cannot find indicator location in file');
+			return;
+		}
+
+		const confirmed = window.confirm(`Are you sure you want to delete the indicator "${item.name}"?`);
+		if (!confirmed) return;
+
+		try {
+			const result = await deleteIndicatorDirective(plugin, item.filename, item.lineno);
+			if (result.success) {
+				new Notice(`Indicator "${item.name}" deleted successfully`);
+				await loadAll();
+			} else {
+				new Notice(`Failed to delete indicator: ${result.error || 'Unknown error'}`);
+			}
+		} catch (error) {
+			new Notice(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+		}
+	}
 </script>
 
 <div class="indicators-section">
@@ -422,7 +463,13 @@
 						<!-- Top row: name / meta left — remaining right -->
 						<div class="card-top">
 							<div class="card-identity">
-								<span class="card-name">{item.name}</span>
+								<div class="card-title-row">
+									<span class="card-name">{item.name}</span>
+									<div class="card-actions">
+										<button class="btn-icon edit-btn" on:click={() => handleEdit(item)} title="Edit">✏️</button>
+										<button class="btn-icon delete-btn" on:click={() => handleDelete(item)} title="Delete">❌</button>
+									</div>
+								</div>
 								<div class="card-meta">
 									<span class="meta-chip">
 										<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
@@ -875,6 +922,55 @@
 
 	.card-error {
 		font-size: var(--font-ui-small);
+		color: var(--text-error);
+	}
+
+	/* ── Edit/Delete Actions ───────────────────────────── */
+	.card-title-row {
+		display: flex;
+		align-items: center;
+		gap: var(--size-4-3);
+	}
+
+	.card-actions {
+		display: inline-flex;
+		gap: 6px;
+		opacity: 0;
+		transition: opacity 0.15s ease-in-out;
+	}
+
+	.indicator-card:hover .card-actions {
+		opacity: 0.8;
+	}
+
+	.card-actions:hover {
+		opacity: 1 !important;
+	}
+
+	.btn-icon {
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 2px 6px;
+		font-size: 13px;
+		opacity: 0.7;
+		transition: opacity 0.2s, background-color 0.2s;
+		border-radius: 4px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.btn-icon:hover {
+		opacity: 1;
+		background: var(--background-modifier-hover);
+	}
+
+	.edit-btn:hover {
+		color: var(--text-accent);
+	}
+
+	.delete-btn:hover {
 		color: var(--text-error);
 	}
 </style>

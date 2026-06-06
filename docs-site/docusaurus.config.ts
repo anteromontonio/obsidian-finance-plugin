@@ -38,6 +38,7 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           editUrl:
             'https://github.com/mkshp-dev/obsidian-finance-plugin/tree/dev/docs-site/',
+          routeBasePath: '/',
         },
         blog: false,
         theme: {
@@ -82,15 +83,15 @@ const config: Config = {
           items: [
             {
               label: 'Getting Started',
-              to: '/docs/intro',
+              to: '/',
             },
             {
               label: 'Installation',
-              to: '/docs/getting-started/installation',
+              to: '/getting-started/installation',
             },
             {
               label: 'Dashboard',
-              to: '/docs/dashboards/overview',
+              to: '/dashboards/overview',
             },
           ],
         },
@@ -121,7 +122,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Mukund Shelake. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} mkshp. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,

@@ -4,6 +4,8 @@ sidebar_position: 3
 
 # Journal Tab
 
+![Journal Tab](/img/JournalTab.png)
+
 The **Journal Tab** provides a comprehensive chronological log of every directive inside your ledger—similar to the interface offered by Fava.
 
 ---
