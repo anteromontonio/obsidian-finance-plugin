@@ -8,6 +8,7 @@
 	export let accounts: string[] = [];
 	export let currencies: string[] = ['INR', 'USD', 'EUR', 'GBP'];
 	export let defaultCurrency: string = 'USD';
+	export let editingIndicator: any = null;
 
 	// Form state
 	let name: string = '';
@@ -33,7 +34,19 @@
 	let showDropdown = false;
 
 	onMount(() => {
-		currency = defaultCurrency;
+		if (editingIndicator) {
+			name = editingIndicator.name || '';
+			accountQuery = editingIndicator.accountString || '';
+			cycle = editingIndicator.period || 'Monthly';
+			target = String(editingIndicator.targetAmount || '');
+			currency = editingIndicator.currency || defaultCurrency;
+			isRollover = editingIndicator.isRollOver || false;
+			startDate = editingIndicator.startDate || new Date().toISOString().split('T')[0];
+			tag = editingIndicator.tag || '';
+			tagMode = editingIndicator.tagMode || 'has';
+		} else {
+			currency = defaultCurrency;
+		}
 	});
 
 	function validate(): boolean {
@@ -84,7 +97,7 @@
 </script>
 
 <div class="indicator-modal">
-	<h2>Add Target</h2>
+	<h2>{editingIndicator ? 'Edit Target' : 'Add Target'}</h2>
 
 	<div class="form-group">
 		<label for="target-name">Name <span class="required">*</span></label>
@@ -185,7 +198,7 @@
 
 	<div class="modal-actions">
 		<button class="cancel-btn" on:click={handleCancel}>Cancel</button>
-		<button class="save-btn" on:click={handleSave}>Save Target</button>
+		<button class="save-btn" on:click={handleSave}>{editingIndicator ? 'Save Changes' : 'Save Target'}</button>
 	</div>
 </div>
 
