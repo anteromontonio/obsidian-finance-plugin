@@ -4,6 +4,8 @@ sidebar_position: 4
 
 # Balance Sheet Tab
 
+![Balance Sheet View](/img/AccountsTab-BalanceSheet.png)
+
 The **Balance Sheet Tab** provides a snapshot of your financial position, showing what you own (Assets), what you owe (Liabilities), and the starting book value (Equity) at any point in time.
 
 ---
@@ -17,6 +19,10 @@ You can toggle the **Valuation** dropdown to view balances in three formats:
 3.  **Units**: Displays raw counts (e.g. `50 AAPL`, `1.5 BTC`, `1000 USD`) using `units()`.
 
 ### Interactive Charts
+
+![Net Worth Trend](/img/AccountsTab-NetWorthTrend.png)
+![Asset Allocation Chart](/img/AccountsTab-PieChart.png)
+
 The top portion of the tab provides:
 *   **Net Worth Trend**: Interactive chart showing your historical net worth.
 *   **Balances (Sunburst Chart)**: Visual sunburst diagram of either Assets, Liabilities, or Equity, allowing you to click and drill down into sub-accounts.

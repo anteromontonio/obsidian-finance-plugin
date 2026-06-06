@@ -11,6 +11,9 @@ The **Overview Tab** is the landing page of the Unified Dashboard. It answers th
 ## 📊 Visual Analytics
 
 ### Key Performance Indicators (KPIs)
+
+![Key Performance Indicators](/img/Overview-KPI.png)
+
 At-a-glance metrics displayed at the top:
 *   **Net Worth**: Your total wealth (Assets + Liabilities) in your Operating Currency.
 *   **Monthly Income**: Total income accrued this calendar month.
@@ -28,6 +31,8 @@ At-a-glance metrics displayed at the top:
 
 ## 🎯 Financial Indicators
 
+![Financial Indicators](/img/Overview-Indicators.png)
+
 Below the KPI cards, the **Financial Indicators** section lets you define and track Budgets and Savings Targets backed by live BQL data.
 
 ### Budgets
@@ -42,6 +47,9 @@ Each budget card shows:
 **Rollover budgets** accumulate unspent amounts across cycles. For example, if you budget $120/month and only spend $110, the extra $10 rolls forward and the next month's available budget becomes $130.
 
 #### Adding a Budget
+
+![Add Budget Modal](/img/Overview-AddBudgetModal.png)
+
 Click **+ Add Budget** and fill in:
 
 | Field | Description |

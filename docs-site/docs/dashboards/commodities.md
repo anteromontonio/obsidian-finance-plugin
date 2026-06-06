@@ -4,6 +4,8 @@ sidebar_position: 7
 
 # Commodities Tab
 
+![Commodities Tab](/img/CommoditiesTab.png)
+
 The **Commodities Tab** manages all currencies and assets used in your Beancount ledger—from stocks and crypto to forex and commodities.
 
 ---
@@ -20,6 +22,10 @@ View all commodities declared in your ledger with:
     *   ❌ **Error**: Price fetcher failed.
 
 ### Metadata Management
+
+![Commodity Card](/img/CommoditiesTab-CommodityCard.png)
+![Commodity Details Modal](/img/CommoditiesTab-CommodityDetailsModal.png)
+
 For each commodity, you can configure:
 *   **Commodity Details**: Access via click to open detailed view modal.
 *   **Price Source**: The fetch source string (e.g., `yahoo/AAPL` for Yahoo Finance).

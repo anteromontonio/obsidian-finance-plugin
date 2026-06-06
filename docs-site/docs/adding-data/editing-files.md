@@ -30,6 +30,11 @@ The editor utilizes a custom **Lezer grammar** compiled specifically for Beancou
 
 ## ⚡ Context-Aware Autocomplete
 
+<video width="100%" autoplay loop muted playsinline controls>
+  <source src="/img/File-AddingTransaction.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
+
 The autocompletion system is active in `.beancount` files, offering smart suggestions based on where your cursor is positioned. Suggestions are cached for 30 seconds to ensure typing remains fluid.
 
 *   **Account Name Autocomplete**: Type any account prefix (e.g. `Assets:`, `Expenses:Food`) in a posting line to trigger a popup listing your active open accounts. Suggestions are sorted by usage frequency. Suppressed in comments and strings.
@@ -72,6 +77,8 @@ Managing whitespace is crucial in plain-text accounting. The editor handles this
 ---
 
 ## 🔍 Inline Linting & Diagnostics
+
+![Inline Linting Diagnostics](/img/File-Error.png)
 
 You don't need to switch to a terminal or run a separate `bean-check` tool to check for syntax errors. The plugin automatically runs background diagnostics using your `bean-query` engine:
 

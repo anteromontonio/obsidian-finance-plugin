@@ -4,11 +4,16 @@ sidebar_position: 6
 
 # Income Statement Tab
 
+![Income Statement](/img/Income.png)
+
 The **Income Statement Tab** (also known as a Profit and Loss statement) summarizes your revenues and expenses over the lifetime of your ledger, showing your net profit or loss.
 
 ---
 
 ## 📈 Income vs. Expenses
+
+![Net Income Trend](/img/IncomeTab-NetIncomeTrend.png)
+![Expenses Pie Chart](/img/IncomeTab-ExpensesPieChart.png)
 
 The statement is divided into two primary sections:
 
