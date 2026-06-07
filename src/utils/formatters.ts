@@ -38,38 +38,6 @@ export function extractNonReportingCurrencies(inventoryString: string, operating
     return matches.join('\n');
 }
 
-// --- CURRENCY FORMATTER ---
-
-/**
- * Formats a number as a currency string (e.g. "1,234.56 USD").
- */
-export function formatCurrency(amount: number, currency: string): string {
-    if (isNaN(amount)) return `0.00 ${currency}`;
-    return `${amount.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 4,
-    })} ${currency}`;
-}
-
-// --- DATE HELPER ---
-
-/**
- * Gets the ISO start/end date strings for the current calendar month.
- */
-export function getCurrentMonthRange(): { start: string; end: string } {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-    const formatDate = (date: Date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
-
-    return { start: formatDate(startOfMonth), end: formatDate(endOfMonth) };
-}
 
 // --- METADATA PARSER ---
 

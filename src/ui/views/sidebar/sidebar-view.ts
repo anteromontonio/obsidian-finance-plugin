@@ -2,7 +2,7 @@
 import { ItemView, WorkspaceLeaf, Notice, MarkdownRenderer, TFile } from 'obsidian';
 import type BeancountPlugin from '../../../main';
 import BeancountViewComponent from './SidebarView.svelte'; // Assuming this is the correct Svelte component for the sidebar
-import { runQuery, convertWslPathToWindows, execSafe } from '../../../utils/index';
+import { runQuery, execSafe } from '../../../utils/index';
 import * as queries from '../../../queries/index';
 import { parse as parseCsv } from 'csv-parse/sync';
 import { Logger } from '../../../utils/logger';

@@ -19,12 +19,10 @@ export { convertWindowsPathToWsl, convertWslPathToWindows, atomicFileWrite, crea
 export {
 	extractConvertedAmountNumber,
 	extractNonReportingCurrencies,
-	formatCurrency,
-	getCurrentMonthRange,
 	parseMetadataString,
 	debounce,
 } from './formatters';
-export { parseCommoditiesListCSV, parseCommoditiesPriceDataCSV, parseCommodityDetailsCSV, parseCommoditiesHoldingsCSV, parseCombinedCommodityDataCSV } from './csvParsers';
+export { parseCommoditiesListCSV, parseCommoditiesPriceDataCSV, parseCommodityDetailsCSV, parseCombinedCommodityDataCSV } from './csvParsers';
 export { buildAccountTree, getOpenAccounts, getPayees, getTags, getCommodities } from './accounts';
 export { getTransactionEntries, getBalanceEntries, getNoteEntries } from './journal';
 export {
