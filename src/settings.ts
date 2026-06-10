@@ -8,7 +8,11 @@ import type { LintMode } from './lang/beancount-lint';
 
 /**
  * Interface defining the plugin settings.
+
+
  */
+export type FileOrganization = "yearly" | "monthly";
+
 export interface BeancountPluginSettings {
     /** Path to the main Beancount file. */
     beancountFilePath: string;
@@ -37,6 +41,8 @@ export interface BeancountPluginSettings {
     structuredFolderName: string;
     /** Computed absolute path to the structured folder (set automatically). */
     structuredFolderPath: string;
+    /** How to organize transaction files. */
+    fileOrganization: FileOrganization;
     // Price Fetching Settings
     /** Whether to enable automatic price fetching on a schedule. */
     autoPriceFetch: boolean;
@@ -73,6 +79,7 @@ export const DEFAULT_SETTINGS: BeancountPluginSettings = {
     // Structured Layout Settings
     structuredFolderName: 'Finances',
     structuredFolderPath: '',
+    fileOrganization: 'yearly',
     // Price Fetching Settings
     autoPriceFetch: false,
     priceFetchIntervalHours: 24,
@@ -446,6 +453,19 @@ export class BeancountSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
+        // File organization setting
+        new Setting(containerEl)
+            .setName('Transaction File Organization')
+            .setDesc('How transactions should be split into multiple files inside the transactions/ folder.')
+            .addDropdown(dropdown => dropdown
+                .addOption('yearly', 'Yearly (e.g. transactions/2025.beancount)')
+                .addOption('monthly', 'Monthly (e.g. transactions/2025/2025-01.beancount)')
+                .setValue(this.plugin.settings.fileOrganization)
+                .onChange(async (value) => {
+                    this.plugin.settings.fileOrganization = value as FileOrganization;
+                    await this.plugin.saveSettings();
+                }));
+
         // Display file structure info
         const infoDiv = containerEl.createDiv({ cls: 'structured-layout-info' });
         infoDiv.style.padding = '10px';
@@ -467,7 +487,7 @@ export class BeancountSettingTab extends PluginSettingTab {
             '📄 balances.beancount - Balance assertions',
             '📄 notes.beancount - Note directives',
             '📄 events.beancount - Event directives',
-            '📁 transactions/ - Folder with year-based transaction files (e.g., 2024.beancount, 2025.beancount)'
+            '📁 transactions/ - Folder with transaction files organized by year or month'
         ];
 
         files.forEach(file => {

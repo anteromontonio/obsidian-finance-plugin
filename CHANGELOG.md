@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## In-progress
 
+- **File Organization: Support monthly transaction files** — Added setting to organize transactions by month (`transactions/YYYY/YYYY-MM.beancount`) instead of just yearly. Updates the onboarding wizard and automatic file management tools to support both formats dynamically. Closes [#210](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/210).
+
 - **Financial Indicators: Add edit and delete support for budgets and targets** — Added UI action buttons to edit and delete indicators, backed by new atomic update/delete directives helpers and event line location querying. Closes [#207](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/207).
 
 ## [2.0.0] - 2026-06-03
