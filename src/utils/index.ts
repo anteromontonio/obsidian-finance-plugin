@@ -52,7 +52,7 @@ export {
 } from './directives';
 
 // Re-export structuredLayout helpers that some callers pull from utils/index
-export { getTargetFile, getMainLedgerPath, ensureYearFile } from './structuredLayout';
+export { getTargetFile, getMainLedgerPath, ensureTransactionFile } from './structuredLayout';
 export type { OperationType } from './structuredLayout';
 
 // Re-export validation utilities (still implemented here until moved)

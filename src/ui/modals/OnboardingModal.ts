@@ -35,6 +35,7 @@ export class OnboardingModal extends Modal {
     private dataChoice: DataChoice | null = null;
     private existingFilePath: string = '';
     private structuredFolderName: string = 'Finances';
+    private fileOrganization: 'yearly' | 'monthly' = 'yearly';
     private operatingCurrency: string = 'USD'; // Default operating currency
 
     constructor(app: App, plugin: BeancountPlugin) {
@@ -561,6 +562,18 @@ export class OnboardingModal extends Modal {
                     this.structuredFolderName = value || 'Finances';
                 }));
 
+        // File organization setting
+        new Setting(folderSection)
+            .setName('Transaction File Organization')
+            .setDesc('How transactions should be split into multiple files inside the transactions/ folder.')
+            .addDropdown(dropdown => dropdown
+                .addOption('yearly', 'Yearly (e.g. transactions/2025.beancount)')
+                .addOption('monthly', 'Monthly (e.g. transactions/2025/2025-01.beancount)')
+                .setValue(this.fileOrganization)
+                .onChange(value => {
+                    this.fileOrganization = value as 'yearly' | 'monthly';
+                }));
+
         // Operating currency setting
         new Setting(folderSection)
             .setName('Operating currency')
@@ -751,6 +764,7 @@ export class OnboardingModal extends Modal {
 
             // Temporarily set settings to point to demo file for migration source
             this.plugin.settings.beancountFilePath = absolutePath;
+            this.plugin.settings.fileOrganization = this.fileOrganization;
             await this.plugin.saveSettings();
 
             Logger.log(`Onboarding: Starting migration from demo file to structured layout`);
@@ -806,6 +820,7 @@ export class OnboardingModal extends Modal {
 
         // Temporarily set the file path for migration source
         this.plugin.settings.beancountFilePath = absolutePath;
+        this.plugin.settings.fileOrganization = this.fileOrganization;
         await this.plugin.saveSettings();
 
         Logger.log(`[Onboarding] Starting migration with file: ${absolutePath}`);
