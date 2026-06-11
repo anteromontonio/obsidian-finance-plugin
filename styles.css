@@ -1,5 +1,65 @@
 /* styles.css */
 
+:root {
+	/* Spacing Design Tokens */
+	--spacing-xs: var(--size-4-1);  /* 4px */
+	--spacing-sm: var(--size-4-2);  /* 8px */
+	--spacing-md: var(--size-4-3);  /* 12px */
+	--spacing-lg: var(--size-4-4);  /* 16px */
+	--spacing-xl: var(--size-4-6);  /* 24px */
+	--spacing-xxl: var(--size-4-8); /* 32px */
+
+	/* Typography Design Tokens */
+	--font-weight-normal: 400;
+	--font-weight-medium: 500;
+	--font-weight-semibold: 600;
+	--font-weight-bold: 700;
+
+	--font-size-xs: var(--font-ui-small);
+	--font-size-sm: var(--font-ui-medium);
+	--font-size-md: var(--font-ui-large);
+	--font-size-lg: var(--font-ui-larger);
+
+	/* Shadow Design Tokens */
+	--shadow-flat: none;
+	--shadow-sm: var(--shadow-s);
+	--shadow-md: var(--shadow-l);
+
+	/* Transition Design Tokens */
+	--transition-fast: 0.1s ease;
+	--transition-normal: 0.2s ease;
+	--transition-slow: 0.3s ease;
+
+	/* Finance-Specific Color Tokens (Default fallback) */
+	--color-asset: #4caf50;
+	--color-liability: #f44336;
+	--color-equity: #2196f3;
+	--color-income: #009688;
+	--color-expense: #ff9800;
+
+	/* Semantics */
+	--color-success: var(--text-success);
+	--color-error: var(--text-error);
+	--color-warning: var(--color-orange);
+	--color-info: var(--color-blue);
+}
+
+.theme-light {
+	--color-asset: #2e7d32;      /* Forest green for good readability in light theme */
+	--color-liability: #c62828;  /* Deep red */
+	--color-equity: #1565c0;     /* Deep blue */
+	--color-income: #00796b;     /* Deep teal */
+	--color-expense: #e65100;    /* Deep orange */
+}
+
+.theme-dark {
+	--color-asset: #81c784;      /* Soft green for dark theme */
+	--color-liability: #e57373;  /* Soft red */
+	--color-equity: #64b5f6;     /* Soft blue */
+	--color-income: #4db6ac;     /* Soft teal */
+	--color-expense: #ffb74d;    /* Soft orange */
+}
+
 /* --- Beancount File View --- */
 
 .beancount-file-view {
@@ -44,7 +104,7 @@
 /* --- BQL Code Block Styles --- */
 
 .bql-query-container {
-	margin: 16px 0;
+	margin: var(--spacing-lg) 0;
 	border: none;
 	background: none;
 	overflow: hidden;
@@ -54,7 +114,7 @@
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: 4px 0 8px 0;
+	padding: var(--spacing-xs) 0 var(--spacing-sm) 0;
 	background: none;
 	border-bottom: none;
 }
@@ -62,12 +122,12 @@
 .bql-query-label {
 	display: flex;
 	align-items: center;
-	gap: 6px;
+	gap: var(--spacing-xs);
 }
 
 .bql-label {
-	font-size: 0.85em;
-	font-weight: 600;
+	font-size: var(--font-size-xs);
+	font-weight: var(--font-weight-semibold);
 	color: var(--text-accent);
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
@@ -75,7 +135,7 @@
 
 .bql-query-controls {
 	display: flex;
-	gap: 4px;
+	gap: var(--spacing-xs);
 }
 
 .bql-refresh-btn, .bql-copy-btn, .bql-export-btn {
@@ -83,10 +143,10 @@
 	border: none;
 	background: var(--background-secondary);
 	color: var(--text-muted);
-	border-radius: 3px;
+	border-radius: var(--radius-s);
 	cursor: pointer;
 	font-size: 11px;
-	transition: background-color 0.2s ease;
+	transition: background-color var(--transition-normal);
 	opacity: 0.7;
 }
 
@@ -100,11 +160,11 @@
 	border: 1px solid var(--background-modifier-border);
 	background: var(--background-secondary);
 	color: var(--text-muted);
-	border-radius: 3px;
+	border-radius: var(--radius-s);
 	cursor: pointer;
 	font-size: 11px;
 	opacity: 0.7;
-	transition: opacity 0.2s ease;
+	transition: opacity var(--transition-normal);
 }
 
 .bql-format-select:hover,
@@ -115,25 +175,25 @@
 
 .bql-text-result {
 	font-family: var(--font-monospace);
-	font-size: 0.85em;
+	font-size: var(--font-size-xs);
 	white-space: pre;
 	overflow-x: auto;
-	padding: 8px 0;
+	padding: var(--spacing-sm) 0;
 	color: var(--text-normal);
 	background: none;
 	border: none;
 }
 
 .bql-query-details {
-	margin: 0 0 12px 0;
+	margin: 0 0 var(--spacing-md) 0;
 	border-bottom: none;
 }
 
 .bql-query-summary {
-	padding: 4px 0;
+	padding: var(--spacing-xs) 0;
 	cursor: pointer;
 	background: none;
-	font-size: 0.85em;
+	font-size: var(--font-size-xs);
 	color: var(--text-muted);
 	border: none;
 	margin: 0;
@@ -145,8 +205,8 @@
 }
 
 .bql-query-code {
-	margin: 0 0 8px 0;
-	padding: 8px 0;
+	margin: 0 0 var(--spacing-sm) 0;
+	padding: var(--spacing-sm) 0;
 	background: none;
 	border: none;
 	font-size: 0.8em;
@@ -155,12 +215,13 @@
 
 .bql-query-code code {
 	background: var(--background-secondary);
-	padding: 8px 12px;
-	border-radius: 4px;
+	padding: var(--spacing-sm) var(--spacing-md);
+	border-radius: var(--radius-s);
 	display: block;
 	font-family: var(--font-monospace);
 	color: var(--text-normal);
 }
+
 
 .bql-result-area {
 	padding: 0;

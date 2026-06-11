@@ -33,7 +33,7 @@ Focusing on refining the local editing experience, resolving security/community 
 - [ ] **Community Review Security Fixes**
   - Refactor vault enumeration (`vault.getFiles`, `getMarkdownFiles`) to adhere to community review recommendations.
   - *Reference:* [#205](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/205)
-- [ ] **Design Token System**
+- [x] **Design Token System**
   - Establish a unified token system in `styles.css` for consistent spacing, colors, and typography across Svelte views.
   - *Reference:* [#84](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/84)
 - [ ] **Transaction Table Improvements**
