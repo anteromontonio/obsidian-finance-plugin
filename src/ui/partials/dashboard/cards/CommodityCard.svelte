@@ -202,10 +202,10 @@
 
 <style>
 	.commodity-card-wrapper {
-		background: var(--background-primary);
-		border: 1px solid var(--background-modifier-border);
-		border-radius: 14px;
-		transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+		background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border-hover);
+		border-radius: 6px;
+		transition: all 0.2s ease;
 		position: relative;
 		overflow: hidden;
 		display: flex;
@@ -214,8 +214,8 @@
 
 	.commodity-card-wrapper:hover {
 		border-color: var(--interactive-accent);
-		transform: translateY(-3px);
-		box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+		transform: translateY(-1px);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 	}
 
 	.commodity-card-wrapper::after {
@@ -239,8 +239,8 @@
 		height: 100%;
 		display: flex;
 		flex-direction: column;
-		padding: 18px;
-		gap: 20px;
+		padding: var(--size-4-3);
+		gap: var(--size-4-3);
 		background: transparent;
 		border: none;
 		cursor: pointer;
@@ -373,38 +373,38 @@
 	.value-container {
 		display: flex;
 		align-items: baseline;
-		gap: 5px;
-		margin-bottom: 10px;
+		gap: 4px;
+		margin-bottom: 6px;
 	}
 
 	.value-main {
-		font-size: 26px;
-		font-weight: 800;
+		font-size: 22px;
+		font-weight: 700;
 		color: var(--text-accent);
-		letter-spacing: -1px;
+		letter-spacing: -0.5px;
 		line-height: 1;
 		font-variant-numeric: tabular-nums;
 	}
 
 	.value-main.no-price {
 		color: var(--text-muted);
-		font-size: 22px;
+		font-size: 18px;
 	}
 
 	.value-currency {
-		font-size: 13px;
+		font-size: 11px;
 		font-weight: 600;
 		color: var(--text-muted);
 	}
 
 	.no-price-state {
-		margin-bottom: 10px;
+		margin-bottom: 6px;
 	}
 
 	.no-price-text {
 		color: var(--text-muted);
 		font-style: italic;
-		font-size: 14px;
+		font-size: 12px;
 	}
 
 	/* Price + Holdings rows */
@@ -412,9 +412,10 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: baseline;
-		padding: 9px 0;
-		border-top: 1px dashed var(--background-modifier-border);
-		font-size: 12px;
+		padding: 6px 0;
+		border-top: 1px dashed var(--background-modifier-border-hover);
+		font-size: 11px;
+		line-height: 1.2;
 	}
 
 	/* Operating-currency info block — fills the space of the two data rows */
@@ -423,7 +424,7 @@
 		align-items: flex-start;
 		gap: 7px;
 		padding: 10px 12px;
-		border-top: 1px dashed var(--background-modifier-border);
+		border-top: 1px dashed var(--background-modifier-border-hover);
 		background: color-mix(in srgb, var(--interactive-accent), transparent 92%);
 		border-radius: 8px;
 		color: var(--text-accent);
@@ -465,14 +466,14 @@
 		justify-content: space-between;
 		align-items: center;
 		margin-top: auto;
-		padding-top: 14px;
-		border-top: 1px solid var(--background-modifier-border);
+		padding-top: var(--size-4-2);
+		border-top: 1px solid var(--background-modifier-border-hover);
 		color: var(--text-muted);
 		transition: all 0.2s ease;
 	}
 
 	.details-text {
-		font-size: 13px;
+		font-size: 11px;
 		font-weight: 600;
 	}
 

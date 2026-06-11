@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## In-progress
 
+- **Component Cards: Refine styling, margins, and density** — Refactored TransactionCard, BalanceCard, NoteCard, and CommodityCard to use a var(--background-secondary) background with subtle border-hover outlines. Tightened component padding, optimized typography visual hierarchy (emphasizing values, muting labels/dates), and reduced line-heights to present dense card lists cleanly. Closes [#219](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/219).
+
 - **Dashboard Layout: Optimize tab padding, density, and controls** — Moved outer padding to UnifiedDashboardView's tab container, removing double padding across all tabs. Increased density on Income Statement and Balance Sheet tables by reducing cell padding and using smaller UI font sizes. Tightened TransactionsTab filter controls with compact spacing and standard Obsidian-aligned input heights. Closes [#218](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/218).
 
 - **Modal Polish: Compact grid layouts, unified spacing, and standard footers** — Refactored form layouts in AddBudgetModal, AddTargetModal, and CommodityCreateModal to use CSS Grid for compact, aligned form presentation. Standardized spacing using Obsidian design tokens, unified modal footers using a standard .modal-footer class aligned to the bottom right, and adjusted custom autocomplete dropdown max heights to optimize vertical space. Closes [#217](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/217).
