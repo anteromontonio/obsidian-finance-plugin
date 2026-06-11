@@ -15,6 +15,8 @@ The **Onboarding Modal** appears automatically when:
 **Manual Launch:**
 Open Command Palette (`Ctrl/Cmd + P`) → **"Obsidian Finance: Run Setup/Onboarding"**
 
+![Onboarding Welcome](/img/Onboarding-modal1.png)
+
 ---
 
 ## Step 1: Prerequisites Check 🔍
@@ -22,6 +24,8 @@ Open Command Palette (`Ctrl/Cmd + P`) → **"Obsidian Finance: Run Setup/Onboard
 The plugin verifies your system has the required software (Python, Beancount, bean-query, and optionally bean-price).
 
 For a detailed list of system requirements and step-by-step installation instructions for Windows, macOS, Linux, and WSL, please refer to the **[Requirements](./requirements.md)** guide.
+
+![Prerequisites Onboarding Welcome Screen](/img/Onboarding-checkingPreRequisites.png)
 
 ### Running the Check
 
@@ -40,6 +44,8 @@ If all requirements are satisfied, you'll see:
 - bean-query command path and version
 - bean-price command path and version *(or a neutral notice if not installed)*
 - **"Next: File Setup →"** button to proceed
+
+![Prerequisites Verification Results](/img/Onboarding-checkingPreRequisites_lowerPart.png)
 
 The detected commands are automatically saved to your settings — including `beanPriceCommand` if bean-price was found.
 
@@ -62,6 +68,8 @@ Click **"Skip (Manual Config)"** to configure later in **Settings → Connection
 ## Step 2: File Setup 📁
 
 Choose your starting point after prerequisites are verified.
+
+![File Setup Section](/img/Onboarding-FileSetup_topPart.png)
 
 #### 📊 Option 1: Start with Demo Data
 
@@ -101,6 +109,8 @@ The demo data is completely safe to explore and modify. You can delete it anytim
 3. **Configure Folder**: Set the folder name for structured layout (default: "Finances")
 4. **Import**: Plugin automatically imports and organizes your file into structured layout
 
+![Select or Import Existing File](/img/Onboarding-FileSetup_lowerPart.png)
+
 **Path Examples:**
 - Inside vault: Select from dropdown
 - Outside vault: `C:\Users\You\Documents\finances.beancount`
@@ -116,6 +126,8 @@ The demo data is completely safe to explore and modify. You can delete it anytim
 ## Step 3: Verification ✅
 
 After setup completes, you'll see a success screen with:
+
+![Verification Summary](/img/Onboarding-verification_topPart.png)
 
 ### Configuration Summary
 
@@ -136,6 +148,8 @@ After setup completes, you'll see a success screen with:
 
 - **Open Dashboard & Close**: Opens the unified dashboard view and closes the modal
 - **Close**: Just close the modal (can open dashboard later via Command Palette)
+
+![Onboarding Completed Successfully](/img/Onboarding-verification_lowerPart.png)
 
 ---
 
