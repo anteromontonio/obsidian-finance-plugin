@@ -89,7 +89,7 @@
 
 <style>
 	/* Styles remain unchanged */
-	.beancount-overview { padding: var(--size-4-4); }
+	.beancount-overview { padding: 0; }
 	
 	.overview-header {
 		display: flex;

@@ -111,7 +111,7 @@
     .tab-content {
         flex: 1;
         overflow-y: auto;
-        padding: 0;
+        padding: var(--size-4-4);
         background: var(--background-primary);
     }
 </style>

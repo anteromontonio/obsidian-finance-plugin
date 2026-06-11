@@ -363,7 +363,7 @@
 
 <style>
 	.income-statement-container {
-		padding: var(--size-4-4);
+		padding: 0;
 		width: 100%;
 		overflow-x: auto;
 	}
@@ -664,6 +664,7 @@
 		border-collapse: collapse;
 		table-layout: fixed;
 		min-width: 300px;
+		font-size: var(--font-ui-small);
 	}
 
 	.beancount-table thead {
@@ -672,7 +673,7 @@
 	}
 
 	.header-row th {
-		padding: var(--size-4-3);
+		padding: var(--size-4-1) var(--size-4-2);
 		font-weight: 600;
 		color: var(--text-normal);
 		text-align: left;
@@ -700,7 +701,7 @@
 
 	.beancount-table td,
 	.beancount-table th {
-		padding: var(--size-4-2) var(--size-4-3);
+		padding: var(--size-4-1) var(--size-4-2);
 		border-bottom: 1px solid var(--background-secondary);
 		vertical-align: top;
 		word-wrap: break-word;

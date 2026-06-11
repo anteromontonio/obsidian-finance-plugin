@@ -426,7 +426,7 @@
 
 <style>
 	.balance-sheet-container { 
-		padding: var(--size-4-4); 
+		padding: 0; 
 		width: 100%;
 		overflow-x: auto;
 	}
@@ -710,6 +710,7 @@
 		border-collapse: collapse;
 		table-layout: fixed; /* Fixed layout for better control */
 		min-width: 400px; /* Minimum width to prevent cramping */
+		font-size: var(--font-ui-small);
 	}
 
 	/* Table headers */
@@ -719,7 +720,7 @@
 	}
 
 	.header-row th {
-		padding: var(--size-4-3);
+		padding: var(--size-4-1) var(--size-4-2);
 		font-weight: 600;
 		color: var(--text-normal);
 		text-align: left;
@@ -747,7 +748,7 @@
 	
 	.beancount-table td, 
 	.beancount-table th { 
-		padding: var(--size-4-2) var(--size-4-3); 
+		padding: var(--size-4-1) var(--size-4-2); 
 		border-bottom: 1px solid var(--background-secondary); 
 		vertical-align: top; /* Changed from middle to top for multi-line content */
 		word-wrap: break-word;

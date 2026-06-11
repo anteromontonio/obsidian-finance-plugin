@@ -190,11 +190,22 @@
 </div>
 
 <style>
-	.account-transactions-view { padding: var(--size-4-4); height: 100%; overflow-y: auto; }
-	.controls { margin-bottom: var(--size-4-4); display: flex; flex-wrap: wrap; align-items: center; gap: var(--size-4-4); }
-	.controls > div { display: flex; align-items: center; gap: var(--size-4-2); }
-	.controls label { font-weight: 600; margin-right: var(--size-4-1); white-space: nowrap; }
-	.controls input[type="date"], .controls input[type="text"] { padding: var(--size-4-1) var(--size-4-2); }
+	.account-transactions-view { padding: 0; }
+	.controls { margin-bottom: var(--size-4-3); display: flex; flex-wrap: wrap; align-items: center; gap: var(--size-4-2); }
+	.controls > div { display: flex; align-items: center; gap: var(--size-4-1); }
+	.controls label { font-weight: 500; margin-right: var(--size-4-1); white-space: nowrap; font-size: var(--font-ui-small); }
+	.controls input[type="date"], .controls input[type="text"] {
+		padding: var(--size-4-1) var(--size-4-2);
+		height: 28px;
+		font-size: var(--font-ui-small);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: var(--radius-s);
+		background-color: var(--background-modifier-form-field);
+		color: var(--text-normal);
+	}
+	.controls input[type="date"] {
+		padding: 2px var(--size-4-2);
+	}
 	.controls input[type="text"] { min-width: 150px; }
 	.transaction-table { width: 100%; border-collapse: collapse; }
 	.transaction-table th { text-align: left; font-size: var(--font-ui-small); font-weight: 600; color: var(--text-muted); padding: 8px 6px; border-bottom: 1px solid var(--background-modifier-border); }
