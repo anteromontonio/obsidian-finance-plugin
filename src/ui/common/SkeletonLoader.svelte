@@ -35,7 +35,7 @@
 	{:else}
 		<div class="skeleton-list">
 			{#each Array(rows) as _, i}
-				<div class="skeleton-list-item" style="padding-left: {i % 3 * 16}px">
+				<div class="skeleton-list-item" style="--indent: {i % 3 * 16}px">
 					<div class="skeleton-circle"></div>
 					<div class="skeleton-line text"></div>
 					<div class="skeleton-line amount"></div>
@@ -139,6 +139,7 @@
 		align-items: center;
 		gap: var(--spacing-md);
 		padding: var(--spacing-sm) 0;
+		padding-left: var(--indent, 0px);
 	}
 
 	.skeleton-circle {

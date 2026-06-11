@@ -354,7 +354,8 @@
 					fill={hoveredNode === node ? getHoverColor(node.section, node.negative) : node.color}
 					stroke="var(--background-primary)"
 					stroke-width="1.5"
-					style="cursor:{node.sourceItem?.children?.length ? 'pointer' : 'default'};transition:fill 0.12s ease;"
+					class="sunburst-arc"
+					class:drillable={node.sourceItem?.children?.length}
 					on:mousemove={(e) => onArcMouseMove(e, node)}
 					on:click={() => onArcClick(node)}
 					role="button"
@@ -428,19 +429,19 @@
 		<div class="sunburst-legend" aria-label="Chart legend">
 			{#if Math.abs(totalAssets) > 0.001}
 				<span class="legend-item">
-					<span class="legend-dot" style="background:{getColor('Assets', 0)};"></span>
+					<span class="legend-dot legend-assets"></span>
 					{assetsLabel}
 				</span>
 			{/if}
 			{#if Math.abs(totalLiabilities) > 0.001}
 				<span class="legend-item">
-					<span class="legend-dot" style="background:{getColor('Liabilities', 0)};"></span>
+					<span class="legend-dot legend-liabilities"></span>
 					{liabilitiesLabel}
 				</span>
 			{/if}
 			{#if Math.abs(totalEquity) > 0.001}
 				<span class="legend-item">
-					<span class="legend-dot" style="background:{getColor('Equity', 0)};"></span>
+					<span class="legend-dot legend-equity"></span>
 					{equityLabel}
 				</span>
 			{/if}
@@ -450,7 +451,7 @@
 	<!-- Hatch pattern hint -->
 	{#if grandTotal >= 0.001}
 		<p class="hatch-hint">
-			<svg width="14" height="14" style="vertical-align:-2px;margin-right:4px;">
+			<svg width="14" height="14" class="hatch-hint-svg">
 				<defs>
 					<pattern id="hatch-hint-pat" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
 						<line x1="0" y1="0" x2="0" y2="8" stroke="var(--text-muted)" stroke-width="3"/>
@@ -569,6 +570,32 @@
 		height: 11px;
 		border-radius: 50%;
 		flex-shrink: 0;
+	}
+
+	.legend-assets {
+		background: hsl(142, 52%, 36%);
+	}
+
+	.legend-liabilities {
+		background: hsl(4, 52%, 36%);
+	}
+
+	.legend-equity {
+		background: hsl(213, 52%, 36%);
+	}
+
+	.sunburst-arc {
+		cursor: default;
+		transition: fill 0.12s ease;
+	}
+
+	.sunburst-arc.drillable {
+		cursor: pointer;
+	}
+
+	.hatch-hint-svg {
+		vertical-align: -2px;
+		margin-right: 4px;
 	}
 
 	.sunburst-empty {

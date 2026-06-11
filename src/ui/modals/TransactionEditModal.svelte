@@ -1371,7 +1371,7 @@
 						placeholder="e.g. my_expenses"
 						required
 					/>
-					<small style="color: var(--text-muted)">Use in notes with <code>bql-q:{queryName || 'name'}</code></small>
+					<small class="query-hint">Use in notes with <code>bql-q:{queryName || 'name'}</code></small>
 				</div>
 
 				<div class="form-group full-width">
@@ -1382,7 +1382,7 @@
 						placeholder="SELECT account, sum(position) WHERE account ~ 'Expenses' GROUP BY account"
 						required
 						rows="4"
-						style="font-family: monospace; font-size: 0.9em;"
+						class="query-sql-textarea"
 					></textarea>
 					<button
 						type="button"
@@ -1405,7 +1405,7 @@
 				{#if queryTestRows.length > 0}
 					<div class="form-group full-width">
 						<div class="query-test-results">
-							<small style="color: var(--text-muted); display:block; margin-bottom:0.4rem;">
+							<small class="query-preview-label">
 								Preview {Math.min(queryTestRows.length - 1, 5)} row(s)
 							</small>
 							<table class="query-preview-table">
@@ -2512,5 +2512,20 @@
 	.btn-load-query:hover {
 		background: var(--interactive-accent);
 		color: var(--text-on-accent);
+	}
+
+	.query-hint {
+		color: var(--text-muted);
+	}
+
+	.query-sql-textarea {
+		font-family: var(--font-monospace);
+		font-size: 0.9em;
+	}
+
+	.query-preview-label {
+		color: var(--text-muted);
+		display: block;
+		margin-bottom: 0.4rem;
 	}
 </style>

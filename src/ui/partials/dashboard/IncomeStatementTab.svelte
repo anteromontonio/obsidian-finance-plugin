@@ -284,8 +284,7 @@
 							{#each visibleIncome as item}
 								<tr class={getAccountClass(item)}>
 									<td class="account-name"
-										on:click={(e) => item.isCategory && toggleCollapse(item.account, e)}
-										style="cursor: {item.isCategory ? 'pointer' : 'default'};">
+										on:click={(e) => item.isCategory && toggleCollapse(item.account, e)}>
 										{#if item.isCategory}
 											<span class="collapse-icon">{isCollapsed(item.account) ? '▶' : '▼'}</span>
 										{/if}
@@ -326,8 +325,7 @@
 							{#each visibleExpenses as item}
 								<tr class={getAccountClass(item)}>
 									<td class="account-name"
-										on:click={(e) => item.isCategory && toggleCollapse(item.account, e)}
-										style="cursor: {item.isCategory ? 'pointer' : 'default'};">
+										on:click={(e) => item.isCategory && toggleCollapse(item.account, e)}>
 										{#if item.isCategory}
 											<span class="collapse-icon">{isCollapsed(item.account) ? '▶' : '▼'}</span>
 										{/if}
@@ -716,6 +714,11 @@
 		text-overflow: ellipsis;
 		max-width: 180px;
 		width: 50%;
+		cursor: default;
+	}
+
+	:global(.account-row.category) .account-name {
+		cursor: pointer;
 	}
 
 	.collapse-icon {

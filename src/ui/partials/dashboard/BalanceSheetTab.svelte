@@ -328,8 +328,7 @@
 					{#each visibleAssets as item}
 						<tr class={getAccountClass(item)}>
 							<td class="account-name" 
-								on:click={(e) => item.isCategory && toggleCollapse(item.account, e)} 
-								style="cursor: {item.isCategory ? 'pointer' : 'default'};">
+								on:click={(e) => item.isCategory && toggleCollapse(item.account, e)}>
 								{#if item.isCategory}
 									<span class="collapse-icon">{isCollapsed(item.account) ? '▶' : '▼'}</span>
 								{/if}
@@ -365,8 +364,7 @@
 					{#each visibleLiabilities as item}
 						<tr class={getAccountClass(item)}>
 							<td class="account-name" 
-								on:click={(e) => item.isCategory && toggleCollapse(item.account, e)} 
-								style="cursor: {item.isCategory ? 'pointer' : 'default'};">
+								on:click={(e) => item.isCategory && toggleCollapse(item.account, e)}>
 								{#if item.isCategory}
 									<span class="collapse-icon">{isCollapsed(item.account) ? '▶' : '▼'}</span>
 								{/if}
@@ -402,8 +400,7 @@
 					{#each visibleEquity as item}
 						<tr class={getAccountClass(item)}>
 							<td class="account-name" 
-								on:click={(e) => item.isCategory && toggleCollapse(item.account, e)} 
-								style="cursor: {item.isCategory ? 'pointer' : 'default'};">
+								on:click={(e) => item.isCategory && toggleCollapse(item.account, e)}>
 								{#if item.isCategory}
 									<span class="collapse-icon">{isCollapsed(item.account) ? '▶' : '▼'}</span>
 								{/if}
@@ -764,6 +761,11 @@
 		text-overflow: ellipsis;
 		max-width: 160px;
 		width: 40%;
+		cursor: default;
+	}
+
+	:global(.account-row.category) .account-name {
+		cursor: pointer;
 	}
 
 	.collapse-icon {

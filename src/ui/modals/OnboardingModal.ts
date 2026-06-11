@@ -59,10 +59,6 @@ export class OnboardingModal extends Modal {
 
         // Step indicator
         const stepIndicator = header.createDiv({ cls: 'step-indicator' });
-        stepIndicator.style.display = 'flex';
-        stepIndicator.style.gap = '10px';
-        stepIndicator.style.marginTop = '10px';
-        stepIndicator.style.marginBottom = '20px';
 
         const steps = [
             { id: 'prerequisites', label: '1. Prerequisites', icon: '🔍' },
@@ -72,20 +68,9 @@ export class OnboardingModal extends Modal {
 
         steps.forEach(step => {
             const stepEl = stepIndicator.createDiv({ cls: 'step-item' });
-            stepEl.style.display = 'flex';
-            stepEl.style.alignItems = 'center';
-            stepEl.style.gap = '5px';
-            stepEl.style.padding = '5px 10px';
-            stepEl.style.borderRadius = '5px';
-            stepEl.style.fontSize = '0.9em';
 
             if (step.id === this.currentStep) {
-                stepEl.style.backgroundColor = 'var(--interactive-accent)';
-                stepEl.style.color = 'var(--text-on-accent)';
-                stepEl.style.fontWeight = 'bold';
-            } else {
-                stepEl.style.backgroundColor = 'var(--background-modifier-border)';
-                stepEl.style.color = 'var(--text-muted)';
+                stepEl.classList.add('is-active');
             }
 
             stepEl.createSpan({ text: `${step.icon} ${step.label}` });
@@ -113,140 +98,82 @@ export class OnboardingModal extends Modal {
 
         // Requirements section
         const reqSection = contentEl.createDiv({ cls: 'requirements-section' });
-        reqSection.style.marginBottom = '20px';
-        reqSection.style.padding = '15px';
-        reqSection.style.border = '1px solid var(--background-modifier-border)';
-        reqSection.style.borderRadius = '5px';
 
         reqSection.createEl('h4', { text: '📋 Required Software' });
         const reqList = reqSection.createEl('ul');
-        reqList.style.marginLeft = '20px';
         reqList.createEl('li', { text: 'Python 3.8 or higher' });
         reqList.createEl('li', { text: 'Beancount v3+ (pip install beancount)' });
         reqList.createEl('li', { text: 'Bean Query (pip install beanquery — separate package)' });
         const beanPriceItem = reqList.createEl('li');
-        beanPriceItem.innerHTML = 'Bean Price <em style="color:var(--text-muted)">(optional)</em> — for automated price fetching (pip install beanprice — separate package)';
+        beanPriceItem.innerHTML = 'Bean Price <em class="text-muted">(optional)</em> — for automated price fetching (pip install beanprice — separate package)';
 
-        const optionalNote = reqSection.createEl('p', { cls: 'setting-item-description' });
-        optionalNote.style.marginTop = '10px';
-        optionalNote.style.fontStyle = 'italic';
+        const optionalNote = reqSection.createEl('p', { cls: 'setting-item-description optional-note' });
         optionalNote.innerHTML = '<strong>Note:</strong> bean-query and bean-price are NOT included with Beancount and each require a separate pip install.';
 
         // Detection status
         if (this.prerequisitesChecked) {
             const statusSection = contentEl.createDiv({ cls: 'detection-results' });
-            statusSection.style.marginBottom = '20px';
-            statusSection.style.padding = '15px';
-            statusSection.style.border = '1px solid var(--background-modifier-border)';
-            statusSection.style.borderRadius = '5px';
 
             statusSection.createEl('h4', { text: '🎯 Detection Results' });
 
             // Commands grid
             const commandsGrid = statusSection.createDiv({ cls: 'commands-grid' });
-            commandsGrid.style.display = 'grid';
-            commandsGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(250px, 1fr))';
-            commandsGrid.style.gap = '15px';
-            commandsGrid.style.marginTop = '15px';
 
             // Python card
-            const pythonCard = commandsGrid.createDiv({ cls: 'command-item' });
-            pythonCard.style.padding = '12px';
-            pythonCard.style.border = '1px solid var(--background-modifier-border)';
-            pythonCard.style.borderRadius = '5px';
-            pythonCard.style.backgroundColor = this.pythonValid ? 'var(--background-modifier-success)' : 'var(--background-modifier-error)';
+            const pythonCard = commandsGrid.createDiv({ cls: `command-item ${this.pythonValid ? 'is-valid' : 'is-invalid'}` });
 
             const pythonHeader = pythonCard.createDiv({ cls: 'command-header' });
-            pythonHeader.style.display = 'flex';
-            pythonHeader.style.justifyContent = 'space-between';
-            pythonHeader.style.alignItems = 'center';
-            pythonHeader.style.marginBottom = '8px';
             pythonHeader.createEl('strong', { text: 'Python:' });
             pythonHeader.createEl('span', { text: this.pythonValid ? '✅' : '❌' });
 
             if (this.pythonValid) {
                 const pythonCmd = pythonCard.createEl('code');
-                pythonCmd.style.display = 'block';
-                pythonCmd.style.fontSize = '0.85em';
-                pythonCmd.style.marginBottom = '5px';
                 pythonCmd.textContent = this.pythonCommand || '';
 
                 if (this.pythonVersion) {
-                    const pythonVer = pythonCard.createDiv();
-                    pythonVer.style.fontSize = '0.85em';
-                    pythonVer.style.color = 'var(--text-muted)';
+                    const pythonVer = pythonCard.createDiv({ cls: 'version-info' });
                     pythonVer.innerHTML = `<strong>Version:</strong> ${this.pythonVersion}`;
                 }
             } else {
-                pythonCard.createDiv().textContent = 'Not found';
+                pythonCard.createDiv({ cls: 'not-found-info' }).textContent = 'Not found';
             }
 
             // Bean Query card
-            const beanQueryCard = commandsGrid.createDiv({ cls: 'command-item' });
-            beanQueryCard.style.padding = '12px';
-            beanQueryCard.style.border = '1px solid var(--background-modifier-border)';
-            beanQueryCard.style.borderRadius = '5px';
-            beanQueryCard.style.backgroundColor = this.beanQueryValid ? 'var(--background-modifier-success)' : 'var(--background-modifier-error)';
+            const beanQueryCard = commandsGrid.createDiv({ cls: `command-item ${this.beanQueryValid ? 'is-valid' : 'is-invalid'}` });
 
             const beanQueryHeader = beanQueryCard.createDiv({ cls: 'command-header' });
-            beanQueryHeader.style.display = 'flex';
-            beanQueryHeader.style.justifyContent = 'space-between';
-            beanQueryHeader.style.alignItems = 'center';
-            beanQueryHeader.style.marginBottom = '8px';
             beanQueryHeader.createEl('strong', { text: 'Bean Query:' });
             beanQueryHeader.createEl('span', { text: this.beanQueryValid ? '✅' : '❌' });
 
             if (this.beanQueryValid) {
                 const beanQueryCmd = beanQueryCard.createEl('code');
-                beanQueryCmd.style.display = 'block';
-                beanQueryCmd.style.fontSize = '0.85em';
-                beanQueryCmd.style.marginBottom = '5px';
                 beanQueryCmd.textContent = this.beanQueryCommand || '';
 
                 if (this.beanQueryVersion) {
-                    const beanQueryVer = beanQueryCard.createDiv();
-                    beanQueryVer.style.fontSize = '0.85em';
-                    beanQueryVer.style.color = 'var(--text-muted)';
+                    const beanQueryVer = beanQueryCard.createDiv({ cls: 'version-info' });
                     beanQueryVer.innerHTML = `<strong>Version:</strong> ${this.beanQueryVersion}`;
                 }
             } else {
-                beanQueryCard.createDiv().textContent = 'Not found - Install beanquery package';
+                beanQueryCard.createDiv({ cls: 'not-found-info' }).textContent = 'Not found - Install beanquery package';
             }
 
             // Bean Price card (optional — shown regardless, gray if not found)
-            const beanPriceCard = commandsGrid.createDiv({ cls: 'command-item' });
-            beanPriceCard.style.padding = '12px';
-            beanPriceCard.style.border = '1px solid var(--background-modifier-border)';
-            beanPriceCard.style.borderRadius = '5px';
-            beanPriceCard.style.backgroundColor = this.beanPriceValid
-                ? 'var(--background-modifier-success)'
-                : 'var(--background-secondary)';
+            const beanPriceCard = commandsGrid.createDiv({ cls: `command-item ${this.beanPriceValid ? 'is-valid' : 'is-optional'}` });
 
             const beanPriceHeader = beanPriceCard.createDiv({ cls: 'command-header' });
-            beanPriceHeader.style.display = 'flex';
-            beanPriceHeader.style.justifyContent = 'space-between';
-            beanPriceHeader.style.alignItems = 'center';
-            beanPriceHeader.style.marginBottom = '8px';
             beanPriceHeader.createEl('strong', { text: 'Bean Price:' });
             beanPriceHeader.createEl('span', { text: this.beanPriceValid ? '✅' : '➖ Optional' });
 
             if (this.beanPriceValid) {
                 const beanPriceCmd = beanPriceCard.createEl('code');
-                beanPriceCmd.style.display = 'block';
-                beanPriceCmd.style.fontSize = '0.85em';
-                beanPriceCmd.style.marginBottom = '5px';
                 beanPriceCmd.textContent = this.beanPriceCommand || '';
 
                 if (this.beanPriceVersion) {
-                    const beanPriceVer = beanPriceCard.createDiv();
-                    beanPriceVer.style.fontSize = '0.85em';
-                    beanPriceVer.style.color = 'var(--text-muted)';
+                    const beanPriceVer = beanPriceCard.createDiv({ cls: 'version-info' });
                     beanPriceVer.innerHTML = `<strong>Version:</strong> ${this.beanPriceVersion}`;
                 }
             } else {
-                const notFoundDiv = beanPriceCard.createDiv();
-                notFoundDiv.style.fontSize = '0.85em';
-                notFoundDiv.style.color = 'var(--text-muted)';
+                const notFoundDiv = beanPriceCard.createDiv({ cls: 'not-found-info' });
                 notFoundDiv.textContent = 'Not found — install with: pip install beanprice';
             }
 
@@ -258,10 +185,6 @@ export class OnboardingModal extends Modal {
 
         // Action buttons
         const buttonContainer = contentEl.createDiv({ cls: 'onboarding-buttons' });
-        buttonContainer.style.display = 'flex';
-        buttonContainer.style.justifyContent = 'space-between';
-        buttonContainer.style.marginTop = '20px';
-        buttonContainer.style.gap = '10px';
 
         const checkBtn = buttonContainer.createEl('button', { text: '🔍 Check Prerequisites', cls: 'mod-cta' });
         checkBtn.onclick = async () => {
@@ -285,10 +208,6 @@ export class OnboardingModal extends Modal {
 
     private renderInstallationInstructions(parentEl: HTMLElement) {
         const installSection = parentEl.createDiv({ cls: 'installation-instructions' });
-        installSection.style.marginTop = '20px';
-        installSection.style.padding = '15px';
-        installSection.style.backgroundColor = 'var(--background-primary-alt)';
-        installSection.style.borderRadius = '5px';
 
         installSection.createEl('h5', { text: '📚 Installation Instructions' });
 
@@ -296,25 +215,24 @@ export class OnboardingModal extends Modal {
         const platform = detector['_systemInfo']?.platformDisplay || 'Unknown';
 
         // Platform-specific instructions
-        const instructionsDiv = installSection.createDiv();
-        instructionsDiv.style.marginTop = '10px';
+        const instructionsDiv = installSection.createDiv({ cls: 'optional-note' });
 
         if (platform.includes('Windows')) {
             instructionsDiv.innerHTML = `
                 <p><strong>Windows:</strong></p>
-                <ol style="margin-left: 20px;">
+                <ol>
                     <li>Install Python 3.8+ from <a href="https://www.python.org/downloads/">python.org</a></li>
                     <li>Open PowerShell or Command Prompt</li>
                     <li>Install Beancount: <code>pip install beancount</code></li>
                     <li>Install Bean Query (separate): <code>pip install beanquery</code></li>
                     <li>Verify installation: <code>bean-query --version</code></li>
                 </ol>
-                <p style="margin-top: 10px;"><strong>Alternative (WSL):</strong> Install in Windows Subsystem for Linux</p>
+                <p><strong>Alternative (WSL):</strong> Install in Windows Subsystem for Linux</p>
             `;
         } else if (platform.includes('macOS')) {
             instructionsDiv.innerHTML = `
                 <p><strong>macOS:</strong></p>
-                <ol style="margin-left: 20px;">
+                <ol>
                     <li>Install Homebrew if not already installed: <code>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</code></li>
                     <li>Install Python: <code>brew install python@3.11</code></li>
                     <li>Install Beancount: <code>pip3 install beancount</code></li>
@@ -325,7 +243,7 @@ export class OnboardingModal extends Modal {
         } else {
             instructionsDiv.innerHTML = `
                 <p><strong>Linux:</strong></p>
-                <ol style="margin-left: 20px;">
+                <ol>
                     <li>Install Python 3.8+: <code>sudo apt install python3 python3-pip</code> (Debian/Ubuntu)</li>
                     <li>Install Beancount: <code>pip3 install beancount</code></li>
                     <li>Install Bean Query (separate): <code>pip3 install beanquery</code></li>
@@ -334,9 +252,7 @@ export class OnboardingModal extends Modal {
             `;
         }
 
-        const linkDiv = installSection.createDiv();
-        linkDiv.style.marginTop = '15px';
-        linkDiv.style.fontSize = '0.9em';
+        const linkDiv = installSection.createDiv({ cls: 'optional-note' });
         linkDiv.innerHTML = '<p>📖 <a href="https://beancount.github.io/docs/installing_beancount.html" target="_blank">Official Beancount Installation Guide</a></p>';
     }
 
@@ -422,21 +338,13 @@ export class OnboardingModal extends Modal {
 
         // Option A: Demo Data
         const demoSection = contentEl.createDiv({ cls: 'onboarding-section' });
-        demoSection.style.marginBottom = '20px';
-        demoSection.style.padding = '15px';
-        demoSection.style.border = '1px solid var(--background-modifier-border)';
-        demoSection.style.borderRadius = '5px';
 
         const demoHeader = demoSection.createDiv({ cls: 'onboarding-option-header' });
-        demoHeader.style.display = 'flex';
-        demoHeader.style.alignItems = 'center';
-        demoHeader.style.marginBottom = '10px';
 
         const demoRadio = demoHeader.createEl('input', {
             type: 'radio',
             attr: { name: 'data-choice', value: 'demo' }
         });
-        demoRadio.style.marginRight = '10px';
         demoRadio.checked = this.dataChoice === 'demo';
         demoRadio.onchange = () => {
             this.dataChoice = 'demo';
@@ -452,21 +360,13 @@ export class OnboardingModal extends Modal {
 
         // Option B: Existing File
         const existingSection = contentEl.createDiv({ cls: 'onboarding-section' });
-        existingSection.style.padding = '15px';
-        existingSection.style.border = '1px solid var(--background-modifier-border)';
-        existingSection.style.borderRadius = '5px';
-        existingSection.style.marginBottom = '20px';
 
         const existingHeader = existingSection.createDiv({ cls: 'onboarding-option-header' });
-        existingHeader.style.display = 'flex';
-        existingHeader.style.alignItems = 'center';
-        existingHeader.style.marginBottom = '10px';
 
         const existingRadio = existingHeader.createEl('input', {
             type: 'radio',
             attr: { name: 'data-choice', value: 'existing' }
         });
-        existingRadio.style.marginRight = '10px';
         existingRadio.checked = this.dataChoice === 'existing';
         existingRadio.onchange = () => {
             this.dataChoice = 'existing';
@@ -529,8 +429,7 @@ export class OnboardingModal extends Modal {
                 // No .beancount files found, show only manual input
                 existingSection.createEl('p', {
                     text: 'No .beancount files found in vault.',
-                    cls: 'setting-item-description',
-                    attr: { style: 'color: var(--text-muted); font-style: italic; margin-bottom: 10px;' }
+                    cls: 'setting-item-description text-muted optional-note'
                 });
 
                 new Setting(existingSection)
@@ -547,10 +446,6 @@ export class OnboardingModal extends Modal {
 
         // Structured folder name setting
         const folderSection = contentEl.createDiv({ cls: 'onboarding-section' });
-        folderSection.style.marginTop = '20px';
-        folderSection.style.padding = '15px';
-        folderSection.style.border = '1px solid var(--background-modifier-border)';
-        folderSection.style.borderRadius = '5px';
 
         new Setting(folderSection)
             .setName('Structured folder name')
@@ -587,20 +482,12 @@ export class OnboardingModal extends Modal {
 
         // Show note about demo currency
         if (this.dataChoice === 'demo') {
-            const currencyNote = folderSection.createDiv();
-            currencyNote.style.marginTop = '5px';
-            currencyNote.style.fontSize = '0.9em';
-            currencyNote.style.color = 'var(--text-muted)';
-            currencyNote.style.fontStyle = 'italic';
+            const currencyNote = folderSection.createDiv({ cls: 'optional-note text-muted' });
             currencyNote.innerHTML = '💡 <strong>Note:</strong> Demo data uses USD. You can change this setting later.';
         }
 
         // Setup button
         const buttonContainer = contentEl.createDiv({ cls: 'onboarding-buttons' });
-        buttonContainer.style.display = 'flex';
-        buttonContainer.style.justifyContent = 'space-between';
-        buttonContainer.style.marginTop = '20px';
-        buttonContainer.style.gap = '10px';
 
         const backBtn = buttonContainer.createEl('button', { text: '← Back to Prerequisites' });
         backBtn.onclick = () => {
@@ -630,23 +517,14 @@ export class OnboardingModal extends Modal {
             cls: 'setting-item-description'
         });
 
-        const successSection = contentEl.createDiv({ cls: 'success-section' });
-        successSection.style.padding = '20px';
-        successSection.style.marginTop = '20px';
-        successSection.style.backgroundColor = 'var(--background-modifier-success)';
-        successSection.style.border = '2px solid var(--color-green)';
-        successSection.style.borderRadius = '5px';
-        successSection.style.textAlign = 'center';
+        const successSection = contentEl.createDiv({ cls: 'onboarding-success-section' });
 
         successSection.createEl('h3', { text: '🎉 Setup Complete!' });
 
-        const summaryDiv = successSection.createDiv();
-        summaryDiv.style.marginTop = '15px';
-        summaryDiv.style.textAlign = 'left';
+        const summaryDiv = successSection.createDiv({ cls: 'onboarding-success-summary' });
 
         summaryDiv.createEl('h4', { text: 'Configuration Summary:' });
         const summaryList = summaryDiv.createEl('ul');
-        summaryList.style.marginLeft = '20px';
         summaryList.createEl('li').innerHTML = `<strong>Python:</strong> ${this.pythonCommand || 'N/A'} (${this.pythonVersion || 'unknown'})`;
         summaryList.createEl('li').innerHTML = `<strong>Bean Query:</strong> ${this.beanQueryCommand || 'N/A'}`;
         summaryList.createEl('li').innerHTML = `<strong>Bean Price:</strong> ${this.beanPriceValid
@@ -657,15 +535,10 @@ export class OnboardingModal extends Modal {
         summaryList.createEl('li').innerHTML = `<strong>Data Source:</strong> ${this.dataChoice === 'demo' ? 'Demo Data' : 'Existing Ledger'}`;
         summaryList.createEl('li').innerHTML = `<strong>Operating Currency:</strong> ${this.operatingCurrency}`;
 
-        const nextStepsDiv = contentEl.createDiv();
-        nextStepsDiv.style.marginTop = '20px';
-        nextStepsDiv.style.padding = '15px';
-        nextStepsDiv.style.border = '1px solid var(--background-modifier-border)';
-        nextStepsDiv.style.borderRadius = '5px';
+        const nextStepsDiv = contentEl.createDiv({ cls: 'next-steps-section' });
 
         nextStepsDiv.createEl('h4', { text: '🚀 Next Steps:' });
         const stepsList = nextStepsDiv.createEl('ol');
-        stepsList.style.marginLeft = '20px';
         stepsList.createEl('li', { text: 'Open the Finance Dashboard (Command Palette → "Open Finance Dashboard")' });
         stepsList.createEl('li', { text: 'Explore the 5 tabs: Overview, Transactions, Journal, Balance Sheet, Commodities' });
         stepsList.createEl('li', { text: 'Try BQL queries in markdown notes with code blocks' });
@@ -673,10 +546,7 @@ export class OnboardingModal extends Modal {
             stepsList.createEl('li', { text: 'Enable Automatic Price Fetching in Settings → General to keep commodity prices up to date' });
         }
 
-        const buttonContainer = contentEl.createDiv({ cls: 'onboarding-buttons' });
-        buttonContainer.style.display = 'flex';
-        buttonContainer.style.justifyContent = 'center';
-        buttonContainer.style.marginTop = '20px';
+        const buttonContainer = contentEl.createDiv({ cls: 'onboarding-buttons mod-center' });
 
         const doneBtn = buttonContainer.createEl('button', { text: 'Open Dashboard & Close', cls: 'mod-cta' });
         doneBtn.onclick = async () => {
@@ -686,7 +556,6 @@ export class OnboardingModal extends Modal {
         };
 
         const closeBtn = buttonContainer.createEl('button', { text: 'Close' });
-        closeBtn.style.marginLeft = '10px';
         closeBtn.onclick = () => {
             this.close();
         };
