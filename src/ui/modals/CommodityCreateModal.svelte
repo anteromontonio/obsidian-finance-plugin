@@ -107,99 +107,101 @@
 <div class="commodity-create-modal">
     <h2>Add New Commodity</h2>
 
-    <div class="form-group">
-        <label for="symbol">
-            Symbol <span class="required">*</span>
-        </label>
-        <input
-            id="symbol"
-            type="text"
-            bind:value={symbol}
-            on:input={handleSymbolInput}
-            placeholder="BTC, AAPL, USD..."
-            class:error={symbolError}
-            required
-        />
-        {#if symbolError}
-            <div class="error-message">{symbolError}</div>
-        {/if}
-        <div class="hint">Uppercase alphanumeric recommended (e.g., BTC, AAPL)</div>
-    </div>
-
-    <div class="form-group">
-        <label for="date">
-            Date <span class="required">*</span>
-        </label>
-        <input
-            id="date"
-            type="date"
-            bind:value={date}
-            required
-        />
-        <div class="hint">Date when the commodity was first introduced</div>
-    </div>
-
-    <div class="form-group">
-        <label for="priceMetadata">
-            Price Source <span class="optional">(optional)</span>
-        </label>
-        <div class="input-with-button">
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="symbol">
+                Symbol <span class="required">*</span>
+            </label>
             <input
-                id="priceMetadata"
+                id="symbol"
                 type="text"
-                bind:value={priceMetadata}
-                placeholder="yahoo/AAPL, USD, coinbase/BTC-USD..."
+                bind:value={symbol}
+                on:input={handleSymbolInput}
+                placeholder="BTC, AAPL, USD..."
+                class:error={symbolError}
+                required
             />
-            <button
-                on:click={testPrice}
-                disabled={testingPrice || !priceMetadata.trim()}
-                class="test-button"
-            >
-                {testingPrice ? '⏳' : '🧪'} Test
-            </button>
+            {#if symbolError}
+                <div class="error-message">{symbolError}</div>
+            {/if}
+            <div class="hint">Uppercase alphanumeric recommended (e.g., BTC, AAPL)</div>
         </div>
-        {#if priceTestResult}
-            <div class="test-result">{priceTestResult}</div>
-        {/if}
-        <div class="hint">Price source for automated price fetching (e.g., yahoo/AAPL)</div>
-    </div>
 
-    <div class="form-group">
-        <label for="logoUrl">
-            Logo URL <span class="optional">(optional)</span>
-        </label>
-        <div class="input-with-button">
+        <div class="form-group">
+            <label for="date">
+                Date <span class="required">*</span>
+            </label>
             <input
-                id="logoUrl"
-                type="url"
-                bind:value={logoUrl}
-                on:input={handleLogoInput}
-                placeholder="https://logos.hunter.io/bitcoin.org"
+                id="date"
+                type="date"
+                bind:value={date}
+                required
             />
-            <button
-                on:click={testLogo}
-                disabled={testingLogo || !logoUrl.trim()}
-                class="test-button"
-            >
-                {testingLogo ? '⏳' : '🧪'} Test
-            </button>
+            <div class="hint">Date when the commodity was first introduced</div>
         </div>
-        {#if logoTestResult}
-            <div class="test-result">{logoTestResult}</div>
-        {/if}
-        {#if logoPreview}
-            <div class="logo-preview">
-                <img 
-                    src={logoPreview} 
-                    alt="Logo preview" 
-                    on:error={handleLogoError}
+
+        <div class="form-group full-width">
+            <label for="priceMetadata">
+                Price Source <span class="optional">(optional)</span>
+            </label>
+            <div class="input-with-button">
+                <input
+                    id="priceMetadata"
+                    type="text"
+                    bind:value={priceMetadata}
+                    placeholder="yahoo/AAPL, USD, coinbase/BTC-USD..."
                 />
+                <button
+                    on:click={testPrice}
+                    disabled={testingPrice || !priceMetadata.trim()}
+                    class="test-button"
+                >
+                    {testingPrice ? '⏳' : '🧪'} Test
+                </button>
             </div>
-        {/if}
-        <div class="hint">URL to commodity logo image (will be displayed in UI)</div>
+            {#if priceTestResult}
+                <div class="test-result">{priceTestResult}</div>
+            {/if}
+            <div class="hint">Price source for automated price fetching (e.g., yahoo/AAPL)</div>
+        </div>
+
+        <div class="form-group full-width">
+            <label for="logoUrl">
+                Logo URL <span class="optional">(optional)</span>
+            </label>
+            <div class="input-with-button">
+                <input
+                    id="logoUrl"
+                    type="url"
+                    bind:value={logoUrl}
+                    on:input={handleLogoInput}
+                    placeholder="https://logos.hunter.io/bitcoin.org"
+                />
+                <button
+                    on:click={testLogo}
+                    disabled={testingLogo || !logoUrl.trim()}
+                    class="test-button"
+                >
+                    {testingLogo ? '⏳' : '🧪'} Test
+                </button>
+            </div>
+            {#if logoTestResult}
+                <div class="test-result">{logoTestResult}</div>
+            {/if}
+            {#if logoPreview}
+                <div class="logo-preview">
+                    <img 
+                        src={logoPreview} 
+                        alt="Logo preview" 
+                        on:error={handleLogoError}
+                    />
+                </div>
+            {/if}
+            <div class="hint">URL to commodity logo image (will be displayed in UI)</div>
+        </div>
     </div>
 
-    <div class="button-group">
+    <div class="modal-footer">
         <button on:click={handleCancel} class="cancel-button">
             Cancel
         </button>
@@ -215,24 +217,38 @@
 
 <style>
     .commodity-create-modal {
-        padding: 20px;
+        padding: var(--size-4-4);
         max-width: 600px;
     }
 
     h2 {
-        margin: 0 0 20px 0;
+        margin: 0 0 var(--size-4-4) 0;
         color: var(--text-normal);
+        font-size: var(--font-ui-larger);
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--size-4-2);
+        margin-bottom: var(--size-4-3);
     }
 
     .form-group {
-        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: var(--size-4-1);
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
     }
 
     label {
         display: block;
-        margin-bottom: 6px;
         font-weight: 500;
         color: var(--text-normal);
+        font-size: var(--font-ui-small);
     }
 
     .required {
@@ -249,12 +265,12 @@
     input[type="date"],
     input[type="url"] {
         width: 100%;
-        padding: 8px 12px;
+        padding: var(--size-4-1) var(--size-4-2);
         border: 1px solid var(--background-modifier-border);
-        border-radius: 4px;
+        border-radius: var(--radius-s);
         background: var(--background-primary);
         color: var(--text-normal);
-        font-size: 14px;
+        font-size: var(--font-ui-small);
         font-family: inherit;
     }
 
@@ -276,7 +292,7 @@
 
     .input-with-button {
         display: flex;
-        gap: 8px;
+        gap: var(--size-4-2);
     }
 
     .input-with-button input {
@@ -284,13 +300,13 @@
     }
 
     .test-button {
-        padding: 8px 12px;
+        padding: var(--size-4-1) var(--size-4-3);
         border: 1px solid var(--background-modifier-border);
-        border-radius: 4px;
+        border-radius: var(--radius-s);
         background: var(--background-primary);
         color: var(--text-normal);
         cursor: pointer;
-        font-size: 14px;
+        font-size: var(--font-ui-small);
         white-space: nowrap;
     }
 
@@ -310,10 +326,10 @@
     }
 
     .logo-preview {
-        margin-top: 8px;
-        padding: 8px;
+        margin-top: var(--size-4-2);
+        padding: var(--size-4-2);
         border: 1px solid var(--background-modifier-border);
-        border-radius: 4px;
+        border-radius: var(--radius-s);
         background: var(--background-secondary);
         text-align: center;
     }
@@ -324,20 +340,20 @@
         object-fit: contain;
     }
 
-    .button-group {
+    .modal-footer {
         display: flex;
         justify-content: flex-end;
-        gap: 10px;
-        margin-top: 30px;
-        padding-top: 20px;
+        gap: var(--size-4-2);
+        margin-top: var(--size-4-4);
+        padding-top: var(--size-4-3);
         border-top: 1px solid var(--background-modifier-border);
     }
 
     button {
-        padding: 10px 20px;
+        padding: var(--size-4-1) var(--size-4-4);
         border: none;
-        border-radius: 4px;
-        font-size: 14px;
+        border-radius: var(--radius-s);
+        font-size: var(--font-ui-small);
         font-weight: 500;
         cursor: pointer;
         transition: all 0.2s ease;

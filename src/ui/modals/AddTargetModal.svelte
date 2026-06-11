@@ -99,44 +99,44 @@
 <div class="indicator-modal">
 	<h2>{editingIndicator ? 'Edit Target' : 'Add Target'}</h2>
 
-	<div class="form-group">
-		<label for="target-name">Name <span class="required">*</span></label>
-		<input
-			id="target-name"
-			type="text"
-			bind:value={name}
-			placeholder="e.g. Emergency Fund"
-			class:error={nameError}
-		/>
-		{#if nameError}<span class="error-msg">{nameError}</span>{/if}
-	</div>
-
-	<div class="form-group">
-		<label for="target-account">Asset Account <span class="required">*</span></label>
-		<div class="autocomplete-wrapper">
+	<div class="form-grid">
+		<div class="form-group full-width">
+			<label for="target-name">Name <span class="required">*</span></label>
 			<input
-				id="target-account"
+				id="target-name"
 				type="text"
-				bind:value={accountQuery}
-				placeholder="e.g. Assets:Savings"
-				class:error={accountError}
-				on:focus={() => (showDropdown = true)}
-				on:blur={() => setTimeout(() => (showDropdown = false), 150)}
+				bind:value={name}
+				placeholder="e.g. Emergency Fund"
+				class:error={nameError}
 			/>
-			{#if showDropdown && filteredAccounts.length > 0}
-				<ul class="autocomplete-dropdown">
-					{#each filteredAccounts.slice(0, 8) as acc}
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-						<li on:click={() => selectAccount(acc)}>{acc}</li>
-					{/each}
-				</ul>
-			{/if}
+			{#if nameError}<span class="error-msg">{nameError}</span>{/if}
 		</div>
-		{#if accountError}<span class="error-msg">{accountError}</span>{/if}
-	</div>
 
-	<div class="form-row">
+		<div class="form-group full-width">
+			<label for="target-account">Asset Account <span class="required">*</span></label>
+			<div class="autocomplete-wrapper">
+				<input
+					id="target-account"
+					type="text"
+					bind:value={accountQuery}
+					placeholder="e.g. Assets:Savings"
+					class:error={accountError}
+					on:focus={() => (showDropdown = true)}
+					on:blur={() => setTimeout(() => (showDropdown = false), 150)}
+				/>
+				{#if showDropdown && filteredAccounts.length > 0}
+					<ul class="autocomplete-dropdown">
+						{#each filteredAccounts.slice(0, 8) as acc}
+							<!-- svelte-ignore a11y-click-events-have-key-events -->
+							<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+							<li on:click={() => selectAccount(acc)}>{acc}</li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
+			{#if accountError}<span class="error-msg">{accountError}</span>{/if}
+		</div>
+
 		<div class="form-group">
 			<label for="target-cycle">Period</label>
 			<select id="target-cycle" bind:value={cycle}>
@@ -169,34 +169,34 @@
 				{/each}
 			</select>
 		</div>
-	</div>
 
-	<div class="form-group rollover-row">
-		<label class="toggle-label">
-			<input type="checkbox" bind:checked={isRollover} />
-			Roll over
-		</label>
-	</div>
-
-	{#if isRollover}
-		<div class="form-group">
-			<label for="target-start">Start Date</label>
-			<input id="target-start" type="date" bind:value={startDate} />
+		<div class="form-group rollover-row">
+			<label class="toggle-label">
+				<input type="checkbox" bind:checked={isRollover} />
+				Roll over
+			</label>
 		</div>
-	{/if}
 
-	<div class="form-group">
-		<label for="target-tag">Tag <span class="optional">(optional)</span></label>
-		<div class="tag-row">
-			<select id="target-tag-mode" bind:value={tagMode}>
-				<option value="has">Has tag</option>
-				<option value="not_has">Does not have tag</option>
-			</select>
-			<input id="target-tag" type="text" bind:value={tag} placeholder="e.g. savings" />
+		{#if isRollover}
+			<div class="form-group full-width">
+				<label for="target-start">Start Date</label>
+				<input id="target-start" type="date" bind:value={startDate} />
+			</div>
+		{/if}
+
+		<div class="form-group full-width">
+			<label for="target-tag">Tag <span class="optional">(optional)</span></label>
+			<div class="tag-row">
+				<select id="target-tag-mode" bind:value={tagMode}>
+					<option value="has">Has tag</option>
+					<option value="not_has">Does not have tag</option>
+				</select>
+				<input id="target-tag" type="text" bind:value={tag} placeholder="e.g. savings" />
+			</div>
 		</div>
 	</div>
 
-	<div class="modal-actions">
+	<div class="modal-footer">
 		<button class="cancel-btn" on:click={handleCancel}>Cancel</button>
 		<button class="save-btn" on:click={handleSave}>{editingIndicator ? 'Save Changes' : 'Save Target'}</button>
 	</div>
@@ -213,17 +213,21 @@
 		color: var(--text-normal);
 	}
 
-	.form-group {
+	.form-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--size-4-2);
 		margin-bottom: var(--size-4-3);
+	}
+
+	.form-group {
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
 	}
 
-	.form-row {
-		display: grid;
-		grid-template-columns: 1fr 1fr 1fr;
-		gap: var(--size-4-3);
+	.form-group.full-width {
+		grid-column: 1 / -1;
 	}
 
 	label {
@@ -271,7 +275,7 @@
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
 		border-radius: var(--radius-s);
-		max-height: 160px;
+		max-height: 120px;
 		overflow-y: auto;
 		list-style: none;
 		margin: 2px 0 0;
@@ -291,6 +295,9 @@
 	.rollover-row {
 		flex-direction: row;
 		align-items: center;
+		margin-top: auto;
+		margin-bottom: auto;
+		padding-top: var(--size-4-1);
 	}
 
 	.toggle-label {
@@ -321,7 +328,7 @@
 		flex: 1;
 	}
 
-	.modal-actions {
+	.modal-footer {
 		display: flex;
 		justify-content: flex-end;
 		gap: var(--size-4-2);

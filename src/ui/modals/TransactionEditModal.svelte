@@ -1571,8 +1571,8 @@
 	.form-grid {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 0.5rem;
-		margin-bottom: 0.75rem;
+		gap: var(--size-4-2);
+		margin-bottom: var(--size-4-3);
 	}
 
 	.form-group {
@@ -1631,7 +1631,7 @@
 	.posting-row {
 		display: grid;
 		grid-template-columns: 3fr 1.2fr 1fr auto;
-		gap: 1rem;
+		gap: var(--size-4-3);
 		align-items: end;
 	}
 
@@ -1684,7 +1684,7 @@
 	.advanced-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-		gap: 0.5rem;
+		gap: var(--size-4-2);
 	}
 
 	.advanced-field {
@@ -1857,7 +1857,7 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 0.5rem 1rem;
+		padding: var(--size-4-2) var(--size-4-3);
 		border-top: 1px solid var(--background-modifier-border);
 		background: var(--background-secondary);
 	}

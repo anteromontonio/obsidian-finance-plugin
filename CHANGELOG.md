@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## In-progress
 
+- **Modal Polish: Compact grid layouts, unified spacing, and standard footers** — Refactored form layouts in AddBudgetModal, AddTargetModal, and CommodityCreateModal to use CSS Grid for compact, aligned form presentation. Standardized spacing using Obsidian design tokens, unified modal footers using a standard .modal-footer class aligned to the bottom right, and adjusted custom autocomplete dropdown max heights to optimize vertical space. Closes [#217](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/217).
+
 - **Onboarding Workflow: Refactor wizard to Svelte & polish layout** — Replaced the custom DOM-based onboarding wizard with a Svelte component, introduced a card-based data selection layout, reduced vertical spacing, adopted Obsidian's native setting-item classes, and standardized success/warning states to match Obsidian UI tokens. Closes [#216](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/216).
 
 - **Design Cleanups: Adopt Obsidian spacing and CSS tokens** — Transitioned inline styles across Svelte/TypeScript files to external stylesheets and `<style>` blocks, cleaned up hardcoded pixels to use design tokens, standardized typography variables, and compacted inputs/buttons for a professional native Obsidian feel. Closes [#215](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/215).
