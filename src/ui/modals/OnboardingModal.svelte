@@ -45,6 +45,7 @@
 	// Scan results
 	let beancountFiles: string[] = [];
 	let isSubmitting = false;
+	let showManualPathInput = false;
 
 	onMount(async () => {
 		// Detect platform
@@ -430,34 +431,45 @@
 				{#if dataChoice}
 					<div class="setup-form-container">
 						{#if dataChoice === 'existing'}
-							<!-- Select Existing Dropdown / Input -->
-							<div class="setting-item">
-								<div class="setting-item-info">
-									<div class="setting-item-name">Select Beancount file</div>
-									<div class="setting-item-description">Choose from existing .beancount files in your vault</div>
-								</div>
-								<div class="setting-item-control">
-									{#if beancountFiles.length > 0}
+							{#if beancountFiles.length > 0 && !showManualPathInput}
+								<!-- Dropdown Selection -->
+								<div class="setting-item">
+									<div class="setting-item-info">
+										<div class="setting-item-name">Select Beancount file</div>
+										<div class="setting-item-description">
+											Choose from existing .beancount files in your vault, or
+											<!-- svelte-ignore a11y-click-events-have-key-events -->
+											<!-- svelte-ignore a11y-no-static-element-interactions -->
+											<span class="setup-link" on:click={() => { showManualPathInput = true; existingFilePath = ''; }}>enter path manually</span>.
+										</div>
+									</div>
+									<div class="setting-item-control">
 										<select bind:value={existingFilePath}>
 											{#each beancountFiles as file}
 												<option value={file}>{file}</option>
 											{/each}
 										</select>
-									{:else}
-										<span class="muted-text">No .beancount files found in vault. Enter path below.</span>
-									{/if}
+									</div>
 								</div>
-							</div>
-
-							<div class="setting-item">
-								<div class="setting-item-info">
-									<div class="setting-item-name">Beancount file path</div>
-									<div class="setting-item-description">Absolute or vault-relative path to your ledger file</div>
+							{:else}
+								<!-- Manual Text Input -->
+								<div class="setting-item">
+									<div class="setting-item-info">
+										<div class="setting-item-name">Beancount file path</div>
+										<div class="setting-item-description">
+											Absolute or vault-relative path to your ledger file.
+											{#if beancountFiles.length > 0}
+												<!-- svelte-ignore a11y-click-events-have-key-events -->
+												<!-- svelte-ignore a11y-no-static-element-interactions -->
+												Or <span class="setup-link" on:click={() => { showManualPathInput = false; existingFilePath = beancountFiles[0]; }}>choose file from vault</span>.
+											{/if}
+										</div>
+									</div>
+									<div class="setting-item-control">
+										<input type="text" bind:value={existingFilePath} placeholder="/path/to/your/ledger.beancount" />
+									</div>
 								</div>
-								<div class="setting-item-control">
-									<input type="text" bind:value={existingFilePath} placeholder="/path/to/your/ledger.beancount" />
-								</div>
-							</div>
+							{/if}
 						{/if}
 
 						<!-- Structured Folder Name -->
@@ -872,5 +884,15 @@
 
 	.setting-item-name {
 		font-weight: 500;
+	}
+
+	.setup-link {
+		color: var(--text-accent);
+		cursor: pointer;
+		text-decoration: underline;
+	}
+
+	.setup-link:hover {
+		color: var(--text-accent-hover);
 	}
 </style>
