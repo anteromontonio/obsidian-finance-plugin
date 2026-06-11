@@ -147,6 +147,10 @@ export async function createStructuredFolder(
             }
         }
 
+        // Wait a moment for vault cache to index the new files
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await updateLedgerIncludes(plugin, folderName);
+
         new Notice(`Structured layout created in ${folderName}/`);
         return folderPath;
     } catch (error: any) {
@@ -706,6 +710,10 @@ export async function migrateToStructuredLayout(
         // Normalize path to use forward slashes for Obsidian vault API
         const ledgerPath = path.join(targetFolderName, STRUCTURED_FILES.ledger).replace(/\\/g, '/');
         await writeToFile(plugin, ledgerPath, includeStatements);
+
+        // Wait a moment for vault cache to index the new files
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await updateLedgerIncludes(plugin, targetFolderName);
 
         // Step 6: Update plugin settings
         plugin.settings.structuredFolderName = targetFolderName;

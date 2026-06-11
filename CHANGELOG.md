@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Design Tokens: Establish design token system in styles.css** — Added consistent spacing, typography, shadow, transition, and finance-specific color variables (assets, liabilities, equity, income, expense) adapting automatically to light/dark themes under `:root`. Refactored existing styles to use these variables for better theme integration. Closes [#84](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/84).
 
-- **File Organization: Support monthly transaction files** — Added setting to organize transactions by month (`transactions/YYYY/YYYY-MM.beancount`) instead of just yearly. Updates the onboarding wizard and automatic file management tools to support both formats dynamically. Closes [#210](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/210).
+- **File Organization: Support monthly transaction files** — Added setting to organize transactions by month (`transactions/YYYY/YYYY-MM.beancount`) instead of just yearly. Updates the onboarding wizard and automatic file management tools to support both formats dynamically, and resolves a bug where the main ledger includes remained yearly after initial creation or migration. Closes [#210](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/210).
 
 - **Financial Indicators: Add edit and delete support for budgets and targets** — Added UI action buttons to edit and delete indicators, backed by new atomic update/delete directives helpers and event line location querying. Closes [#207](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/207).
 
