@@ -5,6 +5,8 @@
 	import { Logger } from '../../../utils/logger';
 	import SunburstChart from '../../common/SunburstChart.svelte';
 	import ChartComponent from '../../common/ChartComponent.svelte';
+	import SkeletonLoader from '../../common/SkeletonLoader.svelte';
+	import ErrorBanner from '../../common/ErrorBanner.svelte';
 
 	// Chart selector
 	let selectedChart: 'trend' | 'total' = 'trend';
@@ -113,9 +115,9 @@
 	</div>
 
 	{#if state.isLoading}
-		<p>Loading data...</p>
+		<SkeletonLoader type="list" rows={8} />
 	{:else if state.error}
-		<p class="error-message">{state.error}</p>
+		<ErrorBanner message={state.error} on:retry={handleRefresh} />
 	{:else}
 		<!-- Multi-currency warning -->
 		{#if state.hasUnconvertedCommodities && state.unconvertedWarning}

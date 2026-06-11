@@ -1,6 +1,9 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
     import { debounce, getOpenAccounts, getPayees, getTags, deleteTransaction, deleteBalance, deleteNote } from '../../../utils/index';
+    import SkeletonLoader from '../../common/SkeletonLoader.svelte';
+    import ErrorBanner from '../../common/ErrorBanner.svelte';
+    import EmptyState from '../../common/EmptyState.svelte';
     import TransactionCard from './cards/TransactionCard.svelte';
     import BalanceCard from './cards/BalanceCard.svelte';
     import NoteCard from './cards/NoteCard.svelte';
@@ -311,21 +314,17 @@
 
     <!-- Error Banner -->
     {#if $error}
-        <div class="error-banner">
-            <span class="font-medium">Error:</span> {$error}
-        </div>
+        <ErrorBanner message={$error} on:retry={() => refresh()} />
     {/if}
 
     <!-- Cards List -->
     <div class="cards-container">
         {#if isLoading}
-            <div class="loading-state">Loading entries...</div>
+            <SkeletonLoader type="list" rows={5} />
         {/if}
         
         {#if !isLoading && visibleEntriesArray.length === 0}
-            <span style="display: block; text-align: center; padding: 3rem; color: var(--text-muted);">
-                No entries found matching your filters.
-            </span>
+            <EmptyState icon="📓" title="No Entries Found" description="No transactions, notes, or balances match your search criteria or active filters." />
         {/if}
         
         {#if !isLoading && visibleEntriesArray.length > 0}

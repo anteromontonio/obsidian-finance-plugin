@@ -42,7 +42,7 @@ Focusing on refining the local editing experience, resolving security/community 
 - [ ] **Overview Tab Layout Polish**
   - Redesign KPI cards on the Overview dashboard to support flexible grids and better layout on narrow screens.
   - *Reference:* [#85](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/85)
-- [ ] **Loading & Error States**
+- [x] **Loading & Error States**
   - Standardize spinners, placeholders, and error banners across all dashboard tabs.
   - *Reference:* [#87](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/87)
 

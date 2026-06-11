@@ -1,6 +1,8 @@
 <script lang="ts">
 	import CardComponent from '../../common/CardComponent.svelte';
 	import IndicatorsSection from './IndicatorsSection.svelte';
+	import SkeletonLoader from '../../common/SkeletonLoader.svelte';
+	import ErrorBanner from '../../common/ErrorBanner.svelte';
 	import type { OverviewController } from '../../../controllers/OverviewController';
 	import { writable, type Writable } from 'svelte/store'; // Import writable
 	import type { OverviewState } from '../../../controllers/OverviewController'; // Import the State type
@@ -57,9 +59,9 @@
 	</div>
 
 	{#if state.isLoading}
-		<p>Loading overview data...</p>
+		<SkeletonLoader type="kpi" />
 	{:else if state.error}
-		<p class="error-message">Error: {state.error}</p>
+		<ErrorBanner message={state.error} on:retry={handleRefresh} />
 	{:else}
 		<div class="conversion-warning">
 			<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

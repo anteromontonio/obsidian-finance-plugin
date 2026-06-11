@@ -3,6 +3,9 @@
 	import type { AccountNode } from '../../../models/account';
 	import { debounce } from '../../../utils/index';
 	import type { TransactionController } from '../../../controllers/TransactionController'; // Import controller type
+	import SkeletonLoader from '../../common/SkeletonLoader.svelte';
+	import ErrorBanner from '../../common/ErrorBanner.svelte';
+	import EmptyState from '../../common/EmptyState.svelte';
 
 	// --- PROPS ---
 	// Receive the controller
@@ -144,11 +147,11 @@
 		</div>
 
 		{#if state.isLoading}
-			<p>Loading transactions...</p>
+			<SkeletonLoader type="table" />
 		{:else if state.error}
-			<p class="error-message">Error loading transactions: {state.error}</p>
+			<ErrorBanner message={state.error} on:retry={handleRefresh} />
 		{:else if sortedTransactions.length === 0}
-			<p>No transactions found for the selected criteria.</p>
+			<EmptyState icon="💸" title="No Transactions Found" description="Try selecting a different account or adjusting the date range and filters." />
 		{:else}
 			<table class="transaction-table sortable">
 				<thead>

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## In-progress
 
+- **Loading & Error States: Standardize status states across all tabs** — Added unified, premium skeleton loaders, error banners with interactive retry buttons, and empty state illustrations. Integrated them across all 5 dashboard views to prevent sudden blank state shifts. Closes [#87](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/87).
+
 - **Design Tokens: Establish design token system in styles.css** — Added consistent spacing, typography, shadow, transition, and finance-specific color variables (assets, liabilities, equity, income, expense) adapting automatically to light/dark themes under `:root`. Refactored existing styles to use these variables for better theme integration. Closes [#84](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/84).
 
 - **File Organization: Support monthly transaction files** — Added setting to organize transactions by month (`transactions/YYYY/YYYY-MM.beancount`) instead of just yearly. Updates the onboarding wizard and automatic file management tools to support both formats dynamically. Closes [#210](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/210).
