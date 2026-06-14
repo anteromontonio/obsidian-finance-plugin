@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## In-progress
 
+## 2.1.4 - 2026-06-14
+
 ## 2.1.3 - 2026-06-14
 
 - **Component Cards: Refine styling, margins, and density** — Refactored TransactionCard, BalanceCard, NoteCard, and CommodityCard to use a var(--background-secondary) background with subtle border-hover outlines. Tightened component padding, optimized typography visual hierarchy (emphasizing values, muting labels/dates), and reduced line-heights to present dense card lists cleanly. Closes [#219](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/219).
