@@ -6,13 +6,13 @@ export class Logger {
         this.isDebugMode = enabled;
     }
 
-    static log(message: string, ...args: any[]) {
+    static log(message: string, ...args: unknown[]) {
         if (this.isDebugMode) {
             console.log(`[Beancount] ${message}`, ...args);
         }
     }
 
-    static info(message: string, ...args: any[]) {
+    static info(message: string, ...args: unknown[]) {
         // Info logs might be useful even without debug mode for critical info,
         // but user requested "Debug mode shows the console logs".
         // Let's stick to showing them only in debug mode to be clean,
@@ -26,12 +26,12 @@ export class Logger {
         }
     }
 
-    static warn(message: string, ...args: any[]) {
+    static warn(message: string, ...args: unknown[]) {
         // Warnings should probably always be shown or at least in debug
         console.warn(`[Beancount] ${message}`, ...args);
     }
 
-    static error(message: string, ...args: any[]) {
+    static error(message: string, ...args: unknown[]) {
         // Errors should always be visible
         console.error(`[Beancount] ${message}`, ...args);
     }

@@ -234,7 +234,7 @@ export class BeancountSettingTab extends PluginSettingTab {
                 }));
 
         // Price Fetching Settings Section
-        new Setting(containerEl).setName('Automatic Price Fetching').setHeading();
+        new Setting(containerEl).setName('Automatic price fetching').setHeading();
 
         new Setting(containerEl)
             .setName('Enable automatic price fetching')
@@ -363,15 +363,17 @@ export class BeancountSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        new Setting(containerEl).setName('Named Queries').setHeading();
+        new Setting(containerEl).setName('Named queries').setHeading();
 
         const queryInfoEl = containerEl.createDiv({ cls: 'setting-item-description' });
         queryInfoEl.setCssStyles({ marginBottom: '12px' });
         
         const p1 = queryInfoEl.createEl('p');
         p1.textContent = 'Define reusable BQL queries using the Beancount ';
+        // eslint-disable-next-line obsidianmd/ui/sentence-case
         p1.createEl('code', { text: 'query' });
         p1.appendText(' directive stored in ');
+        // eslint-disable-next-line obsidianmd/ui/sentence-case
         p1.createEl('code', { text: 'queries.beancount' });
         p1.appendText('.');
 
@@ -384,6 +386,7 @@ export class BeancountSettingTab extends PluginSettingTab {
 
         const p3 = queryInfoEl.createEl('p');
         p3.textContent = 'In your notes, use ';
+        // eslint-disable-next-line obsidianmd/ui/sentence-case
         p3.createEl('code', { text: 'bql-q:name' });
         p3.appendText(' to insert the query result inline.');
     }
@@ -449,7 +452,7 @@ export class BeancountSettingTab extends PluginSettingTab {
     }
 
     private renderFilesTab(containerEl: HTMLElement): void {
-        new Setting(containerEl).setName('File Organization').setHeading();
+        new Setting(containerEl).setName('File organization').setHeading();
 
         containerEl.createEl('p', {
             text: 'Your finances are organized using a structured folder layout with separate files for accounts, transactions, prices, and more.',
@@ -470,10 +473,12 @@ export class BeancountSettingTab extends PluginSettingTab {
 
         // File organization setting
         new Setting(containerEl)
-            .setName('Transaction File Organization')
+            .setName('Transaction file organization')
             .setDesc('How transactions should be split into multiple files inside the transactions/ folder.')
             .addDropdown(dropdown => dropdown
+                // eslint-disable-next-line obsidianmd/ui/sentence-case
                 .addOption('yearly', 'Yearly (e.g. transactions/2025.beancount)')
+                // eslint-disable-next-line obsidianmd/ui/sentence-case
                 .addOption('monthly', 'Monthly (e.g. transactions/2025/2025-01.beancount)')
                 .setValue(this.plugin.settings.fileOrganization)
                 .onChange(async (value) => {
@@ -490,7 +495,7 @@ export class BeancountSettingTab extends PluginSettingTab {
             borderRadius: '5px'
         });
 
-        infoDiv.createEl('strong', { text: 'Structured Layout File Organization:' });
+        infoDiv.createEl('strong', { text: 'Structured layout file organization:' });
         const fileList = infoDiv.createEl('ul');
         fileList.setCssStyles({
             marginTop: '8px',
@@ -582,7 +587,7 @@ export class BeancountSettingTab extends PluginSettingTab {
     }
 
     private createConnectionSection(containerEl: HTMLElement) {
-        new Setting(containerEl).setName('Connection Configuration').setHeading();
+        new Setting(containerEl).setName('Connection configuration').setHeading();
 
         const desc = containerEl.createDiv({ cls: 'setting-item-description' });
         desc.setCssStyles({ marginBottom: '1em' });
@@ -713,7 +718,7 @@ export class BeancountSettingTab extends PluginSettingTab {
             border: '1px solid var(--background-modifier-border)'
         });
 
-        new Setting(modalContent).setName('Select Template File').setHeading();
+        new Setting(modalContent).setName('Select template file').setHeading();
 
         const searchInput = modalContent.createEl('input', {
             type: 'text',
@@ -748,7 +753,7 @@ export class BeancountSettingTab extends PluginSettingTab {
 
             if (markdownFiles.length === 0) {
                 const noFiles = fileList.createEl('div', {
-                    text: 'No markdown files found',
+                    text: 'No Markdown files found',
                     cls: 'bql-no-files'
                 });
                 noFiles.setCssStyles({

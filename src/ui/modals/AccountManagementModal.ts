@@ -52,7 +52,7 @@ export class AccountManagementModal extends Modal {
                 .setDesc('Select an account to close')
                 .addDropdown(dropdown => {
                     // Add empty option
-                    dropdown.addOption('', '-- Select an account --');
+                    dropdown.addOption('', '-- select an account --');
                     // Add all open accounts
                     this.openAccounts.forEach(account => {
                         dropdown.addOption(account, account);
@@ -64,6 +64,7 @@ export class AccountManagementModal extends Modal {
                         });
                 });
         } else {
+            /* eslint-disable obsidianmd/ui/sentence-case */
             new Setting(contentEl)
                 .setName('Account name')
                 .setDesc('Enter the full account name (e.g., Assets:Bank:Checking)')
@@ -73,6 +74,7 @@ export class AccountManagementModal extends Modal {
                     .onChange(value => {
                         this.accountName = value;
                     }));
+            /* eslint-enable obsidianmd/ui/sentence-case */
         }
 
         // Date field
