@@ -5,6 +5,8 @@
 	import { Logger } from '../../../utils/logger';
 	import SunburstChart from '../../common/SunburstChart.svelte';
 	import ChartComponent from '../../common/ChartComponent.svelte';
+	import SkeletonLoader from '../../common/SkeletonLoader.svelte';
+	import ErrorBanner from '../../common/ErrorBanner.svelte';
 
 	// Chart selector
 	let selectedChart: 'trend' | 'total' = 'trend';
@@ -113,9 +115,9 @@
 	</div>
 
 	{#if state.isLoading}
-		<p>Loading data...</p>
+		<SkeletonLoader type="list" rows={8} />
 	{:else if state.error}
-		<p class="error-message">{state.error}</p>
+		<ErrorBanner message={state.error} on:retry={handleRefresh} />
 	{:else}
 		<!-- Multi-currency warning -->
 		{#if state.hasUnconvertedCommodities && state.unconvertedWarning}
@@ -282,8 +284,7 @@
 							{#each visibleIncome as item}
 								<tr class={getAccountClass(item)}>
 									<td class="account-name"
-										on:click={(e) => item.isCategory && toggleCollapse(item.account, e)}
-										style="cursor: {item.isCategory ? 'pointer' : 'default'};">
+										on:click={(e) => item.isCategory && toggleCollapse(item.account, e)}>
 										{#if item.isCategory}
 											<span class="collapse-icon">{isCollapsed(item.account) ? '▶' : '▼'}</span>
 										{/if}
@@ -324,8 +325,7 @@
 							{#each visibleExpenses as item}
 								<tr class={getAccountClass(item)}>
 									<td class="account-name"
-										on:click={(e) => item.isCategory && toggleCollapse(item.account, e)}
-										style="cursor: {item.isCategory ? 'pointer' : 'default'};">
+										on:click={(e) => item.isCategory && toggleCollapse(item.account, e)}>
 										{#if item.isCategory}
 											<span class="collapse-icon">{isCollapsed(item.account) ? '▶' : '▼'}</span>
 										{/if}
@@ -363,7 +363,7 @@
 
 <style>
 	.income-statement-container {
-		padding: var(--size-4-4);
+		padding: 0;
 		width: 100%;
 		overflow-x: auto;
 	}
@@ -664,6 +664,7 @@
 		border-collapse: collapse;
 		table-layout: fixed;
 		min-width: 300px;
+		font-size: var(--font-ui-small);
 	}
 
 	.beancount-table thead {
@@ -672,7 +673,7 @@
 	}
 
 	.header-row th {
-		padding: var(--size-4-3);
+		padding: var(--size-4-1) var(--size-4-2);
 		font-weight: 600;
 		color: var(--text-normal);
 		text-align: left;
@@ -700,7 +701,7 @@
 
 	.beancount-table td,
 	.beancount-table th {
-		padding: var(--size-4-2) var(--size-4-3);
+		padding: var(--size-4-1) var(--size-4-2);
 		border-bottom: 1px solid var(--background-secondary);
 		vertical-align: top;
 		word-wrap: break-word;
@@ -714,6 +715,11 @@
 		text-overflow: ellipsis;
 		max-width: 180px;
 		width: 50%;
+		cursor: default;
+	}
+
+	:global(.account-row.category) .account-name {
+		cursor: pointer;
 	}
 
 	.collapse-icon {

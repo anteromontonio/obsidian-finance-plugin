@@ -6,27 +6,23 @@
 // Internal module structure:
 //   queryRunner.ts  – runQuery (BQL execution)
 //   fileEditor.ts   – atomicFileWrite, createBackupFile, convertWindowsPathToWsl, convertWslPathToWindows
-//   formatters.ts   – parseSingleValue, parseAmount, extractConvertedAmount, extractNonReportingCurrencies,
+//   formatters.ts   – extractConvertedAmountNumber, extractNonReportingCurrencies,
 //                     formatCurrency, getCurrentMonthRange, parseMetadataString, debounce
 //   csvParsers.ts   – parseCommoditiesListCSV, parseCommoditiesPriceDataCSV, parseCommodityDetailsCSV
 //   accounts.ts     – buildAccountTree, getOpenAccounts, getPayees, getTags, getCommodities
 //   journal.ts      – getTransactionEntries, getBalanceEntries, getNoteEntries
-//   directives.ts   – all create/update/delete write operations + generateTransactionText + validateCommodityLocation
+//   directives.ts   – all create/delete/update operations + generateTransactionText + validateCommodityLocation
 
 export { runQuery, type BQLFormat } from './queryRunner';
 export { splitCommandLine, execSafe } from './execSafe';
 export { convertWindowsPathToWsl, convertWslPathToWindows, atomicFileWrite, createBackupFile, readFileContent, getVaultRelativePath } from './fileEditor';
 export {
-	parseSingleValue,
-	parseAmount,
-	extractConvertedAmount,
+	extractConvertedAmountNumber,
 	extractNonReportingCurrencies,
-	formatCurrency,
-	getCurrentMonthRange,
 	parseMetadataString,
 	debounce,
 } from './formatters';
-export { parseCommoditiesListCSV, parseCommoditiesPriceDataCSV, parseCommodityDetailsCSV, parseCommoditiesHoldingsCSV, parseCombinedCommodityDataCSV } from './csvParsers';
+export { parseCommoditiesListCSV, parseCommoditiesPriceDataCSV, parseCommodityDetailsCSV, parseCombinedCommodityDataCSV } from './csvParsers';
 export { buildAccountTree, getOpenAccounts, getPayees, getTags, getCommodities } from './accounts';
 export { getTransactionEntries, getBalanceEntries, getNoteEntries } from './journal';
 export {
@@ -56,7 +52,7 @@ export {
 } from './directives';
 
 // Re-export structuredLayout helpers that some callers pull from utils/index
-export { getTargetFile, getMainLedgerPath, ensureYearFile } from './structuredLayout';
+export { getTargetFile, getMainLedgerPath, ensureTransactionFile } from './structuredLayout';
 export type { OperationType } from './structuredLayout';
 
 // Re-export validation utilities (still implemented here until moved)

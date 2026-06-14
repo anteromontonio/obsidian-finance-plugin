@@ -6,6 +6,9 @@
 		CommodityInfo,
 	} from "../../../controllers/CommoditiesController";
 	import CommodityCard from "./cards/CommodityCard.svelte";
+	import SkeletonLoader from "../../common/SkeletonLoader.svelte";
+	import ErrorBanner from "../../common/ErrorBanner.svelte";
+	import EmptyState from "../../common/EmptyState.svelte";
 
 	export let controller: CommoditiesController;
 
@@ -174,17 +177,12 @@
 
 	<!-- Error display -->
 	{#if $errorStore}
-		<div class="error-message">
-			⚠️ {$errorStore}
-		</div>
+		<ErrorBanner message={$errorStore} on:retry={handleRefresh} />
 	{/if}
 
 	<!-- Loading state -->
 	{#if $loadingStore}
-		<div class="loading-container">
-			<div class="loading-spinner"></div>
-			<span>Loading commodities data...</span>
-		</div>
+		<SkeletonLoader type="kpi" />
 	{/if}
 
 	<!-- Commodities grid -->
@@ -200,36 +198,18 @@
 			{/each}
 		</div>
 	{:else if !$loadingStore}
-		<div class="empty-state">
-			<div class="empty-icon">🪙</div>
-			<h4>No commodities found</h4>
-			<p>
-				{$searchTermStore
-					? `No commodities match "${$searchTermStore}"`
-					: filterMode !== 'all'
-					? `No commodities match the "${ filterMode === 'has_holding' ? 'Has Holding' : filterMode === 'has_price' ? 'Has Price' : 'Has Both' }" filter`
-						: 'No commodities found in your Beancount file'}
-			</p>
+		<EmptyState icon="🪙" title="No Commodities Found" description={$searchTermStore ? `No commodities match "${$searchTermStore}"` : filterMode !== 'all' ? `No commodities match the active filter` : 'No commodities found in your Beancount file.'}>
 			{#if !$searchTermStore}
 				<p class="empty-hint">
-					Commodities appear when you declare them in your Beancount
-					file:
+					Commodities appear when you declare them in your Beancount file:
 				</p>
 				<ul class="empty-list">
-					<li>
-						• Commodity declarations (e.g., <code
-							>2024-01-01 commodity BTC</code
-						>)
-					</li>
-					<li>
-						• With metadata for price sources (e.g., <code
-							>price: "USD"</code
-						>)
-					</li>
+					<li>• Commodity declarations (e.g., <code>2024-01-01 commodity BTC</code>)</li>
+					<li>• With price source metadata (e.g., <code>price: "USD"</code>)</li>
 					<li>• Or other metadata like exchange symbols</li>
 				</ul>
 			{/if}
-		</div>
+		</EmptyState>
 	{/if}
 </div>
 
@@ -237,7 +217,7 @@
 
 <style>
 	.commodities-tab {
-		padding: 20px;
+		padding: 0;
 		max-width: 1200px;
 		margin: 0 auto;
 	}

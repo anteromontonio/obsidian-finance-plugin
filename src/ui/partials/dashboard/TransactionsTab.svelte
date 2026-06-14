@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
 	import type { AccountNode } from '../../../models/account';
-	import { parseAmount, debounce } from '../../../utils/index';
+	import { debounce } from '../../../utils/index';
 	import type { TransactionController } from '../../../controllers/TransactionController'; // Import controller type
+	import SkeletonLoader from '../../common/SkeletonLoader.svelte';
+	import ErrorBanner from '../../common/ErrorBanner.svelte';
+	import EmptyState from '../../common/EmptyState.svelte';
 
 	// --- PROPS ---
 	// Receive the controller
@@ -42,6 +45,12 @@
 
 	// --- REMOVED onMount data fetching ---
 
+	function parseAmountNum(str: string): number {
+		if (!str) return 0;
+		const match = str.match(/(-?[\d,]+(?:\.\d+)?)/);
+		return match ? parseFloat(match[1].replace(/,/g, '')) || 0 : 0;
+	}
+
 	// --- Sorting logic (remains local) ---
 	function sortTransactions(transactions: string[][]) {
 		const headers = ['date', 'payee', 'narration', 'amount', 'balance']; // Added balance column
@@ -53,8 +62,8 @@
 			const valA = a.length > columnIndex ? a[columnIndex] : '';
 			const valB = b.length > columnIndex ? b[columnIndex] : '';
 			if (sortColumn === 'amount') {
-				const numA = parseAmount(valA).amount;
-				const numB = parseAmount(valB).amount;
+				const numA = parseAmountNum(valA);
+				const numB = parseAmountNum(valB);
 				return sortDirection === 'asc' ? numA - numB : numB - numA;
 			}
 			const comparison = valA.toLowerCase().localeCompare(valB.toLowerCase()); return sortDirection === 'asc' ? comparison : -comparison;
@@ -138,11 +147,11 @@
 		</div>
 
 		{#if state.isLoading}
-			<p>Loading transactions...</p>
+			<SkeletonLoader type="table" />
 		{:else if state.error}
-			<p class="error-message">Error loading transactions: {state.error}</p>
+			<ErrorBanner message={state.error} on:retry={handleRefresh} />
 		{:else if sortedTransactions.length === 0}
-			<p>No transactions found for the selected criteria.</p>
+			<EmptyState icon="💸" title="No Transactions Found" description="Try selecting a different account or adjusting the date range and filters." />
 		{:else}
 			<table class="transaction-table sortable">
 				<thead>
@@ -181,11 +190,22 @@
 </div>
 
 <style>
-	.account-transactions-view { padding: var(--size-4-4); height: 100%; overflow-y: auto; }
-	.controls { margin-bottom: var(--size-4-4); display: flex; flex-wrap: wrap; align-items: center; gap: var(--size-4-4); }
-	.controls > div { display: flex; align-items: center; gap: var(--size-4-2); }
-	.controls label { font-weight: 600; margin-right: var(--size-4-1); white-space: nowrap; }
-	.controls input[type="date"], .controls input[type="text"] { padding: var(--size-4-1) var(--size-4-2); }
+	.account-transactions-view { padding: 0; }
+	.controls { margin-bottom: var(--size-4-3); display: flex; flex-wrap: wrap; align-items: center; gap: var(--size-4-2); }
+	.controls > div { display: flex; align-items: center; gap: var(--size-4-1); }
+	.controls label { font-weight: 500; margin-right: var(--size-4-1); white-space: nowrap; font-size: var(--font-ui-small); }
+	.controls input[type="date"], .controls input[type="text"] {
+		padding: var(--size-4-1) var(--size-4-2);
+		height: 28px;
+		font-size: var(--font-ui-small);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: var(--radius-s);
+		background-color: var(--background-modifier-form-field);
+		color: var(--text-normal);
+	}
+	.controls input[type="date"] {
+		padding: 2px var(--size-4-2);
+	}
 	.controls input[type="text"] { min-width: 150px; }
 	.transaction-table { width: 100%; border-collapse: collapse; }
 	.transaction-table th { text-align: left; font-size: var(--font-ui-small); font-weight: 600; color: var(--text-muted); padding: 8px 6px; border-bottom: 1px solid var(--background-modifier-border); }

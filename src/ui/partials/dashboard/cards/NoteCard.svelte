@@ -35,10 +35,10 @@
 
 <style>
     .card {
-        background: var(--background-primary);
-        border: 1px solid var(--background-modifier-border);
-        border-radius: 8px;
-        margin-bottom: 1rem;
+        background: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border-hover);
+        border-radius: 6px;
+        margin-bottom: var(--size-4-3);
         overflow: hidden;
     }
 
@@ -46,16 +46,17 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.75rem 1rem;
-        background: var(--background-secondary);
-        border-bottom: 1px solid var(--background-modifier-border);
+        padding: var(--size-4-2) var(--size-4-3);
+        background: var(--background-secondary-alt);
+        border-bottom: 1px solid var(--background-modifier-border-hover);
     }
 
     .header-left {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: var(--size-4-2);
         font-family: var(--font-monospace);
+        font-size: 0.85rem;
     }
 
     .header-right {
@@ -67,27 +68,28 @@
         display: inline-flex;
         align-items: center;
         gap: 0.25rem;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
-        background: var(--text-muted);
-        color: var(--text-on-accent);
+        background: var(--background-modifier-form-field);
+        color: var(--text-muted);
     }
 
     .date {
         color: var(--text-muted);
-        font-weight: 600;
+        font-weight: 500;
+        font-size: 0.85rem;
     }
 
     .btn-edit {
-        padding: 4px 12px;
+        padding: 3px 10px;
         border: 1px solid var(--background-modifier-border);
         background: var(--background-primary);
         border-radius: 4px;
         cursor: pointer;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         display: flex;
         align-items: center;
         gap: 0.25rem;
@@ -105,7 +107,7 @@
         border: none;
         cursor: pointer;
         padding: 4px;
-        font-size: 1rem;
+        font-size: 0.9rem;
         opacity: 0.7;
         transition: opacity 0.2s;
     }
@@ -121,19 +123,20 @@
     }
 
     .card-body {
-        padding: 1rem;
+        padding: var(--size-4-2) var(--size-4-3);
     }
 
     .note-account {
         font-family: var(--font-monospace);
         color: var(--text-muted);
         font-size: 0.85rem;
-        margin-bottom: 0.5rem;
+        margin-bottom: var(--size-4-1);
     }
 
     .note-content {
         white-space: pre-wrap;
         color: var(--text-normal);
-        line-height: 1.5;
+        font-size: 0.9rem;
+        line-height: 1.35;
     }
 </style>

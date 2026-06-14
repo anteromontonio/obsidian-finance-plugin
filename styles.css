@@ -1,5 +1,65 @@
 /* styles.css */
 
+:root {
+	/* Spacing Design Tokens */
+	--spacing-xs: var(--size-4-1);  /* 4px */
+	--spacing-sm: var(--size-4-2);  /* 8px */
+	--spacing-md: var(--size-4-3);  /* 12px */
+	--spacing-lg: var(--size-4-4);  /* 16px */
+	--spacing-xl: var(--size-4-6);  /* 24px */
+	--spacing-xxl: var(--size-4-8); /* 32px */
+
+	/* Typography Design Tokens */
+	--font-weight-normal: 400;
+	--font-weight-medium: 500;
+	--font-weight-semibold: 600;
+	--font-weight-bold: 700;
+
+	--font-size-xs: var(--font-ui-small);
+	--font-size-sm: var(--font-ui-medium);
+	--font-size-md: var(--font-ui-large);
+	--font-size-lg: var(--font-ui-larger);
+
+	/* Shadow Design Tokens */
+	--shadow-flat: none;
+	--shadow-sm: var(--shadow-s);
+	--shadow-md: var(--shadow-l);
+
+	/* Transition Design Tokens */
+	--transition-fast: 0.1s ease;
+	--transition-normal: 0.2s ease;
+	--transition-slow: 0.3s ease;
+
+	/* Finance-Specific Color Tokens (Default fallback) */
+	--color-asset: #4caf50;
+	--color-liability: #f44336;
+	--color-equity: #2196f3;
+	--color-income: #009688;
+	--color-expense: #ff9800;
+
+	/* Semantics */
+	--color-success: var(--text-success);
+	--color-error: var(--text-error);
+	--color-warning: var(--color-orange);
+	--color-info: var(--color-blue);
+}
+
+.theme-light {
+	--color-asset: #2e7d32;      /* Forest green for good readability in light theme */
+	--color-liability: #c62828;  /* Deep red */
+	--color-equity: #1565c0;     /* Deep blue */
+	--color-income: #00796b;     /* Deep teal */
+	--color-expense: #e65100;    /* Deep orange */
+}
+
+.theme-dark {
+	--color-asset: #81c784;      /* Soft green for dark theme */
+	--color-liability: #e57373;  /* Soft red */
+	--color-equity: #64b5f6;     /* Soft blue */
+	--color-income: #4db6ac;     /* Soft teal */
+	--color-expense: #ffb74d;    /* Soft orange */
+}
+
 /* --- Beancount File View --- */
 
 .beancount-file-view {
@@ -44,7 +104,7 @@
 /* --- BQL Code Block Styles --- */
 
 .bql-query-container {
-	margin: 16px 0;
+	margin: var(--spacing-lg) 0;
 	border: none;
 	background: none;
 	overflow: hidden;
@@ -54,7 +114,7 @@
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: 4px 0 8px 0;
+	padding: var(--spacing-xs) 0 var(--spacing-sm) 0;
 	background: none;
 	border-bottom: none;
 }
@@ -62,12 +122,12 @@
 .bql-query-label {
 	display: flex;
 	align-items: center;
-	gap: 6px;
+	gap: var(--spacing-xs);
 }
 
 .bql-label {
-	font-size: 0.85em;
-	font-weight: 600;
+	font-size: var(--font-size-xs);
+	font-weight: var(--font-weight-semibold);
 	color: var(--text-accent);
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
@@ -75,7 +135,7 @@
 
 .bql-query-controls {
 	display: flex;
-	gap: 4px;
+	gap: var(--spacing-xs);
 }
 
 .bql-refresh-btn, .bql-copy-btn, .bql-export-btn {
@@ -83,10 +143,10 @@
 	border: none;
 	background: var(--background-secondary);
 	color: var(--text-muted);
-	border-radius: 3px;
+	border-radius: var(--radius-s);
 	cursor: pointer;
 	font-size: 11px;
-	transition: background-color 0.2s ease;
+	transition: background-color var(--transition-normal);
 	opacity: 0.7;
 }
 
@@ -100,11 +160,11 @@
 	border: 1px solid var(--background-modifier-border);
 	background: var(--background-secondary);
 	color: var(--text-muted);
-	border-radius: 3px;
+	border-radius: var(--radius-s);
 	cursor: pointer;
 	font-size: 11px;
 	opacity: 0.7;
-	transition: opacity 0.2s ease;
+	transition: opacity var(--transition-normal);
 }
 
 .bql-format-select:hover,
@@ -115,25 +175,25 @@
 
 .bql-text-result {
 	font-family: var(--font-monospace);
-	font-size: 0.85em;
+	font-size: var(--font-size-xs);
 	white-space: pre;
 	overflow-x: auto;
-	padding: 8px 0;
+	padding: var(--spacing-sm) 0;
 	color: var(--text-normal);
 	background: none;
 	border: none;
 }
 
 .bql-query-details {
-	margin: 0 0 12px 0;
+	margin: 0 0 var(--spacing-md) 0;
 	border-bottom: none;
 }
 
 .bql-query-summary {
-	padding: 4px 0;
+	padding: var(--spacing-xs) 0;
 	cursor: pointer;
 	background: none;
-	font-size: 0.85em;
+	font-size: var(--font-size-xs);
 	color: var(--text-muted);
 	border: none;
 	margin: 0;
@@ -145,8 +205,8 @@
 }
 
 .bql-query-code {
-	margin: 0 0 8px 0;
-	padding: 8px 0;
+	margin: 0 0 var(--spacing-sm) 0;
+	padding: var(--spacing-sm) 0;
 	background: none;
 	border: none;
 	font-size: 0.8em;
@@ -155,12 +215,13 @@
 
 .bql-query-code code {
 	background: var(--background-secondary);
-	padding: 8px 12px;
-	border-radius: 4px;
+	padding: var(--spacing-sm) var(--spacing-md);
+	border-radius: var(--radius-s);
 	display: block;
 	font-family: var(--font-monospace);
 	color: var(--text-normal);
 }
+
 
 .bql-result-area {
 	padding: 0;
@@ -191,21 +252,21 @@
 	color: var(--text-muted);
 	font-style: italic;
 	text-align: center;
-	padding: 20px;
+	padding: var(--size-4-5);
 }
 
 .bql-error-container {
-	margin: 8px 0;
+	margin: var(--size-4-2) 0;
 }
 
 .bql-error-summary {
 	display: flex;
 	align-items: center;
-	gap: 6px;
+	gap: var(--size-4-1);
 	color: var(--text-muted);
 	font-style: italic;
 	font-size: 0.9em;
-	padding: 4px 0;
+	padding: var(--size-4-1) 0;
 	user-select: none;
 }
 
@@ -224,14 +285,14 @@
 }
 
 .bql-error-details {
-	margin-top: 8px;
+	margin-top: var(--size-4-2);
 }
 
 .bql-error-full {
 	background: var(--background-secondary);
 	border: 1px solid var(--background-modifier-border);
-	border-radius: 4px;
-	padding: 8px;
+	border-radius: var(--radius-s);
+	padding: var(--size-4-2);
 	margin: 0;
 	font-family: var(--font-monospace);
 	font-size: 0.8em;
@@ -245,30 +306,30 @@
 .bql-simple-error {
 	color: var(--text-muted);
 	font-style: italic;
-	padding: 8px 0;
+	padding: var(--size-4-2) 0;
 	font-size: 0.9em;
 }
 
 .bql-error {
 	color: var(--text-error);
 	background: var(--background-modifier-error);
-	padding: 12px;
-	border-radius: 4px;
+	padding: var(--size-4-3);
+	border-radius: var(--radius-s);
 	border: 1px solid var(--text-error);
 	font-size: 0.9em;
 }
 
 .bql-error strong {
 	display: block;
-	margin-bottom: 4px;
+	margin-bottom: var(--size-4-1);
 }
 
 .bql-raw-result {
-	margin-top: 8px;
-	padding: 8px;
+	margin-top: var(--size-4-2);
+	padding: var(--size-4-2);
 	background: var(--background-secondary);
 	border: 1px solid var(--background-modifier-border);
-	border-radius: 4px;
+	border-radius: var(--radius-s);
 	font-family: var(--font-monospace);
 	font-size: 0.8em;
 	color: var(--text-muted);
@@ -280,14 +341,14 @@
 	border-collapse: collapse;
 	font-size: 0.85em;
 	background: none;
-	margin: 8px 0;
+	margin: var(--size-4-2) 0;
 }
 
 .bql-result-table th {
 	background: none;
 	color: var(--text-normal);
 	font-weight: 600;
-	padding: 6px 8px;
+	padding: var(--size-4-1) var(--size-4-2);
 	text-align: left;
 	border-bottom: 1px solid var(--background-modifier-border);
 	position: sticky;
@@ -295,7 +356,7 @@
 }
 
 .bql-result-table td {
-	padding: 4px 8px;
+	padding: var(--size-4-1) var(--size-4-2);
 	border-bottom: 1px solid var(--background-modifier-border-hover);
 	color: var(--text-normal);
 }
@@ -323,7 +384,7 @@
 	.bql-query-header {
 		flex-direction: column;
 		align-items: flex-start;
-		gap: 8px;
+		gap: var(--size-4-2);
 	}
 	
 	.bql-query-controls {
@@ -337,7 +398,7 @@
 	
 	.bql-result-table th,
 	.bql-result-table td {
-		padding: 4px 6px;
+		padding: var(--size-4-1) var(--size-4-1);
 	}
 }
 
@@ -347,7 +408,7 @@
 	font-size: 0.8em;
 	font-style: italic;
 	text-align: center;
-	padding: 8px 0;
+	padding: var(--size-4-2) 0;
 	opacity: 0.6;
 }
 
@@ -372,21 +433,21 @@
 
 /* Clean mode - minimal error styling */
 .bql-query-container.bql-clean-mode .bql-error-container {
-	margin: 8px 0;
+	margin: var(--size-4-2) 0;
 	background: none;
 }
 
 .bql-query-container.bql-clean-mode .bql-error-summary {
 	font-size: 0.85em;
-	padding: 2px 0;
+	padding: var(--size-4-1) 0;
 }
 
 /* --- Inline BQL Styles --- */
 
 .bql-inline-wrapper {
 	font-weight: 600;
-	padding: 1px 3px;
-	border-radius: 3px;
+	padding: 2px var(--size-4-1);
+	border-radius: var(--radius-s);
 	font-family: var(--font-monospace);
 	font-size: 0.9em;
 	transition: all 0.2s ease;
@@ -434,8 +495,8 @@
 
 .bql-inline-wrapper.bql-inline-result:hover {
 	background: var(--background-modifier-hover);
-	border-radius: 3px;
-	padding: 1px 3px;
+	border-radius: var(--radius-s);
+	padding: 2px var(--size-4-1);
 }
 
 /* --- BQL Template File Picker Styles --- */
@@ -444,23 +505,23 @@
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
-	gap: 8px;
+	gap: var(--size-4-2);
 }
 
 .bql-template-file-picker input {
 	flex: 1;
 	min-width: 300px;
-	padding: 6px 8px;
+	padding: var(--size-4-1) var(--size-4-2);
 	border: 1px solid var(--background-modifier-border);
-	border-radius: 4px;
+	border-radius: var(--radius-s);
 	background: var(--background-secondary);
 	color: var(--text-normal);
 	font-family: var(--font-interface);
 }
 
 .bql-template-file-picker button {
-	padding: 6px 12px;
-	border-radius: 4px;
+	padding: var(--size-4-1) var(--size-4-3);
+	border-radius: var(--radius-s);
 	border: 1px solid var(--background-modifier-border);
 	background: var(--interactive-normal);
 	color: var(--text-normal);
@@ -491,7 +552,7 @@
 }
 
 .bql-file-suggestion-item {
-	padding: 8px 12px;
+	padding: var(--size-4-2) var(--size-4-3);
 	cursor: pointer;
 	border-bottom: 1px solid var(--background-modifier-border-hover);
 	font-size: 0.9em;
@@ -522,8 +583,8 @@
 
 .bql-file-modal-content {
 	background: var(--background-primary);
-	padding: 24px;
-	border-radius: 8px;
+	padding: var(--size-4-6);
+	border-radius: var(--radius-m);
 	max-width: 600px;
 	width: 90%;
 	max-height: 80%;
@@ -534,7 +595,7 @@
 
 .bql-file-modal-content h3 {
 	margin-top: 0;
-	margin-bottom: 16px;
+	margin-bottom: var(--size-4-4);
 	color: var(--text-normal);
 }
 
@@ -542,12 +603,12 @@
 	max-height: 300px;
 	overflow-y: auto;
 	border: 1px solid var(--background-modifier-border);
-	border-radius: 4px;
+	border-radius: var(--radius-s);
 	background: var(--background-secondary);
 }
 
 .bql-file-item {
-	padding: 8px 12px;
+	padding: var(--size-4-2) var(--size-4-3);
 	cursor: pointer;
 	border-bottom: 1px solid var(--background-modifier-border-hover);
 	font-size: 0.9em;
@@ -563,7 +624,7 @@
 }
 
 .bql-no-files {
-	padding: 16px;
+	padding: var(--size-4-4);
 	text-align: center;
 	color: var(--text-muted);
 	font-style: italic;
@@ -592,9 +653,9 @@
 .beancount-status-panel {
 	background: var(--background-secondary);
 	border: 1px solid var(--background-modifier-border);
-	border-radius: 8px;
-	padding: 16px;
-	margin: 16px 0;
+	border-radius: var(--radius-m);
+	padding: var(--size-4-4);
+	margin: var(--size-4-4) 0;
 	font-family: var(--font-monospace);
 	font-size: 0.9em;
 }
@@ -602,7 +663,7 @@
 .beancount-status-panel .status-row {
 	display: flex;
 	align-items: center;
-	padding: 6px 0;
+	padding: var(--size-4-1) 0;
 	cursor: help;
 }
 
@@ -611,7 +672,7 @@
 	width: 12px;
 	height: 12px;
 	border-radius: 50%;
-	margin-right: 8px;
+	margin-right: var(--size-4-2);
 	border: 1px solid rgba(0,0,0,0.2);
 	box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
 }
@@ -639,9 +700,9 @@
 /* Test Results */
 .beancount-test-results {
 	font-size: var(--font-ui-small);
-	padding: 10px;
-	border-radius: 6px;
-	margin: 0 10px; /* Align with setting inputs */
+	padding: var(--size-4-2);
+	border-radius: var(--radius-s);
+	margin: 0 var(--size-4-2); /* Align with setting inputs */
 }
 
 .beancount-test-success {
@@ -661,13 +722,13 @@
 
 /* --- Status Container Styles --- */
 .beancount-status-container {
-	padding: 10px 12px;
+	padding: var(--size-4-2) var(--size-4-3);
 	background-color: var(--background-secondary);
-	border-radius: 6px;
+	border-radius: var(--radius-s);
 	border: 1px solid var(--background-modifier-border);
 	font-size: var(--font-ui-small);
 	color: var(--text-muted);
-	margin-bottom: 15px;
+	margin-bottom: var(--size-4-3);
 }
 
 .beancount-status-container.status-ok span {
@@ -686,40 +747,57 @@
 	background-color: var(--background-secondary-alt);
 	white-space: pre-wrap; /* Wrap long lines */
 	word-break: break-all;
-	padding: 8px;
-	border-radius: 4px;
+	padding: var(--size-4-2);
+	border-radius: var(--radius-s);
 	font-size: 0.9em; /* Make it a bit smaller */
-	margin-top: 8px;
+	margin-top: var(--size-4-2);
 }
 
 /* --- Validation Message Styles --- */
 .beancount-validation-message {
-	margin-top: 5px;
+	margin-top: var(--size-4-1);
 	font-size: 0.85em;
 	opacity: 0.9;
 	font-weight: 500;
-	padding: 2px 4px;
-	border-radius: 3px;
+	padding: var(--size-4-1) var(--size-4-2);
+	border-radius: var(--radius-s);
 	transition: all 0.2s ease;
 }
 
 /* Success validation */
 .beancount-validation-message.beancount-validation-success {
-	color: #4caf50;
-	background-color: rgba(76, 175, 80, 0.1);
-	border-left: 2px solid #4caf50;
+	color: var(--text-success);
+	background-color: var(--background-modifier-success, rgba(76, 175, 80, 0.1));
+	border-left: 2px solid var(--text-success);
 }
 
 /* Error validation */
 .beancount-validation-message.beancount-validation-error {
-	color: #f44336;
-	background-color: rgba(244, 67, 54, 0.1);
-	border-left: 2px solid #f44336;
+	color: var(--text-error);
+	background-color: var(--background-modifier-error, rgba(244, 67, 54, 0.1));
+	border-left: 2px solid var(--text-error);
 }
 
 /* Neutral validation */
 .beancount-validation-message.beancount-validation-neutral {
-	color: #666666;
-	background-color: rgba(102, 102, 102, 0.1);
-	border-left: 2px solid #666666;
+	color: var(--text-muted);
+	background-color: var(--background-secondary-alt);
+	border-left: 2px solid var(--text-muted);
+}
+
+/* --- Onboarding Modal Styles (Refactored to OnboardingModal.svelte) --- */
+
+/* Compact Forms (inputs/buttons) globally */
+.modal-content .form-group input,
+.modal-content .form-group select,
+.modal-content .form-group textarea,
+.modal-content .advanced-field input {
+	padding: 4px var(--size-4-2);
+	font-size: var(--font-ui-small);
+}
+
+.modal-content button,
+.beancount-editor button {
+	padding: 4px var(--size-4-3);
+	font-size: var(--font-ui-small);
 }

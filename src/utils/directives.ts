@@ -4,7 +4,7 @@
 
 import { parse as parseCsv } from 'csv-parse/sync';
 import type BeancountPlugin from '../main';
-import { getTargetFile, ensureYearFile } from './structuredLayout';
+import { getTargetFile, ensureTransactionFile } from './structuredLayout';
 import { atomicFileWrite, createBackupFile, convertWslPathToWindows, getNewlineCharacter, readFileContent } from './fileEditor';
 import { runQuery } from './queryRunner';
 import { Logger } from './logger';
@@ -577,7 +577,7 @@ export async function createTransaction(
         const transactionDate = transactionData.date || new Date().toISOString().split('T')[0];
         const year = new Date(transactionDate).getFullYear();
         const folderName = plugin.settings.structuredFolderName || 'Finances';
-        await ensureYearFile(plugin, folderName, year);
+        await ensureTransactionFile(plugin, folderName, transactionDate);
 
         const beancountFilePath = getTargetFile(plugin, 'transaction', transactionDate);
         if (!beancountFilePath) return { success: false, error: 'Beancount file path not configured' };

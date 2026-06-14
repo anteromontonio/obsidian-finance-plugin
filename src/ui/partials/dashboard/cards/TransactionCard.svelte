@@ -52,10 +52,10 @@
 
 <style>
     .card {
-        background: var(--background-primary);
-        border: 1px solid var(--background-modifier-border);
-        border-radius: 8px;
-        margin-bottom: 1rem;
+        background: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border-hover);
+        border-radius: 6px;
+        margin-bottom: var(--size-4-3);
         overflow: hidden;
     }
 
@@ -63,9 +63,9 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.75rem 1rem;
-        background: var(--background-secondary);
-        border-bottom: 1px solid var(--background-modifier-border);
+        padding: var(--size-4-2) var(--size-4-3);
+        background: var(--background-secondary-alt);
+        border-bottom: 1px solid var(--background-modifier-border-hover);
         flex-wrap: wrap;
         gap: 0.5rem;
     }
@@ -73,10 +73,10 @@
     .header-left {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: var(--size-4-2);
         flex-wrap: wrap;
         font-family: var(--font-monospace);
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
 
     .header-right {
@@ -89,9 +89,9 @@
         display: inline-flex;
         align-items: center;
         gap: 0.25rem;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
         background: var(--background-modifier-form-field);
@@ -99,32 +99,35 @@
     }
 
     .date {
-        color: var(--interactive-accent);
-        font-weight: 600;
+        color: var(--text-muted);
+        font-weight: 500;
+        font-size: 0.85rem;
     }
 
     .payee {
         font-style: italic;
-        color: var(--text-normal);
+        color: var(--text-muted);
+        font-size: 0.85rem;
     }
 
     .narration {
         color: var(--text-normal);
         font-weight: 500;
+        font-size: 0.85rem;
     }
 
     .tag {
         color: var(--text-accent);
-        font-size: 0.85rem;
+        font-size: 0.8rem;
     }
 
     .btn-edit {
-        padding: 4px 12px;
+        padding: 3px 10px;
         border: 1px solid var(--background-modifier-border);
         background: var(--background-primary);
         border-radius: 4px;
         cursor: pointer;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         display: flex;
         align-items: center;
         gap: 0.25rem;
@@ -142,7 +145,7 @@
         border: none;
         cursor: pointer;
         padding: 4px;
-        font-size: 1rem;
+        font-size: 0.9rem;
         opacity: 0.7;
         transition: opacity 0.2s;
     }
@@ -158,15 +161,16 @@
     }
 
     .card-body {
-        padding: 0.5rem 0;
+        padding: var(--size-4-1) 0;
     }
 
     .posting-row {
         display: flex;
         justify-content: space-between;
-        padding: 0.5rem 1rem;
+        padding: var(--size-4-2) var(--size-4-3);
         font-family: var(--font-monospace);
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+        line-height: 1.2;
     }
 
     .posting-row:nth-child(even) {
@@ -174,7 +178,8 @@
     }
 
     .account {
-        color: var(--text-normal);
+        color: var(--text-muted);
+        font-size: 0.85rem;
     }
 
     .amount {

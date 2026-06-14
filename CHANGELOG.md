@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## In-progress
 
+- **Component Cards: Refine styling, margins, and density** — Refactored TransactionCard, BalanceCard, NoteCard, and CommodityCard to use a var(--background-secondary) background with subtle border-hover outlines. Tightened component padding, optimized typography visual hierarchy (emphasizing values, muting labels/dates), and reduced line-heights to present dense card lists cleanly. Closes [#219](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/219).
+
+- **Dashboard Layout: Optimize tab padding, density, and controls** — Moved outer padding to UnifiedDashboardView's tab container, removing double padding across all tabs. Increased density on Income Statement and Balance Sheet tables by reducing cell padding and using smaller UI font sizes. Tightened TransactionsTab filter controls with compact spacing and standard Obsidian-aligned input heights. Closes [#218](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/218).
+
+- **Modal Polish: Compact grid layouts, unified spacing, and standard footers** — Refactored form layouts in AddBudgetModal, AddTargetModal, and CommodityCreateModal to use CSS Grid for compact, aligned form presentation. Standardized spacing using Obsidian design tokens, unified modal footers using a standard .modal-footer class aligned to the bottom right, and adjusted custom autocomplete dropdown max heights to optimize vertical space. Closes [#217](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/217).
+
+- **Onboarding Workflow: Refactor wizard to Svelte & polish layout** — Replaced the custom DOM-based onboarding wizard with a Svelte component, introduced a card-based data selection layout, reduced vertical spacing, adopted Obsidian's native setting-item classes, and standardized success/warning states to match Obsidian UI tokens. Closes [#216](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/216).
+
+- **Design Cleanups: Adopt Obsidian spacing and CSS tokens** — Transitioned inline styles across Svelte/TypeScript files to external stylesheets and `<style>` blocks, cleaned up hardcoded pixels to use design tokens, standardized typography variables, and compacted inputs/buttons for a professional native Obsidian feel. Closes [#215](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/215).
+
+- **Loading & Error States: Standardize status states across all tabs** — Added unified, premium skeleton loaders, error banners with interactive retry buttons, and empty state illustrations. Integrated them across all 5 dashboard views to prevent sudden blank state shifts. Closes [#87](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/87).
+
+- **Design Tokens: Establish design token system in styles.css** — Added consistent spacing, typography, shadow, transition, and finance-specific color variables (assets, liabilities, equity, income, expense) adapting automatically to light/dark themes under `:root`. Refactored existing styles to use these variables for better theme integration. Closes [#84](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/84).
+
+- **File Organization: Support monthly transaction files** — Added setting to organize transactions by month (`transactions/YYYY/YYYY-MM.beancount`) instead of just yearly. Updates the onboarding wizard and automatic file management tools to support both formats dynamically, and resolves a bug where the main ledger includes remained yearly after initial creation or migration. Closes [#210](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/210).
+
 - **Financial Indicators: Add edit and delete support for budgets and targets** — Added UI action buttons to edit and delete indicators, backed by new atomic update/delete directives helpers and event line location querying. Closes [#207](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/207).
 
 ## [2.0.0] - 2026-06-03

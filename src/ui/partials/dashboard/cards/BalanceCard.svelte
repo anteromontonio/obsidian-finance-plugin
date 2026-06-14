@@ -45,10 +45,10 @@
 
 <style>
     .card {
-        background: var(--background-primary);
-        border: 1px solid var(--background-modifier-border);
-        border-radius: 8px;
-        margin-bottom: 1rem;
+        background: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border-hover);
+        border-radius: 6px;
+        margin-bottom: var(--size-4-3);
         overflow: hidden;
     }
 
@@ -56,16 +56,17 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.75rem 1rem;
-        background: var(--background-secondary);
-        border-bottom: 1px solid var(--background-modifier-border);
+        padding: var(--size-4-2) var(--size-4-3);
+        background: var(--background-secondary-alt);
+        border-bottom: 1px solid var(--background-modifier-border-hover);
     }
 
     .header-left {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: var(--size-4-2);
         font-family: var(--font-monospace);
+        font-size: 0.85rem;
     }
 
     .header-right {
@@ -77,9 +78,9 @@
         display: inline-flex;
         align-items: center;
         gap: 0.25rem;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
         background: var(--color-purple);
@@ -88,16 +89,17 @@
 
     .date {
         color: var(--text-muted);
-        font-weight: 600;
+        font-weight: 500;
+        font-size: 0.85rem;
     }
 
     .btn-edit {
-        padding: 4px 12px;
+        padding: 3px 10px;
         border: 1px solid var(--background-modifier-border);
         background: var(--background-primary);
         border-radius: 4px;
         cursor: pointer;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         display: flex;
         align-items: center;
         gap: 0.25rem;
@@ -115,7 +117,7 @@
         border: none;
         cursor: pointer;
         padding: 4px;
-        font-size: 1rem;
+        font-size: 0.9rem;
         opacity: 0.7;
         transition: opacity 0.2s;
     }
@@ -131,8 +133,10 @@
     }
 
     .card-body {
-        padding: 0.75rem 1rem;
+        padding: var(--size-4-2) var(--size-4-3);
         font-family: var(--font-monospace);
+        font-size: 0.85rem;
+        line-height: 1.2;
     }
 
     .balance-row {
@@ -142,19 +146,20 @@
     }
 
     .account {
-        color: var(--text-normal);
-        font-size: 1rem;
+        color: var(--text-muted);
+        font-size: 0.85rem;
     }
 
     .amount {
         font-weight: 600;
         color: var(--text-normal);
+        font-size: 0.9rem;
     }
 
     .diff {
-        margin-top: 0.5rem;
-        padding-top: 0.5rem;
-        border-top: 1px dashed var(--background-modifier-border);
+        margin-top: var(--size-4-1);
+        padding-top: var(--size-4-1);
+        border-top: 1px dashed var(--background-modifier-border-hover);
     }
 
     .amount.error {

@@ -4,7 +4,7 @@ import { writable, type Writable, get } from 'svelte/store';
 import type BeancountPlugin from '../main';
 import * as queries from '../queries/index';
 import { parse as parseCsv } from 'csv-parse/sync';
-import { extractConvertedAmount, extractNonReportingCurrencies, parseAmount } from '../utils/index';
+import { extractConvertedAmountNumber, extractNonReportingCurrencies } from '../utils/index';
 import type { ChartConfiguration } from 'chart.js/auto';
 import { Logger } from '../utils/logger';
 // Re-export AccountItem so IncomeStatementTab can import from here
@@ -96,11 +96,8 @@ export class IncomeStatementController {
 		const rootAccounts: AccountItem[] = [];
 
 		for (const [fullAccount, rawAmount] of accounts) {
-			const convertedAmount = extractConvertedAmount(rawAmount, reportingCurrency);
+			const amountNumber = extractConvertedAmountNumber(rawAmount, reportingCurrency);
 			const otherCurrencies = extractNonReportingCurrencies(rawAmount, reportingCurrency);
-
-			// Keep raw beancount sign: income is negative (credit), expenses are positive (debit)
-			const amountNumber = parseFloat(convertedAmount.split(' ')[0].replace(/,/g, '')) || 0;
 
 			const parts = fullAccount.split(':');
 			let currentPath = '';
@@ -273,9 +270,9 @@ export class IncomeStatementController {
 					if (row.length < 3) continue;
 					const year = parseInt(row[0].trim());
 					const monthNum = parseInt(row[1].trim());
-					const rawVal = parseAmount(extractConvertedAmount(row[2].trim(), reportingCurrency));
+					const rawVal = extractConvertedAmountNumber(row[2].trim(), reportingCurrency);
 					// Income is stored negative in beancount; negate for positive display
-					const displayVal = trendType === 'income' ? -rawVal.amount : rawVal.amount;
+					const displayVal = trendType === 'income' ? -rawVal : rawVal;
 					dataMap.set(`${year}-${monthNum.toString().padStart(2, '0')}`, displayVal);
 					if (year < minYear || (year === minYear && monthNum < minMonth)) { minYear = year; minMonth = monthNum; }
 					if (year > maxYear || (year === maxYear && monthNum > maxMonth)) { maxYear = year; maxMonth = monthNum; }
@@ -294,9 +291,9 @@ export class IncomeStatementController {
 					const dateStr = row[0].trim();
 					const d = new Date(dateStr + 'T00:00:00');
 					if (isNaN(d.getTime())) continue;
-					const rawVal = parseAmount(extractConvertedAmount(row[1].trim(), reportingCurrency));
+					const rawVal = extractConvertedAmountNumber(row[1].trim(), reportingCurrency);
 					// Income is stored negative in beancount; negate for positive display
-					const displayVal = trendType === 'income' ? -rawVal.amount : rawVal.amount;
+					const displayVal = trendType === 'income' ? -rawVal : rawVal;
 					dataMap.set(dateStr, displayVal);
 					dates.push(d);
 				}

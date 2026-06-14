@@ -2,7 +2,7 @@
 
 import type { MarkdownPostProcessorContext } from 'obsidian';
 import type BeancountPlugin from '../../main';
-import { parseSingleValue, getQueryDirectives } from '../../utils/index';
+import { getQueryDirectives } from '../../utils/index';
 
 export class InlineBQLProcessor {
 	private plugin: BeancountPlugin;
@@ -135,8 +135,17 @@ export class InlineBQLProcessor {
 	}
 
 	private extractSingleValue(csvResult: string): string {
-		// Use the same robust CSV parsing logic from utils/index.ts
-		return parseSingleValue(csvResult);
+		if (!csvResult || typeof csvResult !== 'string') return '0 USD';
+		const lines = csvResult.split('\n').map(l => l.trim()).filter(Boolean);
+		if (lines.length < 2) return '0 USD';
+		
+		let val = lines[1];
+		if (val.startsWith('"') && val.endsWith('"')) {
+			val = val.substring(1, val.length - 1);
+		}
+		
+		val = val.replace(/^[({[]/g, '').replace(/[)}\]]/g, '').trim();
+		return val || '0 USD';
 	}
 
 	// Invalidate the query directive cache (call after saving a new query)

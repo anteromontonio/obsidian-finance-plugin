@@ -1,5 +1,5 @@
 # vscode
-.vscode 
+.vscode
 
 # Intellij
 *.iml
@@ -7,6 +7,9 @@
 
 # npm
 node_modules
+
+# Python virtual environment
+.venv/
 
 # Don't include the compiled main.js file in the repo.
 # They should be uploaded to GitHub releases instead.
@@ -20,20 +23,14 @@ data.json
 
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store
+
+# Copilot instructions
 .github/copilot-instructions.md
-REDDIT_POST_DRAFT.md
-ONBOARDING_ANALYSIS_REPORT.md
-CRUD_OPERATIONS_REVIEW.md
-TAB_REDESIGN_MOCKUPS.md
-UI_COMPONENT_EXAMPLES.md
-UI_IMPROVEMENT_PLAN.md
-REMOTE_LEDGER_EXPLORATION.md
 
 # graphify knowledge graph outputs
+.graphify_*.json
 graphify-out/
-ui-components-dev/*
-PRE_RELEASE_CHECKLIST.md
-CRUD_OPERATIONS_REVIEW.md
+
+# Docs site media / prompts
 .github/prompts/plan-beanPriceIntegration.prompt.md
-UpdatedCommodityCard.png
-*graphify*
+docs-site/static/img/Showcase.mp4

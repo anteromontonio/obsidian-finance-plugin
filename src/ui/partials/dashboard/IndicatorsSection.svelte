@@ -484,7 +484,7 @@
 							{#if !item.loading && !item.error}
 								<div class="card-remaining">
 									<span class="remaining-label">{isBudget ? 'Remaining' : 'Still needed'}</span>
-									<span class="remaining-value" style="color:{barColor};">{formatAmount(Math.max(item.remaining, 0), item.currency)}</span>
+									<span class="remaining-value" style="--bar-color: {barColor};">{formatAmount(Math.max(item.remaining, 0), item.currency)}</span>
 									<span class="status-badge {status.cls}">{status.label}</span>
 								</div>
 							{/if}
@@ -492,9 +492,9 @@
 
 						{#if item.loading}
 							<div class="card-loading-area">
-								<div class="mini-skeleton" style="height:10px; width:40%;"></div>
-								<div class="mini-skeleton" style="height:6px;"></div>
-								<div class="mini-skeleton" style="height:10px; width:60%;"></div>
+								<div class="mini-skeleton style-h10-w40"></div>
+								<div class="mini-skeleton style-h6"></div>
+								<div class="mini-skeleton style-h10-w60"></div>
 							</div>
 						{:else if item.error}
 							<div class="card-error">{item.error}</div>
@@ -503,10 +503,10 @@
 							<div class="progress-section">
 								<div class="progress-label-row">
 									<span class="progress-label-text">{formatAmount(item.spent, item.currency)} of {effTarget < 0 ? formatSignedAmount(effTarget, item.currency) : formatAmount(effTarget, item.currency)}</span>
-									<span class="pct-text" style="color:{barColor};">{isFinite(pct) ? `${(Math.round(pct * 10) / 10).toFixed(1)}%` : 'Over'}</span>
+									<span class="pct-text" style="--bar-color: {barColor};">{isFinite(pct) ? `${(Math.round(pct * 10) / 10).toFixed(1)}%` : 'Over'}</span>
 								</div>
 								<div class="progress-track">
-									<div class="progress-fill" style="width:{Math.min(pct, 100)}%; background:{barColor};"></div>
+									<div class="progress-fill" style="--pct-width: {Math.min(pct, 100)}%; --bar-color: {barColor};"></div>
 								</div>
 							</div>
 
@@ -539,7 +539,7 @@
 									</div>
 									<div class="stat-block">
 										<span class="stat-label">{isBudget ? 'Remaining' : 'Still needed'}</span>
-										<span class="stat-value" style="color:{barColor};">{formatAmount(Math.max(item.remaining, 0), item.currency)}</span>
+										<span class="stat-value stat-value-colored" style="--bar-color: {barColor};">{formatAmount(Math.max(item.remaining, 0), item.currency)}</span>
 									</div>
 								{/if}
 							</div>
@@ -818,6 +818,7 @@
 		font-weight: 700;
 		line-height: 1.1;
 		white-space: nowrap;
+		color: var(--bar-color);
 	}
 
 	.status-badge {
@@ -854,6 +855,7 @@
 	.pct-text {
 		font-size: var(--font-ui-small);
 		font-weight: 600;
+		color: var(--bar-color);
 	}
 
 	.progress-track {
@@ -868,6 +870,8 @@
 		height: 100%;
 		border-radius: 4px;
 		transition: width 0.4s ease;
+		width: var(--pct-width, 0%);
+		background: var(--bar-color);
 	}
 
 	/* ── Stats row ─────────────────────────────────────── */
@@ -918,6 +922,24 @@
 		background: var(--background-modifier-border);
 		border-radius: 4px;
 		animation: pulse 1.5s ease-in-out infinite;
+	}
+
+	.mini-skeleton.style-h10-w40 {
+		height: 10px;
+		width: 40%;
+	}
+
+	.mini-skeleton.style-h6 {
+		height: 6px;
+	}
+
+	.mini-skeleton.style-h10-w60 {
+		height: 10px;
+		width: 60%;
+	}
+
+	.stat-value-colored {
+		color: var(--bar-color);
 	}
 
 	.card-error {

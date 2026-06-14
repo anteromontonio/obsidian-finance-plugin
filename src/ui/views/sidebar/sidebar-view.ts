@@ -2,7 +2,7 @@
 import { ItemView, WorkspaceLeaf, Notice, MarkdownRenderer, TFile } from 'obsidian';
 import type BeancountPlugin from '../../../main';
 import BeancountViewComponent from './SidebarView.svelte'; // Assuming this is the correct Svelte component for the sidebar
-import { runQuery, parseSingleValue, convertWslPathToWindows, execSafe } from '../../../utils/index';
+import { runQuery, execSafe } from '../../../utils/index';
 import * as queries from '../../../queries/index';
 import { parse as parseCsv } from 'csv-parse/sync';
 import { Logger } from '../../../utils/logger';
@@ -94,7 +94,10 @@ export class BeancountView extends ItemView {
 
 			const [assetsResult, liabilitiesResult, netWorthResult] = kpiResults;
 
-			const parseNumericResult = (csv: string): number => parseFloat(parseSingleValue(csv)) || 0;
+			const parseNumericResult = (csv: string): number => {
+				const lines = csv.split('\n').map(line => line.trim()).filter(Boolean);
+				return parseFloat(lines[1]) || 0;
+			};
 
 			const assetsNum = parseNumericResult(assetsResult);
 			const liabilitiesNum = parseNumericResult(liabilitiesResult);
