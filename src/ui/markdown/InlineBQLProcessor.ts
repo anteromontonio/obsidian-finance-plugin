@@ -92,7 +92,7 @@ export class InlineBQLProcessor {
 		if (!query) return;
 
 		// Create wrapper for the inline BQL result
-		const wrapper = document.createElement('span');
+		const wrapper = activeDocument.createElement('span');
 		wrapper.className = 'bql-inline-wrapper';
 
 		// Store original content for refresh capability
@@ -156,7 +156,7 @@ export class InlineBQLProcessor {
 
 	// Method to refresh all inline BQL values
 	public refreshAllInlineValues() {
-		const inlineElements = document.querySelectorAll('.bql-inline-wrapper');
+		const inlineElements = activeDocument.querySelectorAll('.bql-inline-wrapper');
 		inlineElements.forEach(async (element) => {
 			const query = (element as any)._bqlQuery;
 			if (query) {

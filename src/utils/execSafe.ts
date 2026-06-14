@@ -61,13 +61,13 @@ export function execSafe(
 
         let stdout = '';
         let stderr = '';
-        let timer: NodeJS.Timeout | null = null;
+        let timer: number | null = null;
         let isTimedOut = false;
 
         const maxBuf = options.maxBuffer ?? 50 * 1024 * 1024; // Default to 50MB
 
         if (options.timeout) {
-            timer = setTimeout(() => {
+            timer = window.setTimeout(() => {
                 isTimedOut = true;
                 child.kill();
             }, options.timeout);
@@ -90,12 +90,12 @@ export function execSafe(
         });
 
         child.on('error', (err) => {
-            if (timer) clearTimeout(timer);
+            if (timer) window.clearTimeout(timer);
             reject(err);
         });
 
         child.on('close', (code) => {
-            if (timer) clearTimeout(timer);
+            if (timer) window.clearTimeout(timer);
             if (isTimedOut) {
                 return reject(new Error(`Command timed out after ${options.timeout}ms`));
             }

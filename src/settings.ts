@@ -109,7 +109,7 @@ export class BeancountSettingTab extends PluginSettingTab {
     display(): void {
         const { containerEl } = this;
         containerEl.empty();
-        new Setting(containerEl).setName('Beancount Settings').setHeading();
+        new Setting(containerEl).setName('Beancount configuration').setHeading();
 
         // Create tab navigation
         const tabsContainer = containerEl.createDiv({ cls: 'beancount-settings-tabs' });
@@ -165,7 +165,7 @@ export class BeancountSettingTab extends PluginSettingTab {
     }
 
     private renderGeneralTab(containerEl: HTMLElement): void {
-        new Setting(containerEl).setName('General Settings').setHeading();
+        new Setting(containerEl).setName('Basic preferences').setHeading();
 
         new Setting(containerEl)
             .setName('Operating currency')
@@ -306,7 +306,7 @@ export class BeancountSettingTab extends PluginSettingTab {
     }
 
     private renderBQLTab(containerEl: HTMLElement): void {
-        new Setting(containerEl).setName('BQL Code Block Settings').setHeading();
+        new Setting(containerEl).setName('BQL code blocks').setHeading();
 
         new Setting(containerEl)
             .setName('Show query tools')
@@ -328,7 +328,7 @@ export class BeancountSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        new Setting(containerEl).setName('Editor Settings').setHeading();
+        new Setting(containerEl).setName('Editor configuration').setHeading();
 
         new Setting(containerEl)
             .setName('Editor autocomplete')
@@ -367,15 +367,29 @@ export class BeancountSettingTab extends PluginSettingTab {
 
         const queryInfoEl = containerEl.createDiv({ cls: 'setting-item-description' });
         queryInfoEl.setCssStyles({ marginBottom: '12px' });
-        queryInfoEl.innerHTML = `
-            <p>Define reusable BQL queries using the Beancount <code>query</code> directive stored in <code>queries.beancount</code>.</p>
-            <p>Use the <strong>Add</strong> ribbon button → <em>🔍 Query</em> tab to create named queries.</p>
-            <p>In your notes, use <code>bql-q:name</code> to insert the query result inline.</p>
-        `;
+        
+        const p1 = queryInfoEl.createEl('p');
+        p1.textContent = 'Define reusable BQL queries using the Beancount ';
+        p1.createEl('code', { text: 'query' });
+        p1.appendText(' directive stored in ');
+        p1.createEl('code', { text: 'queries.beancount' });
+        p1.appendText('.');
+
+        const p2 = queryInfoEl.createEl('p');
+        p2.textContent = 'Use the ';
+        p2.createEl('strong', { text: 'Add' });
+        p2.appendText(' ribbon button → ');
+        p2.createEl('em', { text: '🔍 Query' });
+        p2.appendText(' tab to create named queries.');
+
+        const p3 = queryInfoEl.createEl('p');
+        p3.textContent = 'In your notes, use ';
+        p3.createEl('code', { text: 'bql-q:name' });
+        p3.appendText(' to insert the query result inline.');
     }
 
     private renderPerformanceTab(containerEl: HTMLElement): void {
-        new Setting(containerEl).setName('Performance Settings').setHeading();
+        new Setting(containerEl).setName('Performance').setHeading();
 
         new Setting(containerEl)
             .setName('Max transaction results')
@@ -407,7 +421,7 @@ export class BeancountSettingTab extends PluginSettingTab {
     }
 
     private renderBackupTab(containerEl: HTMLElement): void {
-        new Setting(containerEl).setName('Backup Settings').setHeading();
+        new Setting(containerEl).setName('Backups').setHeading();
 
         new Setting(containerEl)
             .setName('Create backups')
@@ -524,7 +538,7 @@ export class BeancountSettingTab extends PluginSettingTab {
     }
 
     private renderAdvancedTab(containerEl: HTMLElement): void {
-        new Setting(containerEl).setName('Advanced Settings').setHeading();
+        new Setting(containerEl).setName('Advanced').setHeading();
 
         new Setting(containerEl)
             .setName('Debug mode')
@@ -572,9 +586,7 @@ export class BeancountSettingTab extends PluginSettingTab {
 
         const desc = containerEl.createDiv({ cls: 'setting-item-description' });
         desc.setCssStyles({ marginBottom: '1em' });
-        desc.innerHTML = `
-            <p>Configure your Beancount file path and connection settings. The plugin will automatically detect your Python environment and test the connection.</p>
-        `;
+        desc.textContent = 'Configure your Beancount file path and connection settings. The plugin will automatically detect your Python environment and test the connection.';
 
         const settingsContainer = containerEl.createDiv({ cls: 'beancount-connection-settings-container' });
 
@@ -596,7 +608,7 @@ export class BeancountSettingTab extends PluginSettingTab {
 
             if (files.length === 0) return;
 
-            suggestionContainer = document.createElement('div');
+            suggestionContainer = activeDocument.createElement('div');
             suggestionContainer.className = 'bql-file-suggestions';
             suggestionContainer.setCssStyles({
                 position: 'absolute',
@@ -613,7 +625,7 @@ export class BeancountSettingTab extends PluginSettingTab {
             });
 
             files.forEach((file, index) => {
-                const item = document.createElement('div');
+                const item = activeDocument.createElement('div');
                 item.className = 'bql-file-suggestion-item';
                 item.textContent = file;
                 item.setCssStyles({
@@ -629,14 +641,14 @@ export class BeancountSettingTab extends PluginSettingTab {
                 });
 
                 if (index === files.length - 1) {
-                    item.style.borderBottom = 'none';
+                    item.setCssStyles({ borderBottom: 'none' });
                 }
 
                 suggestionContainer!.appendChild(item);
             });
 
             const parent = input.parentElement!;
-            parent.style.position = 'relative';
+            parent.setCssStyles({ position: 'relative' });
             parent.appendChild(suggestionContainer);
         };
 
@@ -662,7 +674,7 @@ export class BeancountSettingTab extends PluginSettingTab {
             showSuggestions(markdownFiles);
         });
 
-        document.addEventListener('click', (event) => {
+        activeDocument.addEventListener('click', (event) => {
             if (!input.contains(event.target as Node) && !suggestionContainer?.contains(event.target as Node)) {
                 this.hideSuggestions();
             }
@@ -672,7 +684,7 @@ export class BeancountSettingTab extends PluginSettingTab {
     private hideSuggestions: () => void = () => { };
 
     private showFileSuggestModal(input: HTMLInputElement) {
-        const modal = document.createElement('div');
+        const modal = activeDocument.createElement('div');
         modal.className = 'bql-file-modal';
         modal.setCssStyles({
             position: 'fixed',
@@ -802,6 +814,6 @@ export class BeancountSettingTab extends PluginSettingTab {
             }
         });
 
-        document.body.appendChild(modal);
+        activeDocument.body.appendChild(modal);
     }
 }

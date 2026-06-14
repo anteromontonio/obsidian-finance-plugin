@@ -44,7 +44,7 @@ export class BQLCodeBlockProcessor {
 		const observer = new MutationObserver((mutations) => {
 			mutations.forEach((mutation) => {
 				mutation.removedNodes.forEach((node) => {
-					if (node === element || (node instanceof HTMLElement && node.contains(element))) {
+					if (node === element || (node.instanceOf(HTMLElement) && node.contains(element))) {
 						this.activeBlocks.delete(element);
 						observer.disconnect();
 					}
@@ -57,7 +57,7 @@ export class BQLCodeBlockProcessor {
 		}
 
 		// Create container for the BQL result
-		const container = document.createElement('div');
+		const container = activeDocument.createElement('div');
 		container.className = 'bql-query-container';
 		
 		// Get user preferences (with fallback to defaults if undefined)
@@ -88,14 +88,14 @@ export class BQLCodeBlockProcessor {
 				controls = header.createEl('div', { cls: 'bql-query-controls' });
 
 				// Format selector
-				const formatSelect = controls.createEl('select', { cls: 'bql-format-select', title: 'Output format' }) as HTMLSelectElement;
+				const formatSelect = controls.createEl('select', { cls: 'bql-format-select', title: 'Output format' });
 				const formatOptions: { value: BQLFormat; label: string }[] = [
 					{ value: 'csv', label: 'Table' },
 					{ value: 'text', label: 'Text' },
 					{ value: 'beancount', label: 'Beancount' },
 				];
 				formatOptions.forEach(opt => {
-					const option = formatSelect.createEl('option', { text: opt.label }) as HTMLOptionElement;
+					const option = formatSelect.createEl('option', { text: opt.label });
 					option.value = opt.value;
 				});
 				(container as any)._bqlFormat = 'csv' as BQLFormat;
@@ -207,7 +207,7 @@ export class BQLCodeBlockProcessor {
 				if (result) {
 					navigator.clipboard.writeText(result);
 					copyBtn.textContent = '✓';
-					setTimeout(() => copyBtn.textContent = '📋', 1000);
+					window.setTimeout(() => copyBtn.textContent = '📋', 1000);
 				}
 			});
 		}
@@ -221,7 +221,7 @@ export class BQLCodeBlockProcessor {
 					const mimeType = fmt === 'csv' ? 'text/csv;charset=utf-8;' : 'text/plain;charset=utf-8;';
 					this.downloadFile(result, `bql-query-result.${ext}`, mimeType);
 					exportBtn.textContent = '✓';
-					setTimeout(() => exportBtn.textContent = '📤', 1000);
+					window.setTimeout(() => exportBtn.textContent = '📤', 1000);
 				}
 			});
 		}
@@ -312,7 +312,7 @@ export class BQLCodeBlockProcessor {
 			const rows = lines.slice(1).map(parseCSVLine);
 			
 			// Create table
-			const table = document.createElement('table');
+			const table = activeDocument.createElement('table');
 			table.className = 'bql-result-table';
 			
 			// Create header
@@ -356,15 +356,15 @@ export class BQLCodeBlockProcessor {
 	
 	private downloadFile(content: string, filename: string, mimeType: string) {
 		const blob = new Blob([content], { type: mimeType });
-		const link = document.createElement('a');
+		const link = activeDocument.createElement('a');
 		if (link.download !== undefined) {
 			const url = URL.createObjectURL(blob);
 			link.setAttribute('href', url);
 			link.setAttribute('download', filename);
 			link.setCssStyles({ visibility: 'hidden' });
-			document.body.appendChild(link);
+			activeDocument.body.appendChild(link);
 			link.click();
-			document.body.removeChild(link);
+			activeDocument.body.removeChild(link);
 		}
 	}
 }

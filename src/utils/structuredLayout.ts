@@ -130,7 +130,7 @@ export async function createStructuredFolder(
                 Logger.log(`[structuredLayout] ${ledgerPath} already exists, attempting to update...`);
                 try {
                     // Wait a moment for the file to be available
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    await new Promise(resolve => window.setTimeout(resolve, 100));
                     // ledgerPath is already normalized, use as-is
                     const existing = plugin.app.vault.getAbstractFileByPath(ledgerPath);
                     if (existing && existing instanceof TFile) {
@@ -148,7 +148,7 @@ export async function createStructuredFolder(
         }
 
         // Wait a moment for vault cache to index the new files
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => window.setTimeout(resolve, 100));
         await updateLedgerIncludes(plugin, folderName);
 
         new Notice(`Structured layout created in ${folderName}/`);
@@ -268,7 +268,7 @@ export async function ensureTransactionFile(
             Logger.log(`[structuredLayout] Created transaction file: ${filePath}`);
 
             // Wait a moment for vault cache to update
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => window.setTimeout(resolve, 100));
 
             // Update ledger.beancount to include this file
             await updateLedgerIncludes(plugin, folderName, year); // Keep year for compatibility, but we rely on file scan
@@ -710,7 +710,7 @@ export async function migrateToStructuredLayout(
         await writeToFile(plugin, ledgerPath, includeStatements);
 
         // Wait a moment for vault cache to index the new files
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => window.setTimeout(resolve, 100));
         await updateLedgerIncludes(plugin, targetFolderName);
 
         // Step 6: Update plugin settings

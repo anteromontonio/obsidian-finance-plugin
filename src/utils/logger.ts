@@ -1,3 +1,4 @@
+/* eslint-disable obsidianmd/rule-custom-message */
 export class Logger {
     private static isDebugMode = false;
 

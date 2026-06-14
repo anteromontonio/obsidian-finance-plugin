@@ -66,15 +66,15 @@ export function debounce<T extends (...args: any[]) => any>(
     func: T,
     wait: number
 ): (...args: Parameters<T>) => void {
-    let timeout: ReturnType<typeof setTimeout> | null = null;
+    let timeout: number | null = null;
     return function executedFunction(...args: Parameters<T>) {
         const later = () => {
             timeout = null;
             func(...args);
         };
         if (timeout !== null) {
-            clearTimeout(timeout);
+            window.clearTimeout(timeout);
         }
-        timeout = setTimeout(later, wait);
+        timeout = window.setTimeout(later, wait);
     };
 }

@@ -47,7 +47,7 @@ export class BeancountView extends ItemView {
 		// Listen for events
 		this.component.$on('refresh', () => this.updateView());
 
-		setTimeout(() => this.updateView(), 0);
+		window.setTimeout(() => this.updateView(), 0);
 	}
 
 	async onClose() {
