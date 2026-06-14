@@ -64,17 +64,17 @@ export class AccountManagementModal extends Modal {
                         });
                 });
         } else {
-            /* eslint-disable obsidianmd/ui/sentence-case -- allow capitalized Beancount account prefixes */
+            const accountDesc = 'Enter the full account name (e.g., Assets:Bank:Checking)';
+            const accountPlaceholder = 'Assets:Bank:Checking';
             new Setting(contentEl)
                 .setName('Account name')
-                .setDesc('Enter the full account name (e.g., Assets:Bank:Checking)')
+                .setDesc(accountDesc)
                 .addText(text => text
-                    .setPlaceholder('Assets:Bank:Checking')
+                    .setPlaceholder(accountPlaceholder)
                     .setValue(this.accountName)
                     .onChange(value => {
                         this.accountName = value;
                     }));
-            /* eslint-enable obsidianmd/ui/sentence-case */
         }
 
         // Date field
