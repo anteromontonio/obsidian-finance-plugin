@@ -99,7 +99,7 @@ export const DEFAULT_SETTINGS: BeancountPluginSettings = {
  */
 export class BeancountSettingTab extends PluginSettingTab {
     plugin: BeancountPlugin;
-    private activeTab: string = 'general';
+    private activeTab = 'general';
 
     constructor(app: App, plugin: BeancountPlugin) {
         super(app, plugin);
@@ -635,7 +635,6 @@ export class BeancountSettingTab extends PluginSettingTab {
                 suggestionContainer!.appendChild(item);
             });
 
-            const inputRect = input.getBoundingClientRect();
             const parent = input.parentElement!;
             parent.style.position = 'relative';
             parent.appendChild(suggestionContainer);

@@ -5,7 +5,6 @@ import type BeancountPlugin from '../main';
 import * as queries from '../queries/index';
 import { Logger } from '../utils/logger';
 import {
-    parseCommoditiesListCSV,
     parseCommoditiesPriceDataCSV,
     parseCommodityDetailsCSV,
     parseCombinedCommodityDataCSV,

@@ -129,7 +129,7 @@ export class BQLCodeBlockProcessor {
 		let queryDisplay: HTMLDetailsElement | null = null;
 		if (showQuery) {
 			queryDisplay = container.createEl('details', { cls: 'bql-query-details' });
-			const querySummary = queryDisplay.createEl('summary', { text: 'View Query', cls: 'bql-query-summary' });
+			queryDisplay.createEl('summary', { text: 'View Query', cls: 'bql-query-summary' });
 			const queryCode = queryDisplay.createEl('pre', { cls: 'bql-query-code' });
 			queryCode.createEl('code', { text: query });
 		}
@@ -329,7 +329,7 @@ export class BQLCodeBlockProcessor {
 				const tr = tbody.createEl('tr');
 				row.forEach((cell, index) => {
 					const td = tr.createEl('td');
-					let cellText = cell.replace(/"/g, ''); // Remove quotes
+					const cellText = cell.replace(/"/g, ''); // Remove quotes
 					
 					// Format numbers and currencies for better display
 					if (index > 0 && this.isNumeric(cellText)) {

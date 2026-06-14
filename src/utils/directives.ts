@@ -17,7 +17,7 @@ export async function saveOpenDirective(
     account: string,
     currencies?: string[],
     booking?: string,
-    createBackup: boolean = true
+    createBackup = true
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const filePath = getTargetFile(plugin, 'account', date);
@@ -49,7 +49,7 @@ export async function saveCloseDirective(
     plugin: BeancountPlugin,
     date: string,
     account: string,
-    createBackup: boolean = true
+    createBackup = true
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const filePath = getTargetFile(plugin, 'account', date);
@@ -81,7 +81,7 @@ export async function createBalanceAssertion(
     amount: string,
     currency: string,
     tolerance?: string,
-    createBackup: boolean = true
+    createBackup = true
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const filePath = getTargetFile(plugin, 'balance', date);
@@ -210,7 +210,7 @@ export async function createNote(
     comment: string,
     tags?: string[],
     links?: string[],
-    createBackup: boolean = true
+    createBackup = true
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const filePath = getTargetFile(plugin, 'note', date);
@@ -341,7 +341,7 @@ export async function createCommodity(
     date: string,
     priceMetadata?: string,
     logoUrl?: string,
-    createBackup: boolean = true
+    createBackup = true
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const filePath = getTargetFile(plugin, 'commodity', date);
@@ -377,7 +377,7 @@ export async function saveCommodityMetadata(
     metadata: Record<string, any>,
     filename: string,
     lineno: number,
-    createBackup: boolean = true
+    createBackup = true
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const normalizedPath = convertWslPathToWindows(filename);
@@ -423,7 +423,7 @@ export async function deleteCommodityDirective(
     symbol: string,
     filename: string,
     lineno: number,
-    createBackup: boolean = true
+    createBackup = true
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const normalizedPath = convertWslPathToWindows(filename);
@@ -473,7 +473,7 @@ export async function createPriceDirective(
     commodity: string,
     amount: number,
     currency: string,
-    createBackup: boolean = true
+    createBackup = true
 ): Promise<{ success: boolean; filePath?: string; error?: string }> {
     try {
         const filePath = getTargetFile(plugin, 'price', date);
@@ -506,7 +506,7 @@ export async function createPriceDirective(
 /**
  * Generates properly formatted Beancount transaction text from a transaction data object.
  */
-export function generateTransactionText(transactionData: any, newline: string = '\n'): string {
+export function generateTransactionText(transactionData: any, newline = '\n'): string {
     const date = transactionData.date;
     const flag = transactionData.flag || '*';
     const payee = transactionData.payee || '';
@@ -575,7 +575,6 @@ export async function createTransaction(
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const transactionDate = transactionData.date || new Date().toISOString().split('T')[0];
-        const year = new Date(transactionDate).getFullYear();
         const folderName = plugin.settings.structuredFolderName || 'Finances';
         await ensureTransactionFile(plugin, folderName, transactionDate);
 
@@ -709,7 +708,9 @@ export async function deleteTransaction(
         if (isNaN(lineno) || lineno < 1 || lineno > lines.length)
             return { success: false, error: `Invalid line number ${lineno}` };
 
-        let { startIndex, endIndex } = findTransactionBlock(lines, lineno - 1);
+        const block = findTransactionBlock(lines, lineno - 1);
+        const startIndex = block.startIndex;
+        let endIndex = block.endIndex;
         // Also consume trailing blank line
         if (endIndex + 1 < lines.length && lines[endIndex + 1].trim() === '') endIndex++;
 
@@ -739,7 +740,7 @@ export async function deleteTransaction(
 export async function updateOperatingCurrency(
     plugin: BeancountPlugin,
     currency: string,
-    createBackup: boolean = true
+    createBackup = true
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const { getMainLedgerPath } = await import('./structuredLayout');
@@ -776,7 +777,6 @@ export async function validateCommodityLocation(
     try {
         const normalizedPath = convertWslPathToWindows(filename);
         const _rawContent = await readFileContent(plugin, normalizedPath);
-        const newline = getNewlineCharacter(_rawContent);
         const lines = _rawContent.split(/\r?\n/);
 
         if (isNaN(lineno) || lineno < 1 || lineno > lines.length)
@@ -820,7 +820,7 @@ export async function createQueryDirective(
     date: string,
     name: string,
     sql: string,
-    createBackup: boolean = true
+    createBackup = true
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const filePath = getTargetFile(plugin, 'query');
@@ -910,7 +910,7 @@ export interface IndicatorDirectiveParams {
 export async function createIndicatorDirective(
     plugin: BeancountPlugin,
     params: IndicatorDirectiveParams,
-    createBackup: boolean = true
+    createBackup = true
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const filePath = getTargetFile(plugin, 'event');
@@ -956,7 +956,7 @@ export async function updateIndicatorDirective(
     filename: string,
     lineno: number,
     params: IndicatorDirectiveParams,
-    createBackup: boolean = true
+    createBackup = true
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const normalizedPath = convertWslPathToWindows(filename);
@@ -1014,7 +1014,7 @@ export async function deleteIndicatorDirective(
     plugin: BeancountPlugin,
     filename: string,
     lineno: number,
-    createBackup: boolean = true
+    createBackup = true
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const normalizedPath = convertWslPathToWindows(filename);

@@ -16,7 +16,7 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { existsSync, accessSync, constants } from 'fs';
-import { join, sep } from 'path';
+import { join } from 'path';
 import { homedir, platform } from 'os';
 
 const execAsync = promisify(exec);
@@ -163,7 +163,9 @@ async function main() {
             const cmd = platform() === 'win32' ? 'where bean-query' : 'which bean-query';
             const { stdout } = await execAsync(cmd, { timeout: 3000 });
             bqPath = stdout.trim().split('\n')[0];
-        } catch {}
+        } catch {
+            // Ignore if not found
+        }
 
         // Windows with WSL: bean-query is under \\wsl.localhost\... (a UNC path).
         // That scenario is handled separately by the `wsl bean-query` prefix in SystemDetector —

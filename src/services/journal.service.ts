@@ -29,7 +29,7 @@ export class JournalService {
      * @param {number} [pageSize=200] - Number of items per page.
      * @returns {Promise<JournalApiResponse>} The paginated response containing entries.
      */
-    public async getEntries(filters: JournalFilters, page: number = 1, pageSize: number = 200): Promise<JournalApiResponse> {
+    public async getEntries(filters: JournalFilters, page = 1, pageSize = 200): Promise<JournalApiResponse> {
         // Use BQL queries to fetch entries directly
         const entryTypes = filters.entryTypes || ['transaction', 'balance', 'note'];
         

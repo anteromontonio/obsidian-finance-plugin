@@ -3,7 +3,7 @@ import { TFile } from 'obsidian';
 import type BeancountPlugin from '../main';
 import type { PriceFetchResult } from '../types';
 import { getTargetFile, getMainLedgerPath } from '../utils/structuredLayout';
-import { convertWslPathToWindows, execSafe } from '../utils';
+import { execSafe } from '../utils';
 import { Logger } from '../utils/logger';
 import { SystemDetector } from '../utils/SystemDetector';
 

@@ -13,7 +13,7 @@ declare module "child_process" {
 }
 
 declare module "util" {
-  export function promisify(fn: Function): Function;
+  export function promisify(fn: (...args: any[]) => any): (...args: any[]) => Promise<any>;
 }
 
 declare module "fs" {
