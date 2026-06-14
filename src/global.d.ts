@@ -7,23 +7,6 @@ declare module "*.svelte" {
   export default SvelteComponent;
 }
 
-// Node.js modules for settings validation
-declare module "child_process" {
-  export function exec(command: string, options?: any, callback?: (error: any, stdout: string, stderr: string) => void): any;
-}
-
-declare module "util" {
-  export function promisify(fn: (...args: any[]) => any): (...args: any[]) => Promise<any>;
-}
-
-declare module "fs" {
-  export function existsSync(path: string): boolean;
-}
-
-declare module "path" {
-  export function resolve(...paths: string[]): string;
-}
-
 declare global {
   interface HTMLElement {
     setCssStyles(styles: Partial<CSSStyleDeclaration>): void;
@@ -39,5 +22,7 @@ declare global {
 declare module 'obsidian' {
   interface DataAdapter {
     getBasePath(): string;
+    /** Available in Obsidian's FileSystemAdapter to resolve vault-relative paths. */
+    getFullPath?(path: string): string;
   }
 }

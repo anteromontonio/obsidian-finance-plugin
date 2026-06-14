@@ -3,10 +3,11 @@ import type BeancountPlugin from '../../main';
 import CommodityDetailModalComponent from './CommodityDetailModal.svelte';
 import type { CommoditiesController } from '../../controllers/CommoditiesController';
 import { get } from 'svelte/store';
+import { SvelteComponent } from 'svelte';
 
 export class CommodityDetailModal extends Modal {
     plugin: BeancountPlugin;
-    private component: any;
+    private component: SvelteComponent | null = null;
     private controller: CommoditiesController;
     private symbol: string;
 
@@ -31,9 +32,11 @@ export class CommodityDetailModal extends Modal {
             console.warn('Could not load commodity details before opening modal', e);
         }
 
-        const selected = get((this.controller as any).selectedCommodity) || (this.controller as any).getCommodityBySymbol(this.symbol) || { symbol: this.symbol, metadata: {} };
+        // Access selectedCommodity store via controller — cast to unknown to access the store property
+        const ctrl = this.controller as unknown as { selectedCommodity: { subscribe: (cb: (v: unknown) => void) => () => void }; getCommodityBySymbol: (s: string) => unknown };
+        const selected = get(ctrl.selectedCommodity) || ctrl.getCommodityBySymbol(this.symbol) || { symbol: this.symbol, metadata: {} };
 
-        this.component = new (CommodityDetailModalComponent as any)({
+        this.component = new (CommodityDetailModalComponent as typeof SvelteComponent)({
             target: contentEl,
             props: {
                 symbol: this.symbol,
@@ -42,7 +45,7 @@ export class CommodityDetailModal extends Modal {
         });
 
         // Listen to events
-        this.component.$on('save-metadata', async (e: any) => {
+        this.component.$on('save-metadata', async (e: CustomEvent<{ symbol: string; metadata: Record<string, unknown> }>) => {
             const { symbol, metadata } = e.detail;
             console.debug('[CommodityDetailModal] save-metadata event', { symbol, metadata });
             const result = await this.controller.saveMetadata(symbol, metadata);
@@ -53,9 +56,9 @@ export class CommodityDetailModal extends Modal {
                 // Reload commodity details to reflect changes in the modal
                 try {
                     await this.controller.loadCommodityDetails(symbol);
-                    const updated = get((this.controller as any).selectedCommodity) || { symbol, metadata: {} };
+                    const updated = get(ctrl.selectedCommodity) || { symbol, metadata: {} };
                     // Update component props with fresh data
-                    this.component.$set({ commodity: updated });
+                    this.component!.$set({ commodity: updated });
                     console.debug('[CommodityDetailModal] Commodity details reloaded and UI updated');
                 } catch (reloadError) {
                     console.warn('[CommodityDetailModal] Failed to reload commodity details:', reloadError);
@@ -65,7 +68,7 @@ export class CommodityDetailModal extends Modal {
             }
         });
 
-        this.component.$on('test-price', async (e: any) => {
+        this.component.$on('test-price', async (e: CustomEvent<{ symbol: string }>) => {
             const { symbol } = e.detail;
             console.debug('[CommodityDetailModal] test-price event', { symbol });
             const res = await this.controller.testPriceSource(symbol);
@@ -74,7 +77,7 @@ export class CommodityDetailModal extends Modal {
             else new Notice(`Price test failed: ${res?.error || 'unknown'}`);
         });
 
-        this.component.$on('test-logo', async (e: any) => {
+        this.component.$on('test-logo', async (e: CustomEvent<{ symbol: string; url: string }>) => {
             const { symbol, url } = e.detail;
             console.debug('[CommodityDetailModal] test-logo event', { symbol, url });
             const res = await this.controller.testLogoUrl(symbol, url);
@@ -85,7 +88,7 @@ export class CommodityDetailModal extends Modal {
 
         this.component.$on('close', () => this.close());
 
-        this.component.$on('delete', async (e: any) => {
+        this.component.$on('delete', async (e: CustomEvent<{ symbol: string }>) => {
             const { symbol } = e.detail;
             console.debug('[CommodityDetailModal] delete event', { symbol });
             const result = await this.controller.deleteCommodity(symbol);

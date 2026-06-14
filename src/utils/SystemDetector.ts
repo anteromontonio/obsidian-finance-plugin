@@ -173,7 +173,7 @@ export class SystemDetector {
             // If we get output without error, WSL is available
             // Even if no distributions are installed, the command should work
             return true;
-        } catch (error: any) {
+        } catch (error: unknown) {
             try {
                 // Fallback: try simpler wsl command
                 await execSafe('wsl', ['--help'], { timeout: 3000 });
@@ -469,11 +469,11 @@ export class SystemDetector {
         try {
             const { stdout, stderr } = await execSafe(command, args, { timeout });
             return { success: true, output: stdout, error: stderr };
-        } catch (error: any) {
+        } catch (error: unknown) {
             return { 
                 success: false, 
-                error: error.message || 'Command execution failed',
-                output: error.stdout || ''
+                error: error instanceof Error ? error.message : 'Command execution failed',
+                output: (error as { stdout?: string })?.stdout || ''
             };
         }
     }

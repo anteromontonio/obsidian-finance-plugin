@@ -7,10 +7,11 @@ import type { JournalTransaction, JournalEntry } from '../../models/journal';
 import TransactionEditModal from './TransactionEditModal.svelte';
 import { Logger } from '../../utils/logger';
 import { getOpenAccounts, getPayees, getTags, getCommodities, createTransaction, updateTransaction, deleteTransaction, createBalanceAssertion, saveOpenDirective, saveCloseDirective, createNote, updateBalance, deleteBalance, updateNote, deleteNote, createQueryDirective } from '../../utils';
+import { SvelteComponent } from 'svelte';
 
 export class UnifiedTransactionModal extends Modal {
     plugin: BeancountPlugin;
-    private component: any;
+    private component: SvelteComponent | null = null;
     private transaction: JournalTransaction | null;
     private entry: JournalEntry | null;
     private mode: 'add' | 'edit';
@@ -59,7 +60,7 @@ export class UnifiedTransactionModal extends Modal {
         const currencies: string[] = ['INR', 'USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD']; // Default fallback
 
         // Create component immediately with static import
-        this.component = new (TransactionEditModal as any)({
+        this.component = new (TransactionEditModal as typeof SvelteComponent)({
             target: contentEl,
             props: {
                 transaction: this.transaction,
@@ -75,11 +76,11 @@ export class UnifiedTransactionModal extends Modal {
         });
 
         // Handle events
-        this.component.$on('add', (e: any) => this.onAdd(e.detail));
-        this.component.$on('save', (e: any) => this.onSave(e.detail));
-        this.component.$on('delete', (e: any) => this.onDelete(e.detail));
+        this.component.$on('add', (e: CustomEvent<Record<string, unknown>>) => this.onAdd(e.detail));
+        this.component.$on('save', (e: CustomEvent<Record<string, unknown>>) => this.onSave(e.detail));
+        this.component.$on('delete', (e: CustomEvent<string>) => this.onDelete(e.detail));
         this.component.$on('cancel', () => this.close());
-        this.component.$on('titleChange', (e: any) => this.setTitle(e.detail)); // Listen for title changes
+        this.component.$on('titleChange', (e: CustomEvent<string>) => this.setTitle(e.detail)); // Listen for title changes
 
         // Fetch data in background
         this.fetchData();
@@ -117,7 +118,7 @@ export class UnifiedTransactionModal extends Modal {
         }
     }
 
-    async onAdd(entryData: any) {
+    async onAdd(entryData: Record<string, unknown>) {
         try {
             Logger.log('Adding entry', entryData);
             
@@ -293,7 +294,7 @@ export class UnifiedTransactionModal extends Modal {
         }
     }
 
-    async onSave(entryData: any) {
+    async onSave(entryData: Record<string, unknown>) {
         if (!this.transaction && !this.entry) return;
         
         try {

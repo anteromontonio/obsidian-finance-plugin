@@ -130,10 +130,8 @@ export class BeancountFileView extends TextFileView {
 		if (!this.editorView) return;
 		// Capture the absolute filesystem path for lint error file-matching
 		if (this.file && this.plugin) {
-			// @ts-ignore — app.vault.adapter.getFullPath exists in Obsidian's FileSystemAdapter
-			this.filePath = (this.app as any).vault.adapter.getFullPath
-				? (this.app as any).vault.adapter.getFullPath(this.file.path)
-				: this.file.path;
+			// getFullPath is declared in global.d.ts as an optional method on DataAdapter
+			this.filePath = this.app.vault.adapter.getFullPath?.(this.file.path) ?? this.file.path;
 		}
 		// Invalidate the account cache so completions reflect any new open directives
 		if (this.plugin) invalidateAccountCache(this.plugin);

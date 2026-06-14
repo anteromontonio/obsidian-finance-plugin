@@ -34,7 +34,7 @@ export class JournalService {
         const entryTypes = filters.entryTypes || ['transaction', 'balance', 'note'];
         
         // Fetch all requested entry types in parallel
-        const promises: Promise<any>[] = [];
+        const promises: Promise<JournalApiResponse>[] = [];
         
         if (entryTypes.includes('transaction')) {
             promises.push(getTransactionEntries(this.plugin, filters, 1, 10000)); // Fetch all for merging
@@ -66,7 +66,9 @@ export class JournalService {
         // Merge all entries
         let allEntries: JournalEntry[] = [];
         for (const result of results) {
-            allEntries = allEntries.concat(result.entries);
+            if (Array.isArray(result.entries)) {
+                allEntries = allEntries.concat(result.entries);
+            }
         }
         
         // Sort by date descending

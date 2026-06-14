@@ -1,14 +1,13 @@
-// src/ui/modals/CommodityCreateModal.ts
-
 import { App, Modal, Notice } from 'obsidian';
 import type BeancountPlugin from '../../main';
 import CommodityCreateModalComponent from './CommodityCreateModal.svelte';
 import type { CommoditiesController } from '../../controllers/CommoditiesController';
 import { Logger } from '../../utils/logger';
+import { SvelteComponent } from 'svelte';
 
 export class CommodityCreateModal extends Modal {
     plugin: BeancountPlugin;
-    private component: any;
+    private component: SvelteComponent | null = null;
     private controller: CommoditiesController;
     private onSuccess?: () => void;
 
@@ -31,13 +30,13 @@ export class CommodityCreateModal extends Modal {
 
         Logger.log('[CommodityCreateModal] Opening modal');
 
-        this.component = new (CommodityCreateModalComponent as any)({
+        this.component = new (CommodityCreateModalComponent as typeof SvelteComponent)({
             target: contentEl,
             props: {}
         });
 
         // Listen to save event
-        this.component.$on('save', async (e: any) => {
+        this.component.$on('save', async (e: CustomEvent<{ symbol: string; date: string; priceMetadata: string; logoUrl: string }>) => {
             const { symbol, date, priceMetadata, logoUrl } = e.detail;
             Logger.log('[CommodityCreateModal] save event', { symbol, date, priceMetadata, logoUrl });
 
@@ -73,7 +72,7 @@ export class CommodityCreateModal extends Modal {
         });
 
         // Listen to test-price event
-        this.component.$on('test-price', async (e: any) => {
+        this.component.$on('test-price', async (e: CustomEvent<{ symbol: string; priceMetadata: string }>) => {
             const { symbol, priceMetadata } = e.detail;
             Logger.log('[CommodityCreateModal] test-price event', { symbol, priceMetadata });
 
@@ -92,7 +91,7 @@ export class CommodityCreateModal extends Modal {
         });
 
         // Listen to test-logo event
-        this.component.$on('test-logo', async (e: any) => {
+        this.component.$on('test-logo', async (e: CustomEvent<{ symbol: string; url: string }>) => {
             const { symbol, url } = e.detail;
             Logger.log('[CommodityCreateModal] test-logo event', { symbol, url });
 

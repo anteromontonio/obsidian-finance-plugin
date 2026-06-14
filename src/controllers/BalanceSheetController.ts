@@ -346,7 +346,7 @@ export class BalanceSheetController {
 						mode: 'index',
 						intersect: false,
 						callbacks: {
-							label: (context: any) => `Net Worth: ${context.parsed.y.toLocaleString()} ${currency}`
+							label: (context: { parsed: { y: number } }) => `Net Worth: ${context.parsed.y.toLocaleString()} ${currency}`
 						}
 					}
 				},
@@ -360,7 +360,7 @@ export class BalanceSheetController {
 						display: true,
 						title: { display: true, text: `Amount (${currency})` },
 						grid: { display: true, color: 'rgba(0, 0, 0, 0.1)' },
-						ticks: { callback: (value: any) => value.toLocaleString() }
+						ticks: { callback: (value: number | string) => typeof value === 'number' ? value.toLocaleString() : value }
 					}
 				},
 				interaction: { mode: 'nearest', axis: 'x', intersect: false }

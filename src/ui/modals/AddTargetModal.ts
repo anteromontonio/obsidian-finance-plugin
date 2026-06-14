@@ -7,14 +7,21 @@ import { getOpenAccounts, runQuery, createIndicatorDirective, updateIndicatorDir
 import { getAllCurrenciesQuery } from '../../queries';
 import { parse as parseCsv } from 'csv-parse/sync';
 import { Logger } from '../../utils/logger';
+import type { IndicatorItem } from '../../models/indicator';
+import { SvelteComponent } from 'svelte';
+
+/** Row shape returned by getAllCurrenciesQuery CSV. */
+interface CurrencyRow {
+    currency_: string;
+}
 
 export class AddTargetModal extends Modal {
     plugin: BeancountPlugin;
-    private component: any;
-    private editingIndicator?: any;
+    private component: SvelteComponent | null = null;
+    private editingIndicator?: IndicatorItem;
     private onSuccess?: () => void;
 
-    constructor(app: App, plugin: BeancountPlugin, editingIndicator?: any, onSuccess?: () => void) {
+    constructor(app: App, plugin: BeancountPlugin, editingIndicator?: IndicatorItem, onSuccess?: () => void) {
         super(app);
         this.plugin = plugin;
         this.editingIndicator = editingIndicator;
@@ -38,8 +45,8 @@ export class AddTargetModal extends Modal {
             ]);
             accounts = accs;
             if (csvResult) {
-                const rows = parseCsv(csvResult, { columns: true, skip_empty_lines: true, trim: true }) as any[];
-                const fetched = rows.map((r: any) => r['currency_']).filter(Boolean) as string[];
+                const rows = parseCsv(csvResult, { columns: true, skip_empty_lines: true, trim: true }) as CurrencyRow[];
+                const fetched = rows.map((r) => r['currency_']).filter(Boolean);
                 if (fetched.length > 0) currencies = fetched;
             }
             // Always include the operating currency
@@ -48,7 +55,7 @@ export class AddTargetModal extends Modal {
             Logger.log('[AddTargetModal] Could not prefetch accounts/currencies:', err);
         }
 
-        this.component = new (AddTargetModalComponent as any)({
+        this.component = new (AddTargetModalComponent as typeof SvelteComponent)({
             target: contentEl,
             props: {
                 accounts,
@@ -58,14 +65,24 @@ export class AddTargetModal extends Modal {
             },
         });
 
-        this.component.$on('save', async (e: any) => {
-            const { name, accountQuery, cycle, target, currency, isRollover, startDate, tag, tagMode } = e.detail;
+        this.component.$on('save', async (e: CustomEvent<Record<string, unknown>>) => {
+            const { name, accountQuery, cycle, target, currency, isRollover, startDate, tag, tagMode } = e.detail as {
+                name: string;
+                accountQuery: string;
+                cycle: string;
+                target: number;
+                currency: string;
+                isRollover: boolean;
+                startDate: string;
+                tag: string;
+                tagMode: 'has' | 'not_has';
+            };
             Logger.log('[AddTargetModal] save event', e.detail);
 
             try {
                 let result;
                 if (this.editingIndicator) {
-                    result = await updateIndicatorDirective(this.plugin, this.editingIndicator.filename, this.editingIndicator.lineno, {
+                    result = await updateIndicatorDirective(this.plugin, this.editingIndicator.filename!, this.editingIndicator.lineno!, {
                         type: 'Target',
                         name,
                         accountQuery,

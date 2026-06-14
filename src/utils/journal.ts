@@ -5,6 +5,47 @@ import { parse as parseCsv } from 'csv-parse/sync';
 import type BeancountPlugin from '../main';
 import { runQuery } from './queryRunner';
 import { Logger } from './logger';
+import type { JournalApiResponse, JournalFilters, JournalBalance, JournalNote, JournalTransaction, JournalPosting } from '../models/journal';
+
+/** Shape of a balance row returned by BQL. */
+interface BalanceRow {
+    date: string;
+    account: string;
+    amount: string;
+    tolerance: string;
+    discrepancy: string;
+}
+
+/** Shape of a note row returned by BQL. */
+interface NoteRow {
+    date: string;
+    account: string;
+    comment: string;
+    tags: string;
+    links: string;
+    meta: string;
+}
+
+/** Shape of a posting row returned by BQL. */
+interface PostingRow {
+    id: string;
+    date: string;
+    flag: string;
+    payee: string;
+    narration: string;
+    tags: string;
+    links: string;
+    filename: string;
+    lineno: string;
+    account: string;
+    number: string;
+    currency: string;
+    cost_number: string;
+    cost_currency: string;
+    cost_date: string;
+    price: string;
+    entry_meta: string;
+}
 
 // --- BALANCE ENTRIES ---
 
@@ -13,10 +54,10 @@ import { Logger } from './logger';
  */
 export async function getBalanceEntries(
     plugin: BeancountPlugin,
-    filters: any = {},
+    filters: JournalFilters = {},
     page = 1,
     pageSize = 200
-): Promise<any> {
+): Promise<JournalApiResponse> {
     try {
         Logger.log('[getBalanceEntries] Fetching with filters:', filters);
 
@@ -35,18 +76,18 @@ export async function getBalanceEntries(
             columns: true,
             skip_empty_lines: true,
             trim: true,
-        }) as any[];
+        }) as BalanceRow[];
 
         Logger.log(`[getBalanceEntries] Parsed ${records.length} balance rows`);
 
-        const balances: any[] = records.map((row: any) => {
+        const balances: JournalBalance[] = records.map((row) => {
             const amountStr = (row['amount'] || '').trim();
             const amountParts = amountStr.split(/\s+/);
             const amount = amountParts.length >= 2 ? amountParts[0] : '';
             const currency = amountParts.length >= 2 ? amountParts[1] : '';
             return {
                 id: `balance_${row['date']}_${row['account'].replace(/:/g, '_')}`,
-                type: 'balance',
+                type: 'balance' as const,
                 date: row['date'],
                 account: row['account'],
                 amount,
@@ -90,10 +131,10 @@ export async function getBalanceEntries(
  */
 export async function getNoteEntries(
     plugin: BeancountPlugin,
-    filters: any = {},
+    filters: JournalFilters = {},
     page = 1,
     pageSize = 200
-): Promise<any> {
+): Promise<JournalApiResponse> {
     try {
         Logger.log('[getNoteEntries] Fetching with filters:', filters);
 
@@ -112,21 +153,21 @@ export async function getNoteEntries(
             columns: true,
             skip_empty_lines: true,
             trim: true,
-        }) as any[];
+        }) as NoteRow[];
 
         Logger.log(`[getNoteEntries] Parsed ${records.length} note rows`);
 
-        const notes: any[] = records.map((row: any) => {
+        const notes: JournalNote[] = records.map((row) => {
             const metaStr = row['meta'] || '{}';
-            let metadata: Record<string, any> = {};
+            let metadata: Record<string, unknown> = {};
             try {
-                metadata = JSON.parse(metaStr);
+                metadata = JSON.parse(metaStr) as Record<string, unknown>;
             } catch {
                 metadata = { raw: metaStr };
             }
             return {
                 id: `note_${row['date']}_${row['account'].replace(/:/g, '_')}`,
-                type: 'note',
+                type: 'note' as const,
                 date: row['date'],
                 account: row['account'],
                 comment: row['comment'] || '',
@@ -168,10 +209,10 @@ export async function getNoteEntries(
  */
 export async function getTransactionEntries(
     plugin: BeancountPlugin,
-    filters: any = {},
+    filters: JournalFilters = {},
     page = 1,
     pageSize = 200
-): Promise<any> {
+): Promise<JournalApiResponse> {
     try {
         Logger.log('[getTransactionEntries] Fetching with filters:', filters);
 
@@ -192,12 +233,12 @@ export async function getTransactionEntries(
             columns: true,
             skip_empty_lines: true,
             trim: true,
-        }) as any[];
+        }) as PostingRow[];
 
         Logger.log(`[getTransactionEntries] Parsed ${records.length} posting rows`);
 
         // Group postings by transaction ID
-        const transactionsMap = new Map<string, any>();
+        const transactionsMap = new Map<string, JournalTransaction>();
 
         for (const row of records) {
             const txnId = row['id'];
@@ -205,12 +246,12 @@ export async function getTransactionEntries(
             if (!transactionsMap.has(txnId)) {
                 const tagsStr = row['tags'] || '';
                 const linksStr = row['links'] || '';
-                const tags = tagsStr.trim() ? tagsStr.split(',').map((t: string) => t.trim()).filter(Boolean) : [];
-                const links = linksStr.trim() ? linksStr.split(',').map((l: string) => l.trim()).filter(Boolean) : [];
+                const tags = tagsStr.trim() ? tagsStr.split(',').map((t) => t.trim()).filter(Boolean) : [];
+                const links = linksStr.trim() ? linksStr.split(',').map((l) => l.trim()).filter(Boolean) : [];
 
                 const entryMetaStr = row['entry_meta'] || '{}';
-                let metadata: Record<string, any> = {};
-                try { metadata = JSON.parse(entryMetaStr); } catch { metadata = { raw: entryMetaStr }; }
+                let metadata: Record<string, unknown> = {};
+                try { metadata = JSON.parse(entryMetaStr) as Record<string, unknown>; } catch { metadata = { raw: entryMetaStr }; }
 
                 if (row['filename']) metadata['filename'] = row['filename'];
                 if (row['lineno']) {
@@ -220,7 +261,7 @@ export async function getTransactionEntries(
 
                 transactionsMap.set(txnId, {
                     id: txnId,
-                    type: 'transaction',
+                    type: 'transaction' as const,
                     date: row['date'],
                     flag: row['flag'] || '*',
                     payee: row['payee'] || null,
@@ -232,8 +273,8 @@ export async function getTransactionEntries(
                 });
             }
 
-            const transaction = transactionsMap.get(txnId);
-            const posting: any = {
+            const transaction = transactionsMap.get(txnId)!;
+            const posting: JournalPosting = {
                 account: row['account'],
                 amount: row['number'] || null,
                 currency: row['currency'] || null,
@@ -268,8 +309,8 @@ export async function getTransactionEntries(
         // In-memory account filter — applied after grouping so whole transactions are pulled
         if (filters.account) {
             const accountPattern = filters.account;
-            transactions = transactions.filter((txn: any) =>
-                txn.postings.some((p: any) => {
+            transactions = transactions.filter((txn) =>
+                txn.postings.some((p) => {
                     try { return new RegExp(accountPattern).test(p.account); }
                     catch { return p.account?.includes(accountPattern); }
                 })
@@ -279,16 +320,16 @@ export async function getTransactionEntries(
         // In-memory search term filter
         if (filters.searchTerm) {
             const q = filters.searchTerm.toLowerCase();
-            transactions = transactions.filter((txn: any) =>
+            transactions = transactions.filter((txn) =>
                 txn.narration?.toLowerCase().includes(q) ||
                 txn.payee?.toLowerCase().includes(q) ||
-                txn.postings.some((p: any) => p.account?.toLowerCase().includes(q))
+                txn.postings.some((p) => p.account?.toLowerCase().includes(q))
             );
         }
 
         // Re-sort only when in-memory filters were applied
         if (filters.account || filters.searchTerm) {
-            transactions.sort((a: any, b: any) => {
+            transactions.sort((a, b) => {
                 const d = b.date.localeCompare(a.date);
                 return d !== 0 ? d : a.id.localeCompare(b.id);
             });

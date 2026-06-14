@@ -56,9 +56,9 @@ export async function createStructuredFolder(
         try {
             await plugin.app.vault.createFolder(folderName);
             Logger.log('[structuredLayout] Created main folder');
-        } catch (e: any) {
+        } catch (e: unknown) {
             // Folder might already exist - only log if it's not that error
-            if (!e.message || !e.message.includes('already exists')) {
+            if (!(e instanceof Error) || !e.message.includes('already exists')) {
                 Logger.log('[structuredLayout] Folder creation error:', e);
             }
         }
@@ -68,9 +68,9 @@ export async function createStructuredFolder(
         try {
             await plugin.app.vault.createFolder(transactionsFolderPath);
             Logger.log('[structuredLayout] Created transactions folder');
-        } catch (e: any) {
+        } catch (e: unknown) {
             // Folder might already exist - only log if it's not that error
-            if (!e.message || !e.message.includes('already exists')) {
+            if (!(e instanceof Error) || !e.message.includes('already exists')) {
                 Logger.log('[structuredLayout] Transactions folder creation error:', e);
             }
         }
@@ -98,9 +98,9 @@ export async function createStructuredFolder(
                 } else {
                     Logger.log(`[structuredLayout] ${filePath} already exists, skipping`);
                 }
-            } catch (e: any) {
+            } catch (e: unknown) {
                 // Only log as error if it's not "already exists"
-                if (e.message && e.message.includes('already exists')) {
+                if (e instanceof Error && e.message.includes('already exists')) {
                     Logger.log(`[structuredLayout] ${filePath} already exists (caught in create), skipping`);
                 } else {
                     Logger.error(`[structuredLayout] Failed to create ${filePath}:`, e);
@@ -124,9 +124,9 @@ export async function createStructuredFolder(
                 await plugin.app.vault.create(ledgerPath, includeStatements);
                 Logger.log(`[structuredLayout] Created ${ledgerPath} with includes`);
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             // If file was just created by another process, try to read and update it
-            if (e.message && e.message.includes('already exists')) {
+            if (e instanceof Error && e.message.includes('already exists')) {
                 Logger.log(`[structuredLayout] ${ledgerPath} already exists, attempting to update...`);
                 try {
                     // Wait a moment for the file to be available
@@ -153,10 +153,10 @@ export async function createStructuredFolder(
 
         new Notice(`Structured layout created in ${folderName}/`);
         return folderPath;
-    } catch (error: any) {
+    } catch (error: unknown) {
         Logger.error('[structuredLayout] Failed to create structured folder:', error);
         // Only show user-facing error if it's not just "already exists"
-        if (!error.message || !error.message.includes('already exists')) {
+        if (!(error instanceof Error) || !error.message.includes('already exists')) {
             new Notice('Failed to create structured folder layout');
         }
         throw error;
@@ -246,8 +246,8 @@ export async function ensureTransactionFile(
         if (!plugin.app.vault.getAbstractFileByPath(yearFolder)) {
             try {
                 await plugin.app.vault.createFolder(yearFolder);
-            } catch (e: any) {
-                if (!e.message?.includes('already exists')) throw e;
+            } catch (e: unknown) {
+                if (!(e instanceof Error) || !e.message?.includes('already exists')) throw e;
             }
         }
 
@@ -274,9 +274,9 @@ export async function ensureTransactionFile(
             await updateLedgerIncludes(plugin, folderName, year); // Keep year for compatibility, but we rely on file scan
 
             new Notice(`Created ${title} transaction file and updated ledger includes`);
-        } catch (e: any) {
+        } catch (e: unknown) {
             // If file already exists, just log it - don't throw
-            if (e.message && e.message.includes('already exists')) {
+            if (e instanceof Error && e.message.includes('already exists')) {
                 Logger.log(`[structuredLayout] Transaction file ${filePath} already exists, skipping`);
             } else {
                 Logger.error(`[structuredLayout] Failed to create transaction file ${filePath}:`, e);
@@ -584,8 +584,8 @@ export async function migrateToStructuredLayout(
         Logger.log(`[Migration] Creating folder structure: ${targetFolderName}`);
         try {
             await plugin.app.vault.createFolder(targetFolderName);
-        } catch (e: any) {
-            if (!e.message || !e.message.includes('already exists')) {
+        } catch (e: unknown) {
+            if (!(e instanceof Error) || !e.message.includes('already exists')) {
                 throw e;
             }
         }
@@ -593,8 +593,8 @@ export async function migrateToStructuredLayout(
         const transactionsFolderPath = path.join(targetFolderName, 'transactions');
         try {
             await plugin.app.vault.createFolder(transactionsFolderPath);
-        } catch (e: any) {
-            if (!e.message || !e.message.includes('already exists')) {
+        } catch (e: unknown) {
+            if (!(e instanceof Error) || !e.message.includes('already exists')) {
                 throw e;
             }
         }
@@ -675,8 +675,8 @@ export async function migrateToStructuredLayout(
                         if (!plugin.app.vault.getAbstractFileByPath(yearFolder)) {
                             try {
                                 await plugin.app.vault.createFolder(yearFolder);
-                            } catch (e: any) {
-                                if (!e.message?.includes('already exists')) throw e;
+                            } catch (e: unknown) {
+                                if (!(e instanceof Error) || !e.message?.includes('already exists')) throw e;
                             }
                         }
                         periodFilePath = path.join(yearFolder, `${period}.beancount`).replace(/\\/g, '/');
@@ -853,9 +853,9 @@ async function writeToFile(
             // Create new file, with fallback to modify if it was just created
             try {
                 await plugin.app.vault.create(normalizedPath, content);
-            } catch (createError: any) {
+            } catch (createError: unknown) {
                 // If file was just created by another process, try to modify it
-                if (createError.message && createError.message.includes('already exists')) {
+                if (createError instanceof Error && createError.message.includes('already exists')) {
                     const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
                     if (file && file instanceof TFile) {
                         await plugin.app.vault.modify(file, content);

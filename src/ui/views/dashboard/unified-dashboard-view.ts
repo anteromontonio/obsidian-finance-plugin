@@ -80,8 +80,8 @@ export class UnifiedDashboardView extends ItemView {
 		// --- Listen for events dispatched from Svelte ---
 		this.component.$on('filtersChange', (e) => this.transactionController.handleFilterChange(e.detail));
 		// When CommoditiesTab requests a detail modal, open it using plugin/app context
-		this.component.$on('openCommodity', (e: any) => {
-			const symbol = e.detail?.symbol || e.detail;
+		this.component.$on('openCommodity', (e: CustomEvent<{ symbol: string } | string>) => {
+			const symbol = typeof e.detail === 'object' ? e.detail?.symbol : e.detail;
 			new CommodityDetailModal(this.app, this.plugin, this.commoditiesController, symbol).open();
 		});
 		// When CommoditiesTab dispatches addCommodity, open create modal

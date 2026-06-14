@@ -159,7 +159,7 @@ export class BeancountView extends ItemView {
 		Logger.log('[runBeanCheck] Executing command (safe):', commandBase, args);
 
 		return new Promise((resolve) => {
-			const handleResult = (error: any, stdout: string, stderr: string) => {
+			const handleResult = (error: Error | null, stdout: string, stderr: string) => {
 				Logger.log('[runBeanCheck] Command completed');
 				Logger.log('[runBeanCheck] Error object:', error ? error.message : 'null');
 				Logger.log('[runBeanCheck] Stdout length:', stdout?.length || 0);

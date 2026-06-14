@@ -43,7 +43,7 @@ export interface JournalBaseEntry {
     /** Date of the entry (YYYY-MM-DD). */
     date: string;
     /** Custom metadata associated with the entry. */
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
 }
 
 /**

@@ -78,7 +78,7 @@ export function parseCommoditiesPriceDataCSV(
  */
 export function parseCommodityDetailsCSV(csv: string): {
     symbol: string;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
     logo: string | null;
     priceMetadata: string | null;
     filename: string | null;
