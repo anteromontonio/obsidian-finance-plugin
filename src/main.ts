@@ -88,38 +88,38 @@ export default class BeancountPlugin extends Plugin {
 		this.registerExtensions(['beancount', 'bean'], BEANCOUNT_FILE_VIEW_TYPE);
 
 		// Add Ribbon Icons
-		this.addRibbonIcon('plus-circle', 'Add Transaction', () => {
+		this.addRibbonIcon('plus-circle', 'Add transaction', () => {
 			new UnifiedTransactionModal(this.app, this, null, this.getDashboardRefreshCallback()).open();
 		});
-		this.addRibbonIcon('layout-dashboard', 'Open Beancount Dashboard', () => {
+		this.addRibbonIcon('layout-dashboard', 'Open Beancount dashboard', () => {
 			this.activateView(UNIFIED_DASHBOARD_VIEW_TYPE, 'tab'); // Open the NEW view
 		});
 
 		// Add Commands
 		this.addCommand({
 			id: 'add-beancount-transaction',
-			name: 'Add Beancount Transaction',
+			name: 'Add Beancount transaction',
 			callback: () => { new UnifiedTransactionModal(this.app, this, null, this.getDashboardRefreshCallback()).open(); }
 		});
 		// 'Insert BQL Query Block' command removed — use manual insertion or BQL templates instead
 		this.addCommand({
 			id: 'open-beancount-unified-dashboard', // This ID now opens the new unified view
-			name: 'Open Beancount Unified Dashboard',
+			name: 'Open Beancount unified dashboard',
 			callback: () => { this.activateView(UNIFIED_DASHBOARD_VIEW_TYPE, 'tab'); }
 		});
 		this.addCommand({
 			id: 'open-beancount-snapshot',
-			name: 'Open Beancount Snapshot',
+			name: 'Open Beancount snapshot',
 			callback: () => { this.activateView(BEANCOUNT_VIEW_TYPE, 'right'); }
 		});
 		this.addCommand({
 			id: 'run-beancount-onboarding',
-			name: 'Run Setup/Onboarding',
+			name: 'Run setup/onboarding',
 			callback: () => { new OnboardingModal(this.app, this).open(); }
 		});
 		this.addCommand({
 			id: 'format-beancount-document',
-			name: 'Format Beancount Document',
+			name: 'Format Beancount document',
 			callback: () => {
 				const active = this.app.workspace.getActiveViewOfType(BeancountFileView);
 				if (active) {
@@ -134,7 +134,7 @@ export default class BeancountPlugin extends Plugin {
 		// Add Fetch Commodity Prices command
 		this.addCommand({
 			id: 'fetch-commodity-prices',
-			name: 'Fetch Commodity Prices',
+			name: 'Fetch commodity prices',
 			callback: async () => {
 				// Find the unified dashboard view and call fetchPrices on commodities controller
 				const leaves = this.app.workspace.getLeavesOfType(UNIFIED_DASHBOARD_VIEW_TYPE);

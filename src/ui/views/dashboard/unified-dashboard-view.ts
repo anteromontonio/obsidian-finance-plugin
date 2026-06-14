@@ -40,7 +40,7 @@ export class UnifiedDashboardView extends ItemView {
 	}
 
 	getViewType(): string { return UNIFIED_DASHBOARD_VIEW_TYPE; }
-	getDisplayText(): string { return "Beancount Dashboard"; }
+	getDisplayText(): string { return "Beancount dashboard"; }
 	getIcon(): string { return "layout-dashboard"; }
 
 	// Method to refresh all tabs when transactions are added

@@ -540,7 +540,7 @@ export class CommoditiesController {
             this.lastPriceFetch.set({ date: new Date(), summary });
 
             if (result.fetchedCount === 0) {
-                new Notice('⚠ bean-price returned no price directives. Check your commodity price metadata.');
+                new Notice('⚠ Bean-price returned no price directives. Check your commodity price metadata.');
             } else if (result.savedCount === 0) {
                 new Notice(`ℹ All ${result.fetchedCount} fetched price(s) were already up to date.`);
             } else {

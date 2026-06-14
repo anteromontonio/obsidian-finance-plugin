@@ -81,7 +81,7 @@ export class BQLCodeBlockProcessor {
 			
 			if (showQuery) {
 				const queryLabel = header.createEl('div', { cls: 'bql-query-label' });
-				queryLabel.createEl('span', { text: 'BQL Query', cls: 'bql-label' });
+				queryLabel.createEl('span', { text: 'BQL query', cls: 'bql-label' });
 			}
 			
 			if (showTools) {
@@ -129,7 +129,7 @@ export class BQLCodeBlockProcessor {
 		let queryDisplay: HTMLDetailsElement | null = null;
 		if (showQuery) {
 			queryDisplay = container.createEl('details', { cls: 'bql-query-details' });
-			queryDisplay.createEl('summary', { text: 'View Query', cls: 'bql-query-summary' });
+			queryDisplay.createEl('summary', { text: 'View query', cls: 'bql-query-summary' });
 			const queryCode = queryDisplay.createEl('pre', { cls: 'bql-query-code' });
 			queryCode.createEl('code', { text: query });
 		}

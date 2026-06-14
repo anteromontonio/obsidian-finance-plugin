@@ -32,7 +32,7 @@ export class BeancountView extends ItemView {
 	}
 
 	getViewType() { return BEANCOUNT_VIEW_TYPE; }
-	getDisplayText() { return "Beancount Snapshot"; } // Updated display text
+	getDisplayText() { return "Beancount snapshot"; } // Updated display text
 	getIcon() { return "landmark"; }
 
 	async onOpen() {
