@@ -1,4 +1,3 @@
-/* eslint-disable obsidianmd/rule-custom-message */
 export class Logger {
     private static isDebugMode = false;
 
@@ -8,7 +7,7 @@ export class Logger {
 
     static log(message: string, ...args: unknown[]) {
         if (this.isDebugMode) {
-            console.log(`[Beancount] ${message}`, ...args);
+            console.debug(`[Beancount] ${message}`, ...args);
         }
     }
 
@@ -22,7 +21,7 @@ export class Logger {
         // Let's keep info always visible or just follow debug?
         // "Clean production code" suggests minimal logs.
         if (this.isDebugMode) {
-            console.info(`[Beancount] ${message}`, ...args);
+            console.debug(`[Beancount] ${message}`, ...args);
         }
     }
 
