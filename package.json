@@ -41,5 +41,11 @@
 	"dependencies": {
 		"chart.js": "^4.5.1",
 		"csv-parse": "^6.1.0"
+	},
+	"overrides": {
+		"obsidian": {
+			"@codemirror/state": "$@codemirror/state",
+			"@codemirror/view": "$@codemirror/view"
+		}
 	}
 }
