@@ -21,3 +21,13 @@ declare module "fs" {
 declare module "path" {
   export function resolve(...paths: string[]): string;
 }
+
+interface HTMLElement {
+  setCssStyles(styles: Partial<CSSStyleDeclaration>): void;
+  setCssProps(props: Record<string, string>): void;
+}
+
+interface SVGElement {
+  setCssStyles(styles: Partial<CSSStyleDeclaration>): void;
+  setCssProps(props: Record<string, string>): void;
+}

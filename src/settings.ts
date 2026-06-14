@@ -109,7 +109,7 @@ export class BeancountSettingTab extends PluginSettingTab {
     display(): void {
         const { containerEl } = this;
         containerEl.empty();
-        containerEl.createEl('h2', { text: 'Beancount Settings' });
+        new Setting(containerEl).setName('Beancount Settings').setHeading();
 
         // Create tab navigation
         const tabsContainer = containerEl.createDiv({ cls: 'beancount-settings-tabs' });
@@ -161,12 +161,11 @@ export class BeancountSettingTab extends PluginSettingTab {
                 break;
         }
 
-        // Add CSS styles
-        this.addTabStyles();
+
     }
 
     private renderGeneralTab(containerEl: HTMLElement): void {
-        containerEl.createEl('h3', { text: 'General Settings' });
+        new Setting(containerEl).setName('General Settings').setHeading();
 
         new Setting(containerEl)
             .setName('Operating currency')
@@ -235,7 +234,7 @@ export class BeancountSettingTab extends PluginSettingTab {
                 }));
 
         // Price Fetching Settings Section
-        containerEl.createEl('h3', { text: 'Automatic Price Fetching' });
+        new Setting(containerEl).setName('Automatic Price Fetching').setHeading();
 
         new Setting(containerEl)
             .setName('Enable automatic price fetching')
@@ -274,9 +273,11 @@ export class BeancountSettingTab extends PluginSettingTab {
                 const timeSince = this.formatTimeSince(lastFetchDate);
 
                 const infoEl = containerEl.createDiv({ cls: 'setting-item-description' });
-                infoEl.style.marginTop = '8px';
-                infoEl.style.fontSize = '0.9em';
-                infoEl.style.opacity = '0.7';
+                infoEl.setCssStyles({
+                    marginTop: '8px',
+                    fontSize: '0.9em',
+                    opacity: '0.7'
+                });
                 infoEl.textContent = `Last automatic fetch: ${timeSince} (${lastFetchDate.toLocaleString()})`;
             }
         }
@@ -305,7 +306,7 @@ export class BeancountSettingTab extends PluginSettingTab {
     }
 
     private renderBQLTab(containerEl: HTMLElement): void {
-        containerEl.createEl('h3', { text: 'BQL Code Block Settings' });
+        new Setting(containerEl).setName('BQL Code Block Settings').setHeading();
 
         new Setting(containerEl)
             .setName('Show query tools')
@@ -327,7 +328,7 @@ export class BeancountSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        containerEl.createEl('h3', { text: 'Editor Settings' });
+        new Setting(containerEl).setName('Editor Settings').setHeading();
 
         new Setting(containerEl)
             .setName('Editor autocomplete')
@@ -362,10 +363,10 @@ export class BeancountSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        containerEl.createEl('h3', { text: 'Named Queries' });
+        new Setting(containerEl).setName('Named Queries').setHeading();
 
         const queryInfoEl = containerEl.createDiv({ cls: 'setting-item-description' });
-        queryInfoEl.style.marginBottom = '12px';
+        queryInfoEl.setCssStyles({ marginBottom: '12px' });
         queryInfoEl.innerHTML = `
             <p>Define reusable BQL queries using the Beancount <code>query</code> directive stored in <code>queries.beancount</code>.</p>
             <p>Use the <strong>Add</strong> ribbon button → <em>🔍 Query</em> tab to create named queries.</p>
@@ -374,7 +375,7 @@ export class BeancountSettingTab extends PluginSettingTab {
     }
 
     private renderPerformanceTab(containerEl: HTMLElement): void {
-        containerEl.createEl('h3', { text: 'Performance Settings' });
+        new Setting(containerEl).setName('Performance Settings').setHeading();
 
         new Setting(containerEl)
             .setName('Max transaction results')
@@ -406,7 +407,7 @@ export class BeancountSettingTab extends PluginSettingTab {
     }
 
     private renderBackupTab(containerEl: HTMLElement): void {
-        containerEl.createEl('h3', { text: 'Backup Settings' });
+        new Setting(containerEl).setName('Backup Settings').setHeading();
 
         new Setting(containerEl)
             .setName('Create backups')
@@ -434,7 +435,7 @@ export class BeancountSettingTab extends PluginSettingTab {
     }
 
     private renderFilesTab(containerEl: HTMLElement): void {
-        containerEl.createEl('h3', { text: 'File Organization' });
+        new Setting(containerEl).setName('File Organization').setHeading();
 
         containerEl.createEl('p', {
             text: 'Your finances are organized using a structured folder layout with separate files for accounts, transactions, prices, and more.',
@@ -468,15 +469,19 @@ export class BeancountSettingTab extends PluginSettingTab {
 
         // Display file structure info
         const infoDiv = containerEl.createDiv({ cls: 'structured-layout-info' });
-        infoDiv.style.padding = '10px';
-        infoDiv.style.marginTop = '10px';
-        infoDiv.style.backgroundColor = 'var(--background-secondary)';
-        infoDiv.style.borderRadius = '5px';
+        infoDiv.setCssStyles({
+            padding: '10px',
+            marginTop: '10px',
+            backgroundColor: 'var(--background-secondary)',
+            borderRadius: '5px'
+        });
 
         infoDiv.createEl('strong', { text: 'Structured Layout File Organization:' });
         const fileList = infoDiv.createEl('ul');
-        fileList.style.marginTop = '8px';
-        fileList.style.marginBottom = '0';
+        fileList.setCssStyles({
+            marginTop: '8px',
+            marginBottom: '0'
+        });
 
         const files = [
             '📄 ledger.beancount - Main file with include statements',
@@ -492,31 +497,34 @@ export class BeancountSettingTab extends PluginSettingTab {
 
         files.forEach(file => {
             const li = fileList.createEl('li');
-            li.style.marginBottom = '4px';
+            li.setCssStyles({ marginBottom: '4px' });
             li.textContent = file;
         });
 
         // Show current path
         if (this.plugin.settings.beancountFilePath) {
             const pathDiv = containerEl.createDiv({ cls: 'current-path-display' });
-            pathDiv.style.marginTop = '15px';
-            pathDiv.style.padding = '10px';
-            pathDiv.style.backgroundColor = 'var(--background-modifier-border)';
-            pathDiv.style.borderRadius = '5px';
+            pathDiv.setCssStyles({
+                marginTop: '15px',
+                padding: '10px',
+                backgroundColor: 'var(--background-modifier-border)',
+                borderRadius: '5px'
+            });
 
             pathDiv.createEl('div', {
                 text: 'Main ledger file path:',
                 cls: 'setting-item-name'
             });
-            pathDiv.createEl('div', {
+            const descEl = pathDiv.createEl('div', {
                 text: this.plugin.settings.beancountFilePath,
                 cls: 'setting-item-description'
-            }).style.fontFamily = 'monospace';
+            });
+            descEl.setCssStyles({ fontFamily: 'monospace' });
         }
     }
 
     private renderAdvancedTab(containerEl: HTMLElement): void {
-        containerEl.createEl('h3', { text: 'Advanced Settings' });
+        new Setting(containerEl).setName('Advanced Settings').setHeading();
 
         new Setting(containerEl)
             .setName('Debug mode')
@@ -560,10 +568,10 @@ export class BeancountSettingTab extends PluginSettingTab {
     }
 
     private createConnectionSection(containerEl: HTMLElement) {
-        containerEl.createEl('h3', { text: 'Connection Configuration' });
+        new Setting(containerEl).setName('Connection Configuration').setHeading();
 
         const desc = containerEl.createDiv({ cls: 'setting-item-description' });
-        desc.style.marginBottom = '1em';
+        desc.setCssStyles({ marginBottom: '1em' });
         desc.innerHTML = `
             <p>Configure your Beancount file path and connection settings. The plugin will automatically detect your Python environment and test the connection.</p>
         `;
@@ -590,36 +598,28 @@ export class BeancountSettingTab extends PluginSettingTab {
 
             suggestionContainer = document.createElement('div');
             suggestionContainer.className = 'bql-file-suggestions';
-            suggestionContainer.style.cssText = `
-                position: absolute;
-                top: 100%;
-                left: 0;
-                right: 0;
-                background: var(--background-primary);
-                border: 1px solid var(--background-modifier-border);
-                border-radius: 6px;
-                box-shadow: var(--shadow-s);
-                max-height: 200px;
-                overflow-y: auto;
-                z-index: 1000;
-            `;
+            suggestionContainer.setCssStyles({
+                position: 'absolute',
+                top: '100%',
+                left: '0',
+                right: '0',
+                background: 'var(--background-primary)',
+                border: '1px solid var(--background-modifier-border)',
+                borderRadius: '6px',
+                boxShadow: 'var(--shadow-s)',
+                maxHeight: '200px',
+                overflowY: 'auto',
+                zIndex: '1000'
+            });
 
             files.forEach((file, index) => {
                 const item = document.createElement('div');
                 item.className = 'bql-file-suggestion-item';
                 item.textContent = file;
-                item.style.cssText = `
-                    padding: 8px 12px;
-                    cursor: pointer;
-                    border-bottom: 1px solid var(--background-modifier-border-hover);
-                `;
-
-                item.addEventListener('mouseenter', () => {
-                    item.style.background = 'var(--background-modifier-hover)';
-                });
-
-                item.addEventListener('mouseleave', () => {
-                    item.style.background = '';
+                item.setCssStyles({
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    borderBottom: '1px solid var(--background-modifier-border-hover)'
                 });
 
                 item.addEventListener('click', () => {
@@ -675,58 +675,58 @@ export class BeancountSettingTab extends PluginSettingTab {
     private showFileSuggestModal(input: HTMLInputElement) {
         const modal = document.createElement('div');
         modal.className = 'bql-file-modal';
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-center: center;
-            z-index: 9999;
-        `;
+        modal.setCssStyles({
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: '9999'
+        });
 
         const modalContent = modal.createEl('div', {
             cls: 'bql-file-modal-content'
         });
-        modalContent.style.cssText = `
-            background: var(--background-primary);
-            padding: 24px;
-            border-radius: 8px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 80%;
-            overflow-y: auto;
-            border: 1px solid var(--background-modifier-border);
-        `;
+        modalContent.setCssStyles({
+            background: 'var(--background-primary)',
+            padding: '24px',
+            borderRadius: '8px',
+            maxWidth: '600px',
+            width: '90%',
+            maxHeight: '80%',
+            overflowY: 'auto',
+            border: '1px solid var(--background-modifier-border)'
+        });
 
-        modalContent.createEl('h3', { text: 'Select Template File' });
+        new Setting(modalContent).setName('Select Template File').setHeading();
 
         const searchInput = modalContent.createEl('input', {
             type: 'text',
             placeholder: 'Search markdown files...'
         });
-        searchInput.style.cssText = `
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 16px;
-            border: 1px solid var(--background-modifier-border);
-            border-radius: 4px;
-            background: var(--background-secondary);
-            color: var(--text-normal);
-        `;
+        searchInput.setCssStyles({
+            width: '100%',
+            padding: '8px',
+            marginBottom: '16px',
+            border: '1px solid var(--background-modifier-border)',
+            borderRadius: '4px',
+            background: 'var(--background-secondary)',
+            color: 'var(--text-normal)'
+        });
 
         const fileList = modalContent.createEl('div', {
             cls: 'bql-file-list'
         });
-        fileList.style.cssText = `
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid var(--background-modifier-border);
-            border-radius: 4px;
-        `;
+        fileList.setCssStyles({
+            maxHeight: '300px',
+            overflowY: 'auto',
+            border: '1px solid var(--background-modifier-border)',
+            borderRadius: '4px'
+        });
 
         const updateFileList = (filter = '') => {
             fileList.empty();
@@ -740,12 +740,12 @@ export class BeancountSettingTab extends PluginSettingTab {
                     text: 'No markdown files found',
                     cls: 'bql-no-files'
                 });
-                noFiles.style.cssText = `
-                    padding: 16px;
-                    text-align: center;
-                    color: var(--text-muted);
-                    font-style: italic;
-                `;
+                noFiles.setCssStyles({
+                    padding: '16px',
+                    textAlign: 'center',
+                    color: 'var(--text-muted)',
+                    fontStyle: 'italic'
+                });
                 return;
             }
 
@@ -754,18 +754,10 @@ export class BeancountSettingTab extends PluginSettingTab {
                     text: file.path,
                     cls: 'bql-file-item'
                 });
-                item.style.cssText = `
-                    padding: 8px 12px;
-                    cursor: pointer;
-                    border-bottom: 1px solid var(--background-modifier-border-hover);
-                `;
-
-                item.addEventListener('mouseenter', () => {
-                    item.style.background = 'var(--background-modifier-hover)';
-                });
-
-                item.addEventListener('mouseleave', () => {
-                    item.style.background = '';
+                item.setCssStyles({
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    borderBottom: '1px solid var(--background-modifier-border-hover)'
                 });
 
                 item.addEventListener('click', () => {
@@ -783,24 +775,24 @@ export class BeancountSettingTab extends PluginSettingTab {
         });
 
         const buttonContainer = modalContent.createEl('div');
-        buttonContainer.style.cssText = `
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 16px;
-            gap: 8px;
-        `;
+        buttonContainer.setCssStyles({
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginTop: '16px',
+            gap: '8px'
+        });
 
         const closeButton = buttonContainer.createEl('button', {
             text: 'Cancel'
         });
-        closeButton.style.cssText = `
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            background: var(--interactive-normal);
-            color: var(--text-normal);
-            border: 1px solid var(--background-modifier-border);
-        `;
+        closeButton.setCssStyles({
+            padding: '8px 16px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            background: 'var(--interactive-normal)',
+            color: 'var(--text-normal)',
+            border: '1px solid var(--background-modifier-border)'
+        });
         closeButton.addEventListener('click', () => {
             modal.remove();
         });
@@ -812,66 +804,5 @@ export class BeancountSettingTab extends PluginSettingTab {
         });
 
         document.body.appendChild(modal);
-    }
-
-    private addTabStyles() {
-        // Check if styles already exist
-        if (document.getElementById('beancount-tab-styles')) return;
-
-        const style = document.createElement('style');
-        style.id = 'beancount-tab-styles';
-        style.textContent = `
-            .beancount-settings-tabs {
-                margin-top: 1em;
-            }
-            
-            .beancount-tabs-nav {
-                display: flex;
-                gap: 4px;
-                border-bottom: 2px solid var(--background-modifier-border);
-                margin-bottom: 1.5em;
-                flex-wrap: wrap;
-            }
-            
-            .beancount-tab-button {
-                padding: 8px 16px;
-                cursor: pointer;
-                border: none;
-                background: transparent;
-                color: var(--text-muted);
-                font-size: 0.95em;
-                transition: all 0.2s ease;
-                border-bottom: 2px solid transparent;
-                margin-bottom: -2px;
-                user-select: none;
-            }
-            
-            .beancount-tab-button:hover {
-                color: var(--text-normal);
-                background: var(--background-modifier-hover);
-            }
-            
-            .beancount-tab-button.active {
-                color: var(--text-accent);
-                border-bottom-color: var(--text-accent);
-                font-weight: 500;
-            }
-            
-            .beancount-tabs-content {
-                animation: fadeIn 0.2s ease;
-            }
-            
-            @keyframes fadeIn {
-                from {
-                    opacity: 0;
-                    transform: translateY(4px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-        `;
-        document.head.appendChild(style);
     }
 }

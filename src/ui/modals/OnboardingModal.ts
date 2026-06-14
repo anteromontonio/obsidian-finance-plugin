@@ -16,8 +16,7 @@ export class OnboardingModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
         
-        this.modalEl.style.maxWidth = '720px';
-        this.modalEl.style.width = '90vw';
+        this.modalEl.setCssStyles({ maxWidth: '720px', width: '90vw' });
 
         this.component = new (OnboardingModalComponent as any)({
             target: contentEl,

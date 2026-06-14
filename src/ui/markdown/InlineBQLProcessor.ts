@@ -80,7 +80,7 @@ export class InlineBQLProcessor {
 				codeElement.title = available.length === 0
 					? 'Add query directives via the Add panel (Query tab) or directly to queries.beancount'
 					: `Available queries: ${available.join(', ')}`;
-				codeElement.style.color = 'var(--text-error)';
+				codeElement.setCssStyles({ color: 'var(--text-error)' });
 				return;
 			}
 			query = namedQuery;

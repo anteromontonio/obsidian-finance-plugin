@@ -260,14 +260,14 @@ export class BQLCodeBlockProcessor {
 		
 		// Create collapsible details
 		const details = errorContainer.createEl('div', { cls: 'bql-error-details' });
-		details.style.display = 'none';
+		details.setCssStyles({ display: 'none' });
 		
 		const fullErrorEl = details.createEl('pre', { cls: 'bql-error-full' });
 		fullErrorEl.textContent = fullError;
 		
 		// Toggle functionality
 		let isExpanded = false;
-		summaryLine.style.cursor = 'pointer';
+		summaryLine.setCssStyles({ cursor: 'pointer' });
 		
 		summaryLine.addEventListener('click', () => {
 			isExpanded = !isExpanded;
@@ -361,7 +361,7 @@ export class BQLCodeBlockProcessor {
 			const url = URL.createObjectURL(blob);
 			link.setAttribute('href', url);
 			link.setAttribute('download', filename);
-			link.style.visibility = 'hidden';
+			link.setCssStyles({ visibility: 'hidden' });
 			document.body.appendChild(link);
 			link.click();
 			document.body.removeChild(link);

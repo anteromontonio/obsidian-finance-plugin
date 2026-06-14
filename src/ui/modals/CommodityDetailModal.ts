@@ -20,8 +20,7 @@ export class CommodityDetailModal extends Modal {
     async onOpen() {
         const { contentEl } = this;
         contentEl.empty();
-        this.modalEl.style.maxWidth = '800px';
-        this.modalEl.style.width = '85vw';
+        this.modalEl.setCssStyles({ maxWidth: '800px', width: '85vw' });
 
         console.debug('[CommodityDetailModal] onOpen:', { symbol: this.symbol });
 
