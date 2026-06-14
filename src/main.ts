@@ -316,7 +316,7 @@ export default class BeancountPlugin extends Plugin {
 	// Force refresh all BQL code blocks
 	private refreshBQLBlocks() {
 		// Use setTimeout to ensure settings are fully saved before refreshing
-		setTimeout(() => {
+		window.setTimeout(() => {
 			this.bqlProcessor?.refreshAllBlocks();
 		}, 50);
 	}

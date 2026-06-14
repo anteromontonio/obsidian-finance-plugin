@@ -403,9 +403,9 @@ export class BalanceSheetController {
 			const firstRowIsHeader = records[0]?.[0]?.toLowerCase().includes('account');
 			const rows = firstRowIsHeader ? records.slice(1) : records;
 
-			let tempAssets: [string, string][] = [];
-			let tempLiab: [string, string][] = [];
-			let tempEquity: [string, string][] = [];
+			const tempAssets: [string, string][] = [];
+			const tempLiab: [string, string][] = [];
+			const tempEquity: [string, string][] = [];
 			let hasUnconvertedCommodities = false;
 			const unconvertedAccounts: string[] = [];
 

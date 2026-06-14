@@ -1,4 +1,4 @@
-import { resolve, join, sep } from 'path';
+import { resolve, sep } from 'path';
 import { homedir, platform, arch, type, release } from 'os';
 import { execSafe } from './execSafe';
 
@@ -235,15 +235,18 @@ export class SystemDetector {
                 return process.env.SHELL;
             }
 
-            // Fallback for Unix-like systems if SHELL is not set
             try {
                 await execSafe('bash', ['-c', 'exit 0'], { timeout: 1000 });
                 return 'Bash';
-            } catch {}
+            } catch {
+                // bash not available
+            }
             try {
                 await execSafe('zsh', ['-c', 'exit 0'], { timeout: 1000 });
                 return 'Zsh';
-            } catch {}
+            } catch {
+                // zsh not available
+            }
             return 'sh';
 
         } catch (error) {

@@ -420,8 +420,8 @@ export class IncomeStatementController {
 			const firstRowIsHeader = records[0]?.[0]?.toLowerCase().includes('account');
 			const rows = firstRowIsHeader ? records.slice(1) : records;
 
-			let tempIncome: [string, string][] = [];
-			let tempExpenses: [string, string][] = [];
+			const tempIncome: [string, string][] = [];
+			const tempExpenses: [string, string][] = [];
 			let hasUnconvertedCommodities = false;
 			const unconvertedAccounts: string[] = [];
 

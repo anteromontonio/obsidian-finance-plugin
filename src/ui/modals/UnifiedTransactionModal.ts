@@ -47,8 +47,7 @@ export class UnifiedTransactionModal extends Modal {
         contentEl.empty();
         
         // Set modal container to be wider
-        this.modalEl.style.maxWidth = '1200px';
-        this.modalEl.style.width = '95vw';
+        this.modalEl.setCssStyles({ maxWidth: '1200px', width: '95vw' });
 
         // Set initial title (fallback, component will update it)
         this.setTitle(this.mode === 'edit' ? 'Edit Transaction' : 'Add Transaction');
@@ -57,7 +56,7 @@ export class UnifiedTransactionModal extends Modal {
         const accounts: string[] = [];
         const payees: string[] = [];
         const tags: string[] = [];
-        let currencies: string[] = ['INR', 'USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD']; // Default fallback
+        const currencies: string[] = ['INR', 'USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD']; // Default fallback
 
         // Create component immediately with static import
         this.component = new (TransactionEditModal as any)({

@@ -801,3 +801,55 @@
 	padding: 4px var(--size-4-3);
 	font-size: var(--font-ui-small);
 }
+
+/* Settings Tab Styles */
+.beancount-settings-tabs {
+	margin-top: 1em;
+}
+
+.beancount-tabs-nav {
+	display: flex;
+	gap: 4px;
+	border-bottom: 2px solid var(--background-modifier-border);
+	margin-bottom: 1.5em;
+	flex-wrap: wrap;
+}
+
+.beancount-tab-button {
+	padding: 8px 16px;
+	cursor: pointer;
+	border: none;
+	background: transparent;
+	color: var(--text-muted);
+	font-size: 0.95em;
+	transition: all 0.2s ease;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -2px;
+	user-select: none;
+}
+
+.beancount-tab-button:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.beancount-tab-button.active {
+	color: var(--text-accent);
+	border-bottom-color: var(--text-accent);
+	font-weight: 500;
+}
+
+.beancount-tabs-content {
+	animation: fadeInSettingTab 0.2s ease;
+}
+
+@keyframes fadeInSettingTab {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}

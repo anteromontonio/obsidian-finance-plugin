@@ -70,7 +70,7 @@ export function getIncomeStatementQueryByUnits(): string {
 	return `SELECT account, units(sum(position)) WHERE account ~ '^(Income|Expenses)' AND NOT close_date(account) GROUP BY account ORDER BY account`;
 }
 
-export function getTransactionsQuery(filters: TransactionFilters, limit: number = 1000): string {
+export function getTransactionsQuery(filters: TransactionFilters, limit = 1000): string {
 	const selectPart = `SELECT date, payee, narration, position, balance`; // Added balance column
 	const whereClauses: string[] = [];
 	const orderByPart = `ORDER BY date DESC, lineno DESC LIMIT ${limit}`;

@@ -1,10 +1,9 @@
 // src/views/sidebar-view.ts
-import { ItemView, WorkspaceLeaf, Notice, MarkdownRenderer, TFile } from 'obsidian';
+import { ItemView, WorkspaceLeaf, Notice } from 'obsidian';
 import type BeancountPlugin from '../../../main';
 import BeancountViewComponent from './SidebarView.svelte'; // Assuming this is the correct Svelte component for the sidebar
 import { runQuery, execSafe } from '../../../utils/index';
 import * as queries from '../../../queries/index';
-import { parse as parseCsv } from 'csv-parse/sync';
 import { Logger } from '../../../utils/logger';
 // ----------------------------------------
 
@@ -48,7 +47,7 @@ export class BeancountView extends ItemView {
 		// Listen for events
 		this.component.$on('refresh', () => this.updateView());
 
-		setTimeout(() => this.updateView(), 0);
+		window.setTimeout(() => this.updateView(), 0);
 	}
 
 	async onClose() {
@@ -136,7 +135,7 @@ export class BeancountView extends ItemView {
 	// --- Runs bean-check (using ERRORS query) ---
 	async runBeanCheck(): Promise<{ status: "ok" | "error"; message: string | null; errorCount: number; errorList: string[] }> {
 		const filePath = this.plugin.settings.beancountFilePath;
-		let commandBase = this.plugin.settings.beancountCommand;
+		const commandBase = this.plugin.settings.beancountCommand;
 		Logger.log('[runBeanCheck] Starting validation check');
 		Logger.log('[runBeanCheck] File path:', filePath);
 		Logger.log('[runBeanCheck] Command base:', commandBase);

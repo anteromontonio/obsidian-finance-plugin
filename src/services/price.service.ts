@@ -3,7 +3,7 @@ import { TFile } from 'obsidian';
 import type BeancountPlugin from '../main';
 import type { PriceFetchResult } from '../types';
 import { getTargetFile, getMainLedgerPath } from '../utils/structuredLayout';
-import { convertWslPathToWindows, execSafe } from '../utils';
+import { execSafe } from '../utils';
 import { Logger } from '../utils/logger';
 import { SystemDetector } from '../utils/SystemDetector';
 
@@ -78,7 +78,7 @@ export class PriceService {
 			const result = await Promise.race([
 				execSafe(beanPriceCommand, args, { maxBuffer: 20 * 1024 * 1024 }),
 				new Promise<never>((_, reject) =>
-					setTimeout(() => reject(new Error('Timeout: bean-price took longer than 60 seconds')), 60_000)
+					window.setTimeout(() => reject(new Error('Timeout: bean-price took longer than 60 seconds')), 60_000)
 				),
 			]) as { stdout: string; stderr: string };
 			stdout = result.stdout;

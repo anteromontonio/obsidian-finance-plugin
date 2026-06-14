@@ -27,8 +27,7 @@ export class CommodityCreateModal extends Modal {
     onOpen() {
         const { contentEl } = this;
         contentEl.empty();
-        this.modalEl.style.maxWidth = '600px';
-        this.modalEl.style.width = '90vw';
+        this.modalEl.setCssStyles({ maxWidth: '600px', width: '90vw' });
 
         Logger.log('[CommodityCreateModal] Opening modal');
 

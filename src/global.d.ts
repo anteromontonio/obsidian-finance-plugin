@@ -1,5 +1,7 @@
 // src/global.d.ts
 
+import 'obsidian';
+
 declare module "*.svelte" {
   import { SvelteComponent } from "svelte";
   export default SvelteComponent;
@@ -11,7 +13,7 @@ declare module "child_process" {
 }
 
 declare module "util" {
-  export function promisify(fn: Function): Function;
+  export function promisify(fn: (...args: any[]) => any): (...args: any[]) => Promise<any>;
 }
 
 declare module "fs" {
@@ -20,4 +22,22 @@ declare module "fs" {
 
 declare module "path" {
   export function resolve(...paths: string[]): string;
+}
+
+declare global {
+  interface HTMLElement {
+    setCssStyles(styles: Partial<CSSStyleDeclaration>): void;
+    setCssProps(props: Record<string, string>): void;
+  }
+
+  interface SVGElement {
+    setCssStyles(styles: Partial<CSSStyleDeclaration>): void;
+    setCssProps(props: Record<string, string>): void;
+  }
+}
+
+declare module 'obsidian' {
+  interface DataAdapter {
+    getBasePath(): string;
+  }
 }

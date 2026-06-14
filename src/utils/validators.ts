@@ -53,7 +53,7 @@ export async function validatePriceSource(
         let stdout = '';
         let stderr = '';
 
-        const timeout = setTimeout(() => {
+        const timeout = window.setTimeout(() => {
             child.kill();
             resolve({ success: false, error: 'Price source validation timed out after 10 seconds.' });
         }, 10000);
@@ -67,12 +67,12 @@ export async function validatePriceSource(
         });
 
         child.on('error', (error) => {
-            clearTimeout(timeout);
+            window.clearTimeout(timeout);
             resolve({ success: false, error: error.message });
         });
 
         child.on('close', (code) => {
-            clearTimeout(timeout);
+            window.clearTimeout(timeout);
             if (code !== 0) {
                 const errorMsg = stderr.trim() || `bean-price exited with code ${code}`;
                 resolve({ success: false, error: errorMsg });

@@ -10,9 +10,9 @@ import { getOpenAccounts, saveOpenDirective, saveCloseDirective } from '../../ut
 export class AccountManagementModal extends Modal {
     private plugin: BeancountPlugin;
     private mode: 'open' | 'close';
-    private accountName: string = '';
-    private date: string = '';
-    private currencies: string = '';
+    private accountName = '';
+    private date = '';
+    private currencies = '';
     private onSuccess?: () => Promise<void>;
     private openAccounts: string[] = [];
 
@@ -101,7 +101,12 @@ export class AccountManagementModal extends Modal {
 
         // Buttons
         const buttonContainer = contentEl.createDiv({ cls: 'modal-button-container' });
-        buttonContainer.style.cssText = 'display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;';
+        buttonContainer.setCssStyles({
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: '8px',
+            marginTop: '20px'
+        });
 
         const cancelButton = buttonContainer.createEl('button', { text: 'Cancel' });
         cancelButton.addEventListener('click', () => {

@@ -14,8 +14,8 @@ import { Logger } from './logger';
 export async function getBalanceEntries(
     plugin: BeancountPlugin,
     filters: any = {},
-    page: number = 1,
-    pageSize: number = 200
+    page = 1,
+    pageSize = 200
 ): Promise<any> {
     try {
         Logger.log('[getBalanceEntries] Fetching with filters:', filters);
@@ -39,7 +39,7 @@ export async function getBalanceEntries(
 
         Logger.log(`[getBalanceEntries] Parsed ${records.length} balance rows`);
 
-        let balances: any[] = records.map((row: any) => {
+        const balances: any[] = records.map((row: any) => {
             const amountStr = (row['amount'] || '').trim();
             const amountParts = amountStr.split(/\s+/);
             const amount = amountParts.length >= 2 ? amountParts[0] : '';
@@ -91,8 +91,8 @@ export async function getBalanceEntries(
 export async function getNoteEntries(
     plugin: BeancountPlugin,
     filters: any = {},
-    page: number = 1,
-    pageSize: number = 200
+    page = 1,
+    pageSize = 200
 ): Promise<any> {
     try {
         Logger.log('[getNoteEntries] Fetching with filters:', filters);
@@ -116,7 +116,7 @@ export async function getNoteEntries(
 
         Logger.log(`[getNoteEntries] Parsed ${records.length} note rows`);
 
-        let notes: any[] = records.map((row: any) => {
+        const notes: any[] = records.map((row: any) => {
             const metaStr = row['meta'] || '{}';
             let metadata: Record<string, any> = {};
             try {
@@ -169,8 +169,8 @@ export async function getNoteEntries(
 export async function getTransactionEntries(
     plugin: BeancountPlugin,
     filters: any = {},
-    page: number = 1,
-    pageSize: number = 200
+    page = 1,
+    pageSize = 200
 ): Promise<any> {
     try {
         Logger.log('[getTransactionEntries] Fetching with filters:', filters);

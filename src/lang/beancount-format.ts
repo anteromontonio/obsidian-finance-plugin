@@ -126,7 +126,7 @@ function formatTransactionBlock(lines: string[]): string[] {
             const amountStr = amountMatch[1];
             const currency = amountMatch[2];
             // Normalise @ and @@ spacing
-            let tail = amountMatch[3].trim().replace(/\s*(@{1,2})\s*/g, ' $1 ').trim();
+            const tail = amountMatch[3].trim().replace(/\s*(@{1,2})\s*/g, ' $1 ').trim();
             return { account, amountStr, currency, tail, isComment: false, isBlank: false, isMetadata: false, rawOther: null };
         }
 

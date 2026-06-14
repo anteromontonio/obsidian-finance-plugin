@@ -1,7 +1,7 @@
 // src/stores/journal.store.ts
 import { writable, derived, get } from 'svelte/store';
 import type { JournalService } from '../services/journal.service';
-import type { JournalEntry, JournalFilters, JournalTransaction } from '../models/journal';
+import type { JournalEntry, JournalFilters } from '../models/journal';
 import { Logger } from '../utils/logger';
 
 /**
@@ -17,7 +17,7 @@ export function createJournalStore(service: JournalService) {
     // State
     const entries = writable<JournalEntry[]>([]);
     const transactions = derived(entries, $entries =>
-        $entries.filter(e => e.type === 'transaction') as JournalTransaction[]
+        $entries.filter(e => e.type === 'transaction')
     );
 
     const filters = writable<JournalFilters>({});

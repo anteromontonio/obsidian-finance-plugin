@@ -25,7 +25,7 @@ export class BeancountFileView extends TextFileView {
 	private editorView: EditorView;
 	private plugin: BeancountPlugin | null;
 	/** Absolute filesystem path to the open file (for lint error filtering). */
-	private filePath: string = '';
+	private filePath = '';
 
 	constructor(leaf: WorkspaceLeaf, plugin?: BeancountPlugin) {
 		super(leaf);
