@@ -370,10 +370,10 @@ export class BeancountSettingTab extends PluginSettingTab {
         
         const p1 = queryInfoEl.createEl('p');
         p1.textContent = 'Define reusable BQL queries using the Beancount ';
-        // eslint-disable-next-line obsidianmd/ui/sentence-case
+        // eslint-disable-next-line obsidianmd/ui/sentence-case -- allow lowercase code block placeholder name
         p1.createEl('code', { text: 'query' });
         p1.appendText(' directive stored in ');
-        // eslint-disable-next-line obsidianmd/ui/sentence-case
+        // eslint-disable-next-line obsidianmd/ui/sentence-case -- allow lowercase file name format
         p1.createEl('code', { text: 'queries.beancount' });
         p1.appendText('.');
 
@@ -386,7 +386,7 @@ export class BeancountSettingTab extends PluginSettingTab {
 
         const p3 = queryInfoEl.createEl('p');
         p3.textContent = 'In your notes, use ';
-        // eslint-disable-next-line obsidianmd/ui/sentence-case
+        // eslint-disable-next-line obsidianmd/ui/sentence-case -- allow lowercase inline directive placeholder
         p3.createEl('code', { text: 'bql-q:name' });
         p3.appendText(' to insert the query result inline.');
     }
@@ -476,9 +476,9 @@ export class BeancountSettingTab extends PluginSettingTab {
             .setName('Transaction file organization')
             .setDesc('How transactions should be split into multiple files inside the transactions/ folder.')
             .addDropdown(dropdown => dropdown
-                // eslint-disable-next-line obsidianmd/ui/sentence-case
+                // eslint-disable-next-line obsidianmd/ui/sentence-case -- allow path segments and file extensions
                 .addOption('yearly', 'Yearly (e.g. transactions/2025.beancount)')
-                // eslint-disable-next-line obsidianmd/ui/sentence-case
+                // eslint-disable-next-line obsidianmd/ui/sentence-case -- allow path segments and file extensions
                 .addOption('monthly', 'Monthly (e.g. transactions/2025/2025-01.beancount)')
                 .setValue(this.plugin.settings.fileOrganization)
                 .onChange(async (value) => {

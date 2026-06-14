@@ -1,14 +1,13 @@
-import obsidianmd from 'eslint-plugin-obsidianmd';
-import tseslint from 'typescript-eslint';
+import tsparser from "@typescript-eslint/parser";
+import { defineConfig } from "eslint/config";
+import obsidianmd from "eslint-plugin-obsidianmd";
 
-export default tseslint.config(
+export default defineConfig([
   {
     ignores: [
       "**/node_modules/",
       "**/docs-site/",
       "**/scripts/",
-      "**/.venv/",
-      "**/venv/",
       "main.js",
       "test-build.js",
       "esbuild.config.mjs",
@@ -21,10 +20,11 @@ export default tseslint.config(
   },
   ...obsidianmd.configs.recommended,
   {
+    files: ["**/*.ts"],
     languageOptions: {
+      parser: tsparser,
       parserOptions: {
-        project: true,
-        tsconfigRootDir: import.meta.dirname,
+        project: "./tsconfig.json",
       }
     },
     rules: {
@@ -48,4 +48,4 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": ["warn", { "args": "none", "caughtErrors": "none" }]
     }
   }
-);
+]);

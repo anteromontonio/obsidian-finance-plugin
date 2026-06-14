@@ -64,7 +64,7 @@ export class AccountManagementModal extends Modal {
                         });
                 });
         } else {
-            /* eslint-disable obsidianmd/ui/sentence-case */
+            /* eslint-disable obsidianmd/ui/sentence-case -- allow capitalized Beancount account prefixes */
             new Setting(contentEl)
                 .setName('Account name')
                 .setDesc('Enter the full account name (e.g., Assets:Bank:Checking)')
