@@ -61,7 +61,7 @@ jobs:
         run: |
           gh release create \
             "${{ steps.version.outputs.version }}" \
-            master.js \
+            main.js \
             manifest.json \
             styles.css \
             --draft \
