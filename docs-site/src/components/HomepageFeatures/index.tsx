@@ -1,7 +1,12 @@
+import React from 'react';
 import type {ReactNode} from 'react';
 import clsx from 'clsx';
 import Heading from '@theme/Heading';
 import styles from './styles.module.css';
+
+import LogoSvg from '@site/static/img/logo.svg';
+import DashboardSvg from '@site/static/img/Dashboard.svg';
+import BqlSvg from '@site/static/img/BQL.svg';
 
 type FeatureItem = {
   title: string;
@@ -12,7 +17,7 @@ type FeatureItem = {
 const FeatureList: FeatureItem[] = [
   {
     title: 'Beancount Integration',
-    Svg: require('@site/static/img/logo.svg').default,
+    Svg: LogoSvg,
     description: (
       <>
         Seamlessly integrate with Beancount for powerful double-entry bookkeeping.
@@ -22,7 +27,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Dashboard',
-    Svg: require('@site/static/img/Dashboard.svg').default,
+    Svg: DashboardSvg,
     description: (
       <>
         Access balance sheets, transactions, commodities, and journal entries
@@ -32,7 +37,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'BQL Query Support',
-    Svg: require('@site/static/img/BQL.svg').default,
+    Svg: BqlSvg,
     description: (
       <>
         Run powerful Beancount Query Language (BQL) queries directly in your notes.
@@ -42,7 +47,7 @@ const FeatureList: FeatureItem[] = [
   },
 ];
 
-function Feature({title, Svg, description}: FeatureItem) {
+function Feature({title, Svg, description}: FeatureItem): React.JSX.Element {
   return (
     <div className={clsx('col col--4')}>
       <div className="text--center">
@@ -56,7 +61,7 @@ function Feature({title, Svg, description}: FeatureItem) {
   );
 }
 
-export default function HomepageFeatures(): ReactNode {
+export default function HomepageFeatures(): React.JSX.Element {
   return (
     <section className={styles.features}>
       <div className="container">
