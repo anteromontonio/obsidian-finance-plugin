@@ -107,6 +107,10 @@ export class BeancountSettingTab extends PluginSettingTab {
     }
 
     display(): void {
+        this.displayTab();
+    }
+
+    displayTab(): void {
         const { containerEl } = this;
         containerEl.empty();
         new Setting(containerEl).setName('Beancount configuration').setHeading();
@@ -135,7 +139,7 @@ export class BeancountSettingTab extends PluginSettingTab {
             }
             tabBtn.addEventListener('click', () => {
                 this.activeTab = tab.id;
-                this.display();
+                this.displayTab();
             });
         });
 
@@ -249,7 +253,7 @@ export class BeancountSettingTab extends PluginSettingTab {
                         this.plugin.setupAutomaticPriceFetching();
                     }
                     // Trigger re-render to show/hide interval setting
-                    this.display();
+                    this.displayTab();
                 }));
 
         if (this.plugin.settings.autoPriceFetch) {

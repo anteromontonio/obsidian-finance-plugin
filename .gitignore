@@ -34,3 +34,7 @@ graphify-out/
 # Docs site media / prompts
 .github/prompts/plan-beanPriceIntegration.prompt.md
 docs-site/static/img/Showcase.mp4
+
+# Lint outputs
+lint_any.json
+
