@@ -45,8 +45,8 @@ export class AddBudgetModal extends Modal {
             ]);
             accounts = accs;
             if (csvResult) {
-                const rows = parseCsv(csvResult, { columns: true, skip_empty_lines: true, trim: true }) as CurrencyRow[];
-                const fetched = rows.map((r) => r['currency_']).filter(Boolean);
+                const rows = parseCsv(csvResult, { columns: true, skip_empty_lines: true, trim: true }) as unknown as CurrencyRow[];
+                const fetched = rows.map((r) => r.currency_).filter(Boolean);
                 if (fetched.length > 0) currencies = fetched;
             }
             // Always include the operating currency
@@ -55,7 +55,7 @@ export class AddBudgetModal extends Modal {
             Logger.log('[AddBudgetModal] Could not prefetch accounts/currencies:', err);
         }
 
-        this.component = new (AddBudgetModalComponent as typeof SvelteComponent)({
+        this.component = new (AddBudgetModalComponent)({
             target: contentEl,
             props: {
                 accounts,
@@ -65,61 +65,63 @@ export class AddBudgetModal extends Modal {
             },
         });
 
-        this.component.$on('save', async (e: CustomEvent<Record<string, unknown>>) => {
-            const { name, accountQuery, cycle, target, currency, isRollover, startDate, tag, tagMode } = e.detail as {
-                name: string;
-                accountQuery: string;
-                cycle: string;
-                target: number;
-                currency: string;
-                isRollover: boolean;
-                startDate: string;
-                tag: string;
-                tagMode: 'has' | 'not_has';
-            };
-            Logger.log('[AddBudgetModal] save event', e.detail);
+        this.component.$on('save', (e: CustomEvent<Record<string, unknown>>) => {
+            void (async () => {
+                const { name, accountQuery, cycle, target, currency, isRollover, startDate, tag, tagMode } = e.detail as {
+                    name: string;
+                    accountQuery: string;
+                    cycle: string;
+                    target: number;
+                    currency: string;
+                    isRollover: boolean;
+                    startDate: string;
+                    tag: string;
+                    tagMode: 'has' | 'not_has';
+                };
+                Logger.log('[AddBudgetModal] save event', e.detail);
 
-            try {
-                let result;
-                if (this.editingIndicator) {
-                    result = await updateIndicatorDirective(this.plugin, this.editingIndicator.filename!, this.editingIndicator.lineno!, {
-                        type: 'Budget',
-                        name,
-                        accountQuery,
-                        cycle,
-                        target,
-                        currency,
-                        isRollover,
-                        startDate,
-                        tag,
-                        tagMode,
-                    });
-                } else {
-                    result = await createIndicatorDirective(this.plugin, {
-                        type: 'Budget',
-                        name,
-                        accountQuery,
-                        cycle,
-                        target,
-                        currency,
-                        isRollover,
-                        startDate,
-                        tag,
-                        tagMode,
-                    });
-                }
+                try {
+                    let result;
+                    if (this.editingIndicator) {
+                        result = await updateIndicatorDirective(this.plugin, this.editingIndicator.filename!, this.editingIndicator.lineno!, {
+                            type: 'Budget',
+                            name,
+                            accountQuery,
+                            cycle,
+                            target,
+                            currency,
+                            isRollover,
+                            startDate,
+                            tag,
+                            tagMode,
+                        });
+                    } else {
+                        result = await createIndicatorDirective(this.plugin, {
+                            type: 'Budget',
+                            name,
+                            accountQuery,
+                            cycle,
+                            target,
+                            currency,
+                            isRollover,
+                            startDate,
+                            tag,
+                            tagMode,
+                        });
+                    }
 
-                if (result.success) {
-                    new Notice(this.editingIndicator ? `Budget "${name}" updated successfully` : `Budget "${name}" created successfully`);
-                    this.close();
-                    if (this.onSuccess) this.onSuccess();
-                } else {
-                    new Notice(`Failed to save budget: ${result.error || 'Unknown error'}`);
+                    if (result.success) {
+                        new Notice(this.editingIndicator ? `Budget "${name}" updated successfully` : `Budget "${name}" created successfully`);
+                        this.close();
+                        if (this.onSuccess) this.onSuccess();
+                    } else {
+                        new Notice(`Failed to save budget: ${result.error || 'Unknown error'}`);
+                    }
+                } catch (error) {
+                    Logger.error('[AddBudgetModal] Error saving budget:', error);
+                    new Notice(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 }
-            } catch (error) {
-                Logger.error('[AddBudgetModal] Error saving budget:', error);
-                new Notice(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            }
+            })();
         });
 
         this.component.$on('cancel', () => this.close());

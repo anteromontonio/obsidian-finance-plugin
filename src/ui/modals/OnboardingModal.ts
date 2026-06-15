@@ -19,7 +19,7 @@ export class OnboardingModal extends Modal {
         
         this.modalEl.setCssStyles({ maxWidth: '720px', width: '90vw' });
 
-        this.component = new (OnboardingModalComponent as typeof SvelteComponent)({
+        this.component = new (OnboardingModalComponent)({
             target: contentEl,
             props: {
                 app: this.app,

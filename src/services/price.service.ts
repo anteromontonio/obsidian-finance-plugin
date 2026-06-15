@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { TFile } from 'obsidian';
 import type BeancountPlugin from '../main';
-import type { PriceFetchResult } from '../types';
+import type { PriceFetchResult, PriceData } from '../types';
 import { getTargetFile, getMainLedgerPath } from '../utils/structuredLayout';
 import { execSafe } from '../utils';
 import { Logger } from '../utils/logger';
@@ -80,14 +80,15 @@ export class PriceService {
 				new Promise<never>((_, reject) =>
 					window.setTimeout(() => reject(new Error('Timeout: bean-price took longer than 60 seconds')), 60_000)
 				),
-			]) as { stdout: string; stderr: string };
+			]);
 			stdout = result.stdout;
 			stderr = result.stderr;
-		} catch (err: any) {
+		} catch (err) {
 			// bean-price exits non-zero when there are balance errors in the
 			// ledger — stdout may still contain valid price directives.
-			stdout = err.stdout ?? '';
-			stderr = err.stderr ?? err.message ?? String(err);
+			const errorObj = err as { stdout?: string; stderr?: string; message?: string };
+			stdout = errorObj.stdout ?? '';
+			stderr = errorObj.stderr ?? errorObj.message ?? String(err);
 		}
 
 		// Log stderr for diagnostics but do NOT fail on it
@@ -132,7 +133,7 @@ export class PriceService {
 		}
 
 		// 8. Parse directives into PriceData for the result summary
-		const successful = newDirectives.map(line => this.parseDirective(line)).filter(Boolean) as any[];
+		const successful = newDirectives.map(line => this.parseDirective(line)).filter(Boolean) as PriceData[];
 
 		return {
 			successful,

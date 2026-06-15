@@ -45,9 +45,9 @@ export class BeancountView extends ItemView {
 		});
 
 		// Listen for events
-		this.component.$on('refresh', () => this.updateView());
+		this.component.$on('refresh', () => { void this.updateView(); });
 
-		window.setTimeout(() => this.updateView(), 0);
+		window.setTimeout(() => { void this.updateView(); }, 0);
 	}
 
 	async onClose() {
@@ -121,7 +121,7 @@ export class BeancountView extends ItemView {
 		} catch (error) {
 			console.error("Error updating snapshot view:", error);
 			this.updateProps({ 
-				kpiError: error.message, 
+				kpiError: error instanceof Error ? error.message : String(error), 
 					fileStatus: "error", 
 				fileStatusMessage: "Failed during refresh.",
 				errorCount: 0,
@@ -223,8 +223,9 @@ export class BeancountView extends ItemView {
 				.then(({ stdout, stderr }) => {
 					handleResult(null, stdout, stderr);
 				})
-				.catch((error) => {
-					handleResult(error, error.stdout || '', error.stderr || error.message || String(error));
+				.catch((error: unknown) => {
+					const err = error as { stdout?: string; stderr?: string; message?: string } & Error;
+					handleResult(err, err.stdout || '', err.stderr || err.message || String(error));
 				});
 		});
 	}

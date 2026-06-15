@@ -42,7 +42,7 @@ export function buildAccountTree(accounts: string[]): AccountNode[] {
 export async function getOpenAccounts(plugin: BeancountPlugin): Promise<string[]> {
     try {
         const csv = await runQuery(plugin, `SELECT account FROM #accounts WHERE NOT bool(close)`);
-        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as Record<string, string>[];
+        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as unknown as { account: string }[];
         return records.map((row) => row.account).filter((acc) => acc);
     } catch (error) {
         console.error('[getOpenAccounts] Error:', error);
@@ -56,7 +56,7 @@ export async function getOpenAccounts(plugin: BeancountPlugin): Promise<string[]
 export async function getPayees(plugin: BeancountPlugin): Promise<string[]> {
     try {
         const csv = await runQuery(plugin, `SELECT DISTINCT payee`);
-        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as Record<string, string>[];
+        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as unknown as { payee: string }[];
         return records
             .map((row) => row.payee)
             .filter((payee) => payee && payee.trim() !== '')
@@ -73,11 +73,11 @@ export async function getPayees(plugin: BeancountPlugin): Promise<string[]> {
 export async function getTags(plugin: BeancountPlugin): Promise<string[]> {
     try {
         const csv = await runQuery(plugin, `SELECT DISTINCT joinstr(tags) FROM entries WHERE tags IS NOT NULL`);
-        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as Record<string, string>[];
+        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as unknown as Record<string, string>[];
 
         const allTags = new Set<string>();
         records.forEach((row) => {
-            const tagSet = row['joinstr(tags)'] || row.tags || (Object.values(row)[0] as string);
+            const tagSet = row['joinstr(tags)'] || row.tags || (Object.values(row)[0]);
             if (tagSet && typeof tagSet === 'string') {
                 tagSet.split(',').forEach((t) => {
                     const tag = t.trim().replace(/^#/, '');
@@ -99,9 +99,9 @@ export async function getTags(plugin: BeancountPlugin): Promise<string[]> {
 export async function getCommodities(plugin: BeancountPlugin): Promise<Array<{ name: string }>> {
     try {
         const csv = await runQuery(plugin, `SELECT name AS name_ FROM #commodities GROUP BY name`);
-        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as Record<string, string>[];
+        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as unknown as Record<string, string>[];
         return records
-            .map((row) => ({ name: row.name_ || row.name || (Object.values(row)[0] as string) }))
+            .map((row) => ({ name: row.name_ || row.name || (Object.values(row)[0] || '') }))
             .filter((c) => c.name && c.name.trim() !== '')
             .sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {

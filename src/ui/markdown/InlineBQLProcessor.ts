@@ -4,6 +4,11 @@ import type { MarkdownPostProcessorContext } from 'obsidian';
 import type BeancountPlugin from '../../main';
 import { getQueryDirectives } from '../../utils/index';
 
+interface InlineBQLHTMLElement extends HTMLElement {
+	_bqlQuery?: string;
+	_originalElement?: HTMLElement;
+}
+
 export class InlineBQLProcessor {
 	private plugin: BeancountPlugin;
 	private queryDirectiveCache: Record<string, string> = {};
@@ -96,8 +101,8 @@ export class InlineBQLProcessor {
 		wrapper.className = 'bql-inline-wrapper';
 
 		// Store original content for refresh capability
-		(wrapper as any)._bqlQuery = query;
-		(wrapper as any)._originalElement = codeElement;
+		(wrapper as InlineBQLHTMLElement)._bqlQuery = query;
+		(wrapper as InlineBQLHTMLElement)._originalElement = codeElement;
 
 		try {
 			// Show loading state
@@ -125,7 +130,8 @@ export class InlineBQLProcessor {
 			// Show error state
 			wrapper.textContent = '❌';
 			wrapper.className = 'bql-inline-wrapper bql-inline-error';
-			wrapper.title = `BQL Error: ${error.message}`;
+			const errMsg = error instanceof Error ? error.message : String(error);
+			wrapper.title = `BQL Error: ${errMsg}`;
 		}
 
 		// Replace the original code element
@@ -157,10 +163,10 @@ export class InlineBQLProcessor {
 	// Method to refresh all inline BQL values
 	public refreshAllInlineValues() {
 		const inlineElements = activeDocument.querySelectorAll('.bql-inline-wrapper');
-		inlineElements.forEach(async (element) => {
-			const query = (element as any)._bqlQuery;
+		inlineElements.forEach((element) => {
+			const query = (element as InlineBQLHTMLElement)._bqlQuery;
 			if (query) {
-				await this.processInlineBQL(element as HTMLElement, `bql:${query}`, 'direct');
+				void this.processInlineBQL(element as HTMLElement, `bql:${query}`, 'direct');
 			}
 		});
 	}

@@ -76,24 +76,24 @@ export async function getBalanceEntries(
             columns: true,
             skip_empty_lines: true,
             trim: true,
-        }) as BalanceRow[];
+        }) as unknown as BalanceRow[];
 
         Logger.log(`[getBalanceEntries] Parsed ${records.length} balance rows`);
 
         const balances: JournalBalance[] = records.map((row) => {
-            const amountStr = (row['amount'] || '').trim();
+            const amountStr = (row.amount || '').trim();
             const amountParts = amountStr.split(/\s+/);
             const amount = amountParts.length >= 2 ? amountParts[0] : '';
             const currency = amountParts.length >= 2 ? amountParts[1] : '';
             return {
-                id: `balance_${row['date']}_${row['account'].replace(/:/g, '_')}`,
+                id: `balance_${row.date}_${row.account.replace(/:/g, '_')}`,
                 type: 'balance' as const,
-                date: row['date'],
-                account: row['account'],
+                date: row.date,
+                account: row.account,
                 amount,
                 currency,
-                tolerance: row['tolerance'] || null,
-                diff_amount: row['discrepancy'] || null,
+                tolerance: row.tolerance || null,
+                diff_amount: row.discrepancy || null,
                 metadata: {},
             };
         });
@@ -153,12 +153,12 @@ export async function getNoteEntries(
             columns: true,
             skip_empty_lines: true,
             trim: true,
-        }) as NoteRow[];
+        }) as unknown as NoteRow[];
 
         Logger.log(`[getNoteEntries] Parsed ${records.length} note rows`);
 
         const notes: JournalNote[] = records.map((row) => {
-            const metaStr = row['meta'] || '{}';
+            const metaStr = row.meta || '{}';
             let metadata: Record<string, unknown> = {};
             try {
                 metadata = JSON.parse(metaStr) as Record<string, unknown>;
@@ -166,11 +166,11 @@ export async function getNoteEntries(
                 metadata = { raw: metaStr };
             }
             return {
-                id: `note_${row['date']}_${row['account'].replace(/:/g, '_')}`,
+                id: `note_${row.date}_${row.account.replace(/:/g, '_')}`,
                 type: 'note' as const,
-                date: row['date'],
-                account: row['account'],
-                comment: row['comment'] || '',
+                date: row.date,
+                account: row.account,
+                comment: row.comment || '',
                 metadata,
             };
         });
@@ -233,7 +233,7 @@ export async function getTransactionEntries(
             columns: true,
             skip_empty_lines: true,
             trim: true,
-        }) as PostingRow[];
+        }) as unknown as PostingRow[];
 
         Logger.log(`[getTransactionEntries] Parsed ${records.length} posting rows`);
 
@@ -241,31 +241,31 @@ export async function getTransactionEntries(
         const transactionsMap = new Map<string, JournalTransaction>();
 
         for (const row of records) {
-            const txnId = row['id'];
+            const txnId = row.id;
 
             if (!transactionsMap.has(txnId)) {
-                const tagsStr = row['tags'] || '';
-                const linksStr = row['links'] || '';
+                const tagsStr = row.tags || '';
+                const linksStr = row.links || '';
                 const tags = tagsStr.trim() ? tagsStr.split(',').map((t) => t.trim()).filter(Boolean) : [];
                 const links = linksStr.trim() ? linksStr.split(',').map((l) => l.trim()).filter(Boolean) : [];
 
-                const entryMetaStr = row['entry_meta'] || '{}';
+                const entryMetaStr = row.entry_meta || '{}';
                 let metadata: Record<string, unknown> = {};
                 try { metadata = JSON.parse(entryMetaStr) as Record<string, unknown>; } catch { metadata = { raw: entryMetaStr }; }
 
-                if (row['filename']) metadata['filename'] = row['filename'];
-                if (row['lineno']) {
-                    const n = parseInt(row['lineno']);
+                if (row.filename) metadata['filename'] = row.filename;
+                if (row.lineno) {
+                    const n = parseInt(row.lineno);
                     if (!isNaN(n)) metadata['lineno'] = n;
                 }
 
                 transactionsMap.set(txnId, {
                     id: txnId,
                     type: 'transaction' as const,
-                    date: row['date'],
-                    flag: row['flag'] || '*',
-                    payee: row['payee'] || null,
-                    narration: row['narration'] || '',
+                    date: row.date,
+                    flag: row.flag || '*',
+                    payee: row.payee || null,
+                    narration: row.narration || '',
                     tags,
                     links,
                     metadata,
@@ -275,25 +275,25 @@ export async function getTransactionEntries(
 
             const transaction = transactionsMap.get(txnId)!;
             const posting: JournalPosting = {
-                account: row['account'],
-                amount: row['number'] || null,
-                currency: row['currency'] || null,
+                account: row.account,
+                amount: row.number || null,
+                currency: row.currency || null,
                 flag: null,
                 comment: null,
                 metadata: {},
             };
 
-            if (row['cost_number'] || row['cost_currency']) {
+            if (row.cost_number || row.cost_currency) {
                 posting.cost = {
-                    number: row['cost_number'] || null,
-                    currency: row['cost_currency'] || null,
-                    date: row['cost_date'] || null,
+                    number: row.cost_number || null,
+                    currency: row.cost_currency || null,
+                    date: row.cost_date || null,
                     label: null,
                     isTotal: false,
                 };
             }
 
-            const priceStr = row['price'];
+            const priceStr = row.price;
             if (priceStr?.trim()) {
                 const priceParts = priceStr.trim().split(/\s+/);
                 if (priceParts.length >= 2) {

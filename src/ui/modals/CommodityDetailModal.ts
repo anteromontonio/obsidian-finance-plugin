@@ -36,7 +36,7 @@ export class CommodityDetailModal extends Modal {
         const ctrl = this.controller as unknown as { selectedCommodity: { subscribe: (cb: (v: unknown) => void) => () => void }; getCommodityBySymbol: (s: string) => unknown };
         const selected = get(ctrl.selectedCommodity) || ctrl.getCommodityBySymbol(this.symbol) || { symbol: this.symbol, metadata: {} };
 
-        this.component = new (CommodityDetailModalComponent as typeof SvelteComponent)({
+        this.component = new (CommodityDetailModalComponent)({
             target: contentEl,
             props: {
                 symbol: this.symbol,
@@ -45,59 +45,67 @@ export class CommodityDetailModal extends Modal {
         });
 
         // Listen to events
-        this.component.$on('save-metadata', async (e: CustomEvent<{ symbol: string; metadata: Record<string, unknown> }>) => {
-            const { symbol, metadata } = e.detail;
-            console.debug('[CommodityDetailModal] save-metadata event', { symbol, metadata });
-            const result = await this.controller.saveMetadata(symbol, metadata);
-            console.debug('[CommodityDetailModal] save-metadata result ->', result);
-            if (result && result.success) {
-                new Notice('Metadata saved successfully');
+        this.component.$on('save-metadata', (e: CustomEvent<{ symbol: string; metadata: Record<string, unknown> }>) => {
+            void (async () => {
+                const { symbol, metadata } = e.detail;
+                console.debug('[CommodityDetailModal] save-metadata event', { symbol, metadata });
+                const result = await this.controller.saveMetadata(symbol, metadata);
+                console.debug('[CommodityDetailModal] save-metadata result ->', result);
+                if (result && result.success) {
+                    new Notice('Metadata saved successfully');
 
-                // Reload commodity details to reflect changes in the modal
-                try {
-                    await this.controller.loadCommodityDetails(symbol);
-                    const updated = get(ctrl.selectedCommodity) || { symbol, metadata: {} };
-                    // Update component props with fresh data
-                    this.component!.$set({ commodity: updated });
-                    console.debug('[CommodityDetailModal] Commodity details reloaded and UI updated');
-                } catch (reloadError) {
-                    console.warn('[CommodityDetailModal] Failed to reload commodity details:', reloadError);
+                    // Reload commodity details to reflect changes in the modal
+                    try {
+                        await this.controller.loadCommodityDetails(symbol);
+                        const updated = get(ctrl.selectedCommodity) || { symbol, metadata: {} };
+                        // Update component props with fresh data
+                        this.component!.$set({ commodity: updated });
+                        console.debug('[CommodityDetailModal] Commodity details reloaded and UI updated');
+                    } catch (reloadError) {
+                        console.warn('[CommodityDetailModal] Failed to reload commodity details:', reloadError);
+                    }
+                } else {
+                    new Notice('Failed to save metadata');
                 }
-            } else {
-                new Notice('Failed to save metadata');
-            }
+            })();
         });
 
-        this.component.$on('test-price', async (e: CustomEvent<{ symbol: string }>) => {
-            const { symbol } = e.detail;
-            console.debug('[CommodityDetailModal] test-price event', { symbol });
-            const res = await this.controller.testPriceSource(symbol);
-            console.debug('[CommodityDetailModal] test-price result ->', res);
-            if (res && res.success) new Notice('Price test successful');
-            else new Notice(`Price test failed: ${res?.error || 'unknown'}`);
+        this.component.$on('test-price', (e: CustomEvent<{ symbol: string }>) => {
+            void (async () => {
+                const { symbol } = e.detail;
+                console.debug('[CommodityDetailModal] test-price event', { symbol });
+                const res = await this.controller.testPriceSource(symbol);
+                console.debug('[CommodityDetailModal] test-price result ->', res);
+                if (res && res.success) new Notice('Price test successful');
+                else new Notice(`Price test failed: ${res?.error || 'unknown'}`);
+            })();
         });
 
-        this.component.$on('test-logo', async (e: CustomEvent<{ symbol: string; url: string }>) => {
-            const { symbol, url } = e.detail;
-            console.debug('[CommodityDetailModal] test-logo event', { symbol, url });
-            const res = await this.controller.testLogoUrl(symbol, url);
-            console.debug('[CommodityDetailModal] test-logo result ->', res);
-            if (res && res.success) new Notice('Logo test successful');
-            else new Notice(`Logo test failed: ${res?.error || 'unknown'}`);
+        this.component.$on('test-logo', (e: CustomEvent<{ symbol: string; url: string }>) => {
+            void (async () => {
+                const { symbol, url } = e.detail;
+                console.debug('[CommodityDetailModal] test-logo event', { symbol, url });
+                const res = await this.controller.testLogoUrl(symbol, url);
+                console.debug('[CommodityDetailModal] test-logo result ->', res);
+                if (res && res.success) new Notice('Logo test successful');
+                else new Notice(`Logo test failed: ${res?.error || 'unknown'}`);
+            })();
         });
 
         this.component.$on('close', () => this.close());
 
-        this.component.$on('delete', async (e: CustomEvent<{ symbol: string }>) => {
-            const { symbol } = e.detail;
-            console.debug('[CommodityDetailModal] delete event', { symbol });
-            const result = await this.controller.deleteCommodity(symbol);
-            if (result && result.success) {
-                new Notice(`${symbol} commodity deleted`);
-                this.close();
-            } else {
-                new Notice(`Failed to delete ${symbol}: ${result?.error || 'unknown error'}`);
-            }
+        this.component.$on('delete', (e: CustomEvent<{ symbol: string }>) => {
+            void (async () => {
+                const { symbol } = e.detail;
+                console.debug('[CommodityDetailModal] delete event', { symbol });
+                const result = await this.controller.deleteCommodity(symbol);
+                if (result && result.success) {
+                    new Notice(`${symbol} commodity deleted`);
+                    this.close();
+                } else {
+                    new Notice(`Failed to delete ${symbol}: ${result?.error || 'unknown error'}`);
+                }
+            })();
         });
     }
 

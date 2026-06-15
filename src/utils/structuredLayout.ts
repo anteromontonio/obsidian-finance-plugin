@@ -414,7 +414,8 @@ async function updateLedgerIncludes(
         new Notice(`Updated ledger.beancount with transaction file(s)`);
     } catch (e) {
         Logger.error('[updateLedgerIncludes] Failed to update ledger includes:', e);
-        new Notice(`Error updating ledger includes: ${e.message}`);
+        const errMsg = e instanceof Error ? e.message : String(e);
+        new Notice(`Error updating ledger includes: ${errMsg}`);
     }
 }
 
