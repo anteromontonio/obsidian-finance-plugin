@@ -9,6 +9,63 @@ import { atomicFileWrite, createBackupFile, convertWslPathToWindows, getNewlineC
 import { runQuery } from './queryRunner';
 import { Logger } from './logger';
 
+export interface FileLineRow {
+    filename: string;
+    lineno: string;
+}
+
+export interface BalanceData {
+	date: string;
+	account: string;
+	amount: string | number;
+	currency: string;
+	tolerance?: string | number;
+}
+
+export interface NoteData {
+	date: string;
+	account: string;
+	comment: string;
+	tags?: string[];
+	links?: string[];
+}
+
+export interface CostData {
+	number?: string | number;
+	currency?: string;
+	isTotal?: boolean;
+	date?: string;
+	label?: string;
+}
+
+export interface PriceDataPayload {
+	amount?: string | number;
+	currency?: string;
+	isTotal?: boolean;
+}
+
+export interface PostingData {
+	flag?: string;
+	account: string;
+	amount?: string | number;
+	currency?: string;
+	cost?: CostData;
+	price?: PriceDataPayload;
+	comment?: string;
+	metadata?: Record<string, string>;
+}
+
+export interface TransactionData {
+	date: string;
+	flag?: string;
+	payee?: string;
+	narration?: string;
+	tags?: string[];
+	links?: string[];
+	metadata?: Record<string, string>;
+	postings?: PostingData[];
+}
+
 // ─── OPEN DIRECTIVE ────────────────────────────────────────────────────────────
 
 export async function saveOpenDirective(
@@ -108,7 +165,7 @@ export async function createBalanceAssertion(
 export async function updateBalance(
     plugin: BeancountPlugin,
     balanceId: string,
-    balanceData: any
+    balanceData: BalanceData
 ): Promise<{ success: boolean; error?: string }> {
     try {
         if (!plugin.settings.beancountFilePath)
@@ -122,13 +179,13 @@ export async function updateBalance(
         const account = parts.slice(2).join(':');
 
         const csv = await runQuery(plugin, `SELECT filename, lineno FROM #entries WHERE type='balance' AND date=${date} AND '${account}' IN accounts`);
-        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
+        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as unknown as FileLineRow[];
 
         if (records.length === 0)
             return { success: false, error: `Balance assertion not found for ${account} on ${date}` };
 
-        const actualFilePath = records[0]['filename'];
-        const lineno = parseInt(records[0]['lineno']);
+        const actualFilePath = records[0].filename;
+        const lineno = parseInt(records[0].lineno);
         if (!actualFilePath) return { success: false, error: 'Filename not returned from query' };
 
         const normalizedPath = convertWslPathToWindows(actualFilePath);
@@ -171,13 +228,13 @@ export async function deleteBalance(
         const account = parts.slice(2).join(':');
 
         const csv = await runQuery(plugin, `SELECT filename, lineno FROM #entries WHERE type='balance' AND date=${date} AND '${account}' IN accounts`);
-        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
+        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as unknown as FileLineRow[];
 
         if (records.length === 0)
             return { success: false, error: `Balance assertion not found for ${account} on ${date}` };
 
-        const actualFilePath = records[0]['filename'];
-        const lineno = parseInt(records[0]['lineno']);
+        const actualFilePath = records[0].filename;
+        const lineno = parseInt(records[0].lineno);
         if (!actualFilePath) return { success: false, error: 'Filename not returned from query' };
 
         const normalizedPath = convertWslPathToWindows(actualFilePath);
@@ -239,7 +296,7 @@ export async function createNote(
 export async function updateNote(
     plugin: BeancountPlugin,
     noteId: string,
-    noteData: any
+    noteData: NoteData
 ): Promise<{ success: boolean; error?: string }> {
     try {
         if (!plugin.settings.beancountFilePath)
@@ -253,13 +310,13 @@ export async function updateNote(
         const account = parts.slice(2).join(':');
 
         const csv = await runQuery(plugin, `SELECT filename, lineno FROM #entries WHERE type='note' AND date=${date} AND '${account}' IN accounts`);
-        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
+        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as unknown as FileLineRow[];
 
         if (records.length === 0)
             return { success: false, error: `Note not found for ${account} on ${date}` };
 
-        const actualFilePath = records[0]['filename'];
-        const lineno = parseInt(records[0]['lineno']);
+        const actualFilePath = records[0].filename;
+        const lineno = parseInt(records[0].lineno);
         if (!actualFilePath) return { success: false, error: 'Filename not returned from query' };
 
         const normalizedPath = convertWslPathToWindows(actualFilePath);
@@ -303,13 +360,13 @@ export async function deleteNote(
         const account = parts.slice(2).join(':');
 
         const csv = await runQuery(plugin, `SELECT filename, lineno FROM #entries WHERE type='note' AND date=${date} AND '${account}' IN accounts`);
-        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
+        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as unknown as FileLineRow[];
 
         if (records.length === 0)
             return { success: false, error: `Note not found for ${account} on ${date}` };
 
-        const actualFilePath = records[0]['filename'];
-        const lineno = parseInt(records[0]['lineno']);
+        const actualFilePath = records[0].filename;
+        const lineno = parseInt(records[0].lineno);
         if (!actualFilePath) return { success: false, error: 'Filename not returned from query' };
 
         const normalizedPath = convertWslPathToWindows(actualFilePath);
@@ -374,7 +431,7 @@ export async function createCommodity(
 export async function saveCommodityMetadata(
     plugin: BeancountPlugin,
     symbol: string,
-    metadata: Record<string, any>,
+    metadata: Record<string, unknown>,
     filename: string,
     lineno: number,
     createBackup = true
@@ -405,7 +462,7 @@ export async function saveCommodityMetadata(
         // Build new metadata lines
         const newMetadataLines = Object.entries(metadata)
             .filter(([key]) => key !== 'filename' && key !== 'lineno')
-            .map(([key, value]) => `  ${key}: "${value}"`);
+            .map(([key, value]) => `  ${key}: "${String(value)}"`);
 
         lines.splice(lineIndex + 1, endIndex - lineIndex - 1, ...newMetadataLines);
         await atomicFileWrite(plugin, normalizedPath, lines.join(newline));
@@ -506,7 +563,7 @@ export async function createPriceDirective(
 /**
  * Generates properly formatted Beancount transaction text from a transaction data object.
  */
-export function generateTransactionText(transactionData: any, newline = '\n'): string {
+export function generateTransactionText(transactionData: TransactionData, newline = '\n'): string {
     const date = transactionData.date;
     const flag = transactionData.flag || '*';
     const payee = transactionData.payee || '';
@@ -571,7 +628,7 @@ export function generateTransactionText(transactionData: any, newline = '\n'): s
 
 export async function createTransaction(
     plugin: BeancountPlugin,
-    transactionData: any
+    transactionData: TransactionData
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const transactionDate = transactionData.date || new Date().toISOString().split('T')[0];
@@ -641,19 +698,19 @@ function findTransactionBlock(lines: string[], lineIndex: number): { startIndex:
 export async function updateTransaction(
     plugin: BeancountPlugin,
     transactionId: string,
-    transactionData: any
+    transactionData: TransactionData
 ): Promise<{ success: boolean; error?: string }> {
     try {
         if (!plugin.settings.beancountFilePath)
             return { success: false, error: 'Beancount file path not configured' };
 
         const csv = await runQuery(plugin, `SELECT filename, lineno FROM postings WHERE id = "${transactionId}" LIMIT 1`);
-        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
+        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as unknown as FileLineRow[];
 
         if (records.length === 0) return { success: false, error: `Transaction ${transactionId} not found` };
 
-        const actualFilePath = records[0]['filename'];
-        const lineno = parseInt(records[0]['lineno']);
+        const actualFilePath = records[0].filename;
+        const lineno = parseInt(records[0].lineno);
         if (!actualFilePath) return { success: false, error: 'Filename not returned from query' };
 
         const normalizedPath = convertWslPathToWindows(actualFilePath);
@@ -689,12 +746,12 @@ export async function deleteTransaction(
             return { success: false, error: 'Beancount file path not configured' };
 
         const csv = await runQuery(plugin, `SELECT filename, lineno FROM postings WHERE id = "${transactionId}" LIMIT 1`);
-        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
+        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as unknown as FileLineRow[];
 
         if (records.length === 0) return { success: false, error: `Transaction ${transactionId} not found` };
 
-        const actualFilePath = records[0]['filename'];
-        const lineno = parseInt(records[0]['lineno']);
+        const actualFilePath = records[0].filename;
+        const lineno = parseInt(records[0].lineno);
         if (!actualFilePath) return { success: false, error: 'Filename not returned from query' };
 
         const normalizedPath = convertWslPathToWindows(actualFilePath);
@@ -890,7 +947,7 @@ export interface IndicatorDirectiveParams {
     type: 'Budget' | 'Target';
     name: string;
     accountQuery: string;
-    cycle: 'Monthly' | 'Weekly' | 'Quarterly' | 'Yearly' | string;
+    cycle: 'Monthly' | 'Weekly' | 'Quarterly' | 'Yearly' | (string & {});
     target: number;
     currency: string;
     isRollover: boolean;

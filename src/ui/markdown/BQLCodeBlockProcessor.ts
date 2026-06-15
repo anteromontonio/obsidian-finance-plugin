@@ -4,6 +4,13 @@ import type { MarkdownPostProcessorContext } from 'obsidian';
 import type BeancountPlugin from '../../main';
 import type { BQLFormat } from '../../utils/queryRunner';
 
+interface BQLHTMLElement extends HTMLElement {
+	_bqlSource?: string;
+	_bqlFormat?: BQLFormat;
+	_lastResult?: string;
+	_lastFormat?: BQLFormat;
+}
+
 export class BQLCodeBlockProcessor {
 	private plugin: BeancountPlugin;
 	private activeBlocks: Set<HTMLElement> = new Set();
@@ -22,10 +29,10 @@ export class BQLCodeBlockProcessor {
 	public refreshAllBlocks() {
 		this.activeBlocks.forEach(element => {
 			// Get the stored source
-			const source = (element as any)._bqlSource;
+			const source = (element as BQLHTMLElement)._bqlSource;
 			if (source) {
 				// Reprocess the block with current settings
-				this.processCodeBlock(source, element, {} as MarkdownPostProcessorContext);
+				void this.processCodeBlock(source, element, {} as MarkdownPostProcessorContext);
 			}
 		});
 	}
@@ -35,7 +42,7 @@ export class BQLCodeBlockProcessor {
 		if (!query) return;
 
 		// Store the original source in the element for refresh capability
-		(element as any)._bqlSource = query;
+		(element as BQLHTMLElement)._bqlSource = query;
 		
 		// Register this block for future refreshes
 		this.activeBlocks.add(element);
@@ -98,11 +105,11 @@ export class BQLCodeBlockProcessor {
 					const option = formatSelect.createEl('option', { text: opt.label });
 					option.value = opt.value;
 				});
-				(container as any)._bqlFormat = 'csv' as BQLFormat;
+				(container as BQLHTMLElement)._bqlFormat = 'csv';
 				formatSelect.value = 'csv';
 				formatSelect.addEventListener('change', () => {
-					(container as any)._bqlFormat = formatSelect.value as BQLFormat;
-					executeQuery();
+					(container as BQLHTMLElement)._bqlFormat = formatSelect.value as BQLFormat;
+					void executeQuery();
 				});
 				
 				refreshBtn = controls.createEl('button', { 
@@ -154,7 +161,7 @@ export class BQLCodeBlockProcessor {
 				}
 				
 				// Execute the query with the currently selected format
-				const currentFormat: BQLFormat = (container as any)._bqlFormat ?? 'csv';
+				const currentFormat: BQLFormat = (container as BQLHTMLElement)._bqlFormat ?? 'csv';
 				const queryResult = await this.plugin.runQuery(query, currentFormat);
 				
 				// Clear loading and show results
@@ -185,8 +192,8 @@ export class BQLCodeBlockProcessor {
 				}
 				
 				// Store result for copy/export functions
-				(container as any)._lastResult = queryResult;
-				(container as any)._lastFormat = currentFormat;
+				(container as BQLHTMLElement)._lastResult = queryResult;
+				(container as BQLHTMLElement)._lastFormat = currentFormat;
 				
 			} catch (error) {
 				// Show collapsible error message
@@ -198,14 +205,16 @@ export class BQLCodeBlockProcessor {
 		
 		// Wire up controls (only if they exist)
 		if (refreshBtn) {
-			refreshBtn.addEventListener('click', executeQuery);
+			refreshBtn.addEventListener('click', () => {
+				void executeQuery();
+			});
 		}
 		
 		if (copyBtn) {
 			copyBtn.addEventListener('click', () => {
-				const result = (container as any)._lastResult;
+				const result = (container as BQLHTMLElement)._lastResult;
 				if (result) {
-					navigator.clipboard.writeText(result);
+					void navigator.clipboard.writeText(result);
 					copyBtn.textContent = '✓';
 					window.setTimeout(() => copyBtn.textContent = '📋', 1000);
 				}
@@ -214,8 +223,8 @@ export class BQLCodeBlockProcessor {
 		
 		if (exportBtn) {
 			exportBtn.addEventListener('click', () => {
-				const result = (container as any)._lastResult;
-				const fmt: BQLFormat = (container as any)._lastFormat ?? 'csv';
+				const result = (container as BQLHTMLElement)._lastResult;
+				const fmt: BQLFormat = (container as BQLHTMLElement)._lastFormat ?? 'csv';
 				if (result) {
 					const ext = fmt === 'csv' ? 'csv' : 'txt';
 					const mimeType = fmt === 'csv' ? 'text/csv;charset=utf-8;' : 'text/plain;charset=utf-8;';

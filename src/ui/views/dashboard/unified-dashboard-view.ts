@@ -5,6 +5,7 @@ import type BeancountPlugin from '../../../main';
 import UnifiedDashboardComponent from './UnifiedDashboardView.svelte';
 import { CommodityDetailModal } from '../../modals/CommodityDetailModal';
 import { CommodityCreateModal } from '../../modals/CommodityCreateModal';
+import type { TransactionFilters } from '../../../queries/index';
 
 // --- Import ALL controllers ---
 import { OverviewController } from '../../../controllers/OverviewController';
@@ -78,10 +79,10 @@ export class UnifiedDashboardView extends ItemView {
 		});
 
 		// --- Listen for events dispatched from Svelte ---
-		this.component.$on('filtersChange', (e) => this.transactionController.handleFilterChange(e.detail));
+		this.component.$on('filtersChange', (e: CustomEvent<TransactionFilters>) => { void this.transactionController.handleFilterChange(e.detail); });
 		// When CommoditiesTab requests a detail modal, open it using plugin/app context
-		this.component.$on('openCommodity', (e: any) => {
-			const symbol = e.detail?.symbol || e.detail;
+		this.component.$on('openCommodity', (e: CustomEvent<{ symbol: string } | string>) => {
+			const symbol = typeof e.detail === 'object' ? e.detail?.symbol : e.detail;
 			new CommodityDetailModal(this.app, this.plugin, this.commoditiesController, symbol).open();
 		});
 		// When CommoditiesTab dispatches addCommodity, open create modal
@@ -90,16 +91,16 @@ export class UnifiedDashboardView extends ItemView {
 				this.app,
 				this.plugin,
 				this.commoditiesController,
-				() => this.commoditiesController.refresh()
+				() => { void this.commoditiesController.refresh(); }
 			).open();
 		});
 		
 		// --- Load initial data via controllers ---
-		this.overviewController.loadData();
-		this.transactionController.loadFilterData(); // Load filter dropdown data
-		this.transactionController.handleFilterChange({}); // Load initial transactions
-		this.balanceSheetController.loadData();
-		this.incomeStatementController.loadData();
+		void this.overviewController.loadData();
+		void this.transactionController.loadFilterData(); // Load filter dropdown data
+		void this.transactionController.handleFilterChange({}); // Load initial transactions
+		void this.balanceSheetController.loadData();
+		void this.incomeStatementController.loadData();
 	}
 
 	async onClose() {

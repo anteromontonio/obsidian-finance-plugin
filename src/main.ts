@@ -1,6 +1,6 @@
 // src/main.ts
 
-import { Plugin } from 'obsidian';
+import { Plugin, Notice } from 'obsidian';
 import { BeancountSettingTab, type BeancountPluginSettings, DEFAULT_SETTINGS } from './settings';
 import { BeancountView, BEANCOUNT_VIEW_TYPE } from './ui/views/sidebar/sidebar-view';
 import { BeancountFileView, BEANCOUNT_FILE_VIEW_TYPE } from './ui/views/beancount-file-view';
@@ -12,6 +12,7 @@ import { BQLCodeBlockProcessor } from './ui/markdown/BQLCodeBlockProcessor';
 import { InlineBQLProcessor } from './ui/markdown/InlineBQLProcessor';
 import { OnboardingModal } from './ui/modals/OnboardingModal';
 import { formatBeancountCommand } from './lang/beancount-format';
+import type { EditorView } from '@codemirror/view';
 
 import { JournalService } from './services/journal.service';
 import { PriceService } from './services/price.service';
@@ -92,7 +93,7 @@ export default class BeancountPlugin extends Plugin {
 			new UnifiedTransactionModal(this.app, this, null, this.getDashboardRefreshCallback()).open();
 		});
 		this.addRibbonIcon('layout-dashboard', 'Open Beancount dashboard', () => {
-			this.activateView(UNIFIED_DASHBOARD_VIEW_TYPE, 'tab'); // Open the NEW view
+			void this.activateView(UNIFIED_DASHBOARD_VIEW_TYPE, 'tab'); // Open the NEW view
 		});
 
 		// Add Commands
@@ -105,12 +106,12 @@ export default class BeancountPlugin extends Plugin {
 		this.addCommand({
 			id: 'open-beancount-unified-dashboard', // This ID now opens the new unified view
 			name: 'Open Beancount unified dashboard',
-			callback: () => { this.activateView(UNIFIED_DASHBOARD_VIEW_TYPE, 'tab'); }
+			callback: () => { void this.activateView(UNIFIED_DASHBOARD_VIEW_TYPE, 'tab'); }
 		});
 		this.addCommand({
 			id: 'open-beancount-snapshot',
 			name: 'Open Beancount snapshot',
-			callback: () => { this.activateView(BEANCOUNT_VIEW_TYPE, 'right'); }
+			callback: () => { void this.activateView(BEANCOUNT_VIEW_TYPE, 'right'); }
 		});
 		this.addCommand({
 			id: 'run-beancount-onboarding',
@@ -123,10 +124,9 @@ export default class BeancountPlugin extends Plugin {
 			callback: () => {
 				const active = this.app.workspace.getActiveViewOfType(BeancountFileView);
 				if (active) {
-					formatBeancountCommand((active as any).editorView);
+					formatBeancountCommand((active as unknown as { editorView: EditorView }).editorView);
 				} else {
-					// @ts-ignore
-					new this.app.Notice('Open a .beancount file first.');
+					new Notice('Open a .beancount file first.');
 				}
 			}
 		});
@@ -140,7 +140,7 @@ export default class BeancountPlugin extends Plugin {
 				const leaves = this.app.workspace.getLeavesOfType(UNIFIED_DASHBOARD_VIEW_TYPE);
 				for (const leaf of leaves) {
 					if (leaf.view instanceof UnifiedDashboardView) {
-						await (leaf.view as any).commoditiesController?.fetchPrices();
+						await leaf.view.commoditiesController?.fetchPrices();
 						return;
 					}
 				}
@@ -148,11 +148,9 @@ export default class BeancountPlugin extends Plugin {
 				Logger.log('[Main] Fetching prices via command (dashboard not open)');
 				const result = await this.priceService.fetchAndSavePrices();
 				if (result.savedCount > 0) {
-					// @ts-ignore - Notice exists in Obsidian
-					new this.app.Notice(`✓ Fetched and saved ${result.savedCount} price(s)`);
+					new Notice(`✓ Fetched and saved ${result.savedCount} price(s)`);
 				} else {
-					// @ts-ignore
-					new this.app.Notice('No prices fetched. Check commodity price sources.');
+					new Notice('No prices fetched. Check commodity price sources.');
 				}
 			}
 		});
@@ -175,26 +173,27 @@ export default class BeancountPlugin extends Plugin {
 
 		// Register interval with Obsidian's lifecycle management
 		this.registerInterval(
-			window.setInterval(async () => {
-				Logger.log('[Main] Running automatic price fetch');
-				try {
-					const result = await this.priceService.fetchAndSavePrices();
+			window.setInterval(() => {
+				void (async () => {
+					Logger.log('[Main] Running automatic price fetch');
+					try {
+						const result = await this.priceService.fetchAndSavePrices();
 
-					// Update last fetch timestamp
-					this.settings.lastAutoPriceFetch = Date.now();
-					await this.saveSettings();
+						// Update last fetch timestamp
+						this.settings.lastAutoPriceFetch = Date.now();
+						await this.saveSettings();
 
-					// Only show notice on errors (don't spam on success)
-					if (result.failed.length > 0) {
-						const failedSymbols = result.failed.map(f => f.commodity).join(', ');
-						// @ts-ignore
-						new this.app.Notice(`⚠ Automatic price fetch: Failed for ${failedSymbols}`);
+						// Only show notice on errors (don't spam on success)
+						if (result.failed.length > 0) {
+							const failedSymbols = result.failed.map(f => f.commodity).join(', ');
+							new Notice(`⚠ Automatic price fetch: Failed for ${failedSymbols}`);
+						}
+
+						Logger.log(`[Main] Automatic price fetch complete: ${result.savedCount} saved, ${result.failed.length} failed`);
+					} catch (error) {
+						Logger.error('[Main] Automatic price fetch error:', error);
 					}
-
-					Logger.log(`[Main] Automatic price fetch complete: ${result.savedCount} saved, ${result.failed.length} failed`);
-				} catch (error) {
-					Logger.error('[Main] Automatic price fetch error:', error);
-				}
+				})();
 			}, intervalMs)
 		);
 	}
@@ -234,7 +233,7 @@ export default class BeancountPlugin extends Plugin {
 				type: viewType,
 				active: true,
 			});
-			this.app.workspace.revealLeaf(leaf); // Focus the view
+			await this.app.workspace.revealLeaf(leaf); // Focus the view
 		} else {
 			Logger.error(`Could not get leaf for location: ${location}`);
 		}
@@ -291,13 +290,13 @@ export default class BeancountPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		const raw = await this.loadData();
+		const raw = (await this.loadData()) as Record<string, unknown> | null;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, raw);
 
 		// Migration: consolidate legacy `reportingCurrency` / `defaultCurrency` into `operatingCurrency`
 		if (!this.settings.operatingCurrency) {
-			const legacyReporting = (raw as any)?.reportingCurrency;
-			const legacyDefault = (raw as any)?.defaultCurrency;
+			const legacyReporting = raw?.reportingCurrency;
+			const legacyDefault = raw?.defaultCurrency;
 			const migrated = (legacyReporting || legacyDefault || DEFAULT_SETTINGS.operatingCurrency) as string;
 			this.settings.operatingCurrency = typeof migrated === 'string' ? migrated.toUpperCase() : DEFAULT_SETTINGS.operatingCurrency;
 			// Persist migrated value

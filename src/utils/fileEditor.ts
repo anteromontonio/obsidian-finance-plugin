@@ -119,7 +119,7 @@ export async function atomicFileWrite(plugin: BeancountPlugin, filePath: string,
                 await adapter.remove(relativePath);
             }
             await adapter.rename(tempRelativePath, relativePath);
-        } catch (renameError) {
+        } catch {
             // Fallback: direct overwrite
             await adapter.write(relativePath, content);
             if (await adapter.exists(tempRelativePath)) {

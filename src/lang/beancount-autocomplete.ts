@@ -65,7 +65,7 @@ async function fetchAccountsSorted(plugin: BeancountPlugin): Promise<string[]> {
                 plugin,
                 'SELECT account, COUNT(*) AS n FROM postings GROUP BY account ORDER BY COUNT(*) DESC'
             );
-            const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as Array<{ account: string }>;
+            const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as unknown as { account: string }[];
             const byFreq = records.map((r) => r.account).filter((a) => openSet.has(a));
             const seen = new Set(byFreq);
             const remaining = open.filter((a) => !seen.has(a)).sort();
@@ -116,9 +116,9 @@ async function fetchLinks(plugin: BeancountPlugin): Promise<string[]> {
     let links: string[] = [];
     try {
         const csv = await runQuery(plugin, `SELECT DISTINCT joinstr(links) FROM entries WHERE links IS NOT NULL`);
-        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
+        const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as unknown as Record<string, string>[];
         const seen = new Set<string>();
-        records.forEach((row: any) => {
+        records.forEach((row) => {
             const raw = row['joinstr(links)'] || row.links || Object.values(row)[0];
             if (raw && typeof raw === 'string') {
                 raw.split(',').forEach((l: string) => {
@@ -244,9 +244,9 @@ function beancountCompletionSource(plugin: BeancountPlugin) {
                     plugin,
                     `SELECT DISTINCT narration ${whereClause} ORDER BY date DESC`
                 );
-                const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as any[];
+                const records = parseCsv(csv, { columns: true, skip_empty_lines: true, trim: true }) as unknown as Record<string, string>[];
                 narrations = records
-                    .map((r: any) => r.narration)
+                    .map((r) => r.narration)
                     .filter((n: string) => n && n.trim() !== '');
             } catch {
                 narrations = [];

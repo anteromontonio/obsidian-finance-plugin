@@ -1,14 +1,13 @@
-// src/ui/modals/CommodityCreateModal.ts
-
 import { App, Modal, Notice } from 'obsidian';
 import type BeancountPlugin from '../../main';
 import CommodityCreateModalComponent from './CommodityCreateModal.svelte';
 import type { CommoditiesController } from '../../controllers/CommoditiesController';
 import { Logger } from '../../utils/logger';
+import { SvelteComponent } from 'svelte';
 
 export class CommodityCreateModal extends Modal {
     plugin: BeancountPlugin;
-    private component: any;
+    private component: SvelteComponent | null = null;
     private controller: CommoditiesController;
     private onSuccess?: () => void;
 
@@ -31,39 +30,41 @@ export class CommodityCreateModal extends Modal {
 
         Logger.log('[CommodityCreateModal] Opening modal');
 
-        this.component = new (CommodityCreateModalComponent as any)({
+        this.component = new (CommodityCreateModalComponent)({
             target: contentEl,
             props: {}
         });
 
         // Listen to save event
-        this.component.$on('save', async (e: any) => {
-            const { symbol, date, priceMetadata, logoUrl } = e.detail;
-            Logger.log('[CommodityCreateModal] save event', { symbol, date, priceMetadata, logoUrl });
+        this.component.$on('save', (e: CustomEvent<{ symbol: string; date: string; priceMetadata: string; logoUrl: string }>) => {
+            void (async () => {
+                const { symbol, date, priceMetadata, logoUrl } = e.detail;
+                Logger.log('[CommodityCreateModal] save event', { symbol, date, priceMetadata, logoUrl });
 
-            try {
-                const result = await this.controller.createCommodity(
-                    symbol,
-                    date,
-                    priceMetadata,
-                    logoUrl
-                );
+                try {
+                    const result = await this.controller.createCommodity(
+                        symbol,
+                        date,
+                        priceMetadata,
+                        logoUrl
+                    );
 
-                if (result.success) {
-                    new Notice(`Successfully created commodity ${symbol}`);
-                    this.close();
-                    
-                    // Call success callback if provided
-                    if (this.onSuccess) {
-                        this.onSuccess();
+                    if (result.success) {
+                        new Notice(`Successfully created commodity ${symbol}`);
+                        this.close();
+                        
+                        // Call success callback if provided
+                        if (this.onSuccess) {
+                            this.onSuccess();
+                        }
+                    } else {
+                        new Notice(`Failed to create commodity: ${result.error || 'Unknown error'}`);
                     }
-                } else {
-                    new Notice(`Failed to create commodity: ${result.error || 'Unknown error'}`);
+                } catch (error) {
+                    Logger.error('[CommodityCreateModal] Error creating commodity:', error);
+                    new Notice(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 }
-            } catch (error) {
-                Logger.error('[CommodityCreateModal] Error creating commodity:', error);
-                new Notice(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            }
+            })();
         });
 
         // Listen to cancel event
@@ -73,41 +74,45 @@ export class CommodityCreateModal extends Modal {
         });
 
         // Listen to test-price event
-        this.component.$on('test-price', async (e: any) => {
-            const { symbol, priceMetadata } = e.detail;
-            Logger.log('[CommodityCreateModal] test-price event', { symbol, priceMetadata });
+        this.component.$on('test-price', (e: CustomEvent<{ symbol: string; priceMetadata: string }>) => {
+            void (async () => {
+                const { symbol, priceMetadata } = e.detail;
+                Logger.log('[CommodityCreateModal] test-price event', { symbol, priceMetadata });
 
-            try {
-                const result = await this.controller.testPriceSource(symbol);
-                
-                if (result && result.success) {
-                    new Notice('✅ Price source test successful');
-                } else {
-                    new Notice(`❌ Price test failed: ${result?.error || 'Unable to fetch price'}`);
+                try {
+                    const result = await this.controller.testPriceSource(symbol);
+                    
+                    if (result && result.success) {
+                        new Notice('✅ Price source test successful');
+                    } else {
+                        new Notice(`❌ Price test failed: ${result?.error || 'Unable to fetch price'}`);
+                    }
+                } catch (error) {
+                    Logger.error('[CommodityCreateModal] test-price error:', error);
+                    new Notice(`❌ Price test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 }
-            } catch (error) {
-                Logger.error('[CommodityCreateModal] test-price error:', error);
-                new Notice(`❌ Price test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            }
+            })();
         });
 
         // Listen to test-logo event
-        this.component.$on('test-logo', async (e: any) => {
-            const { symbol, url } = e.detail;
-            Logger.log('[CommodityCreateModal] test-logo event', { symbol, url });
+        this.component.$on('test-logo', (e: CustomEvent<{ symbol: string; url: string }>) => {
+            void (async () => {
+                const { symbol, url } = e.detail;
+                Logger.log('[CommodityCreateModal] test-logo event', { symbol, url });
 
-            try {
-                const result = await this.controller.testLogoUrl(symbol, url);
-                
-                if (result && result.success) {
-                    new Notice('✅ Logo URL is valid');
-                } else {
-                    new Notice(`❌ Logo test failed: ${result?.error || 'Invalid URL'}`);
+                try {
+                    const result = await this.controller.testLogoUrl(symbol, url);
+                    
+                    if (result && result.success) {
+                        new Notice('✅ Logo URL is valid');
+                    } else {
+                        new Notice(`❌ Logo test failed: ${result?.error || 'Invalid URL'}`);
+                    }
+                } catch (error) {
+                    Logger.error('[CommodityCreateModal] test-logo error:', error);
+                    new Notice(`❌ Logo test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 }
-            } catch (error) {
-                Logger.error('[CommodityCreateModal] test-logo error:', error);
-                new Notice(`❌ Logo test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            }
+            })();
         });
     }
 

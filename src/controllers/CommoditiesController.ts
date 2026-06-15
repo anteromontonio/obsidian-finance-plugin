@@ -30,11 +30,11 @@ export interface CommodityInfo {
     /** Alias for priceMetadata (for compatibility). */
     pricemetadata?: string;
     /** Complete metadata dictionary from Beancount. */
-    fullMetadata: Record<string, any>;
+    fullMetadata: Record<string, unknown>;
     /** Latest price information if available. */
     currentPrice?: string;
     /** Alias for fullMetadata for UI compatibility. */
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     /** Logo URL from commodity metadata. */
     logoUrl?: string | null;
     /** Whether the price is latest (updated within last day). */
@@ -49,6 +49,10 @@ export interface CommodityInfo {
     valueInOperatingCurrency?: number;
     /** True for the operating currency (highlighted and pinned to the top). */
     isOperatingCurrency?: boolean;
+    /** The file path where this commodity is defined. */
+    filename?: string;
+    /** The line number in the file where this commodity is defined. */
+    lineno?: number;
 }
 
 /**
@@ -219,7 +223,7 @@ export class CommoditiesController {
                     holdingsRaw: combined?.holdingsRaw || '',
                     valueInOperatingCurrency: combined?.valueOp ?? 0,
                     isOperatingCurrency,
-                } as CommodityInfo;
+                };
             });
 
             // Sort: operating currency first, then by value desc, then alphabetical.
@@ -269,7 +273,7 @@ export class CommoditiesController {
                 currentPrice: undefined,  // Detail query doesn't include current price
                 filename: details.filename || undefined,
                 lineno: details.lineno || undefined
-            } as any);
+            });
 
         } catch (error) {
             Logger.warn(`Failed to query commodity details via BQL for ${symbol}: ${error}`);
@@ -282,7 +286,7 @@ export class CommoditiesController {
      * @param {Record<string, any>} metadata - The metadata key-value pairs.
      * @returns {Promise<boolean | any>} The result object or false on failure.
      */
-    public async saveMetadata(symbol: string, metadata: Record<string, any>): Promise<boolean | any> {
+    public async saveMetadata(symbol: string, metadata: Record<string, unknown>): Promise<false | { success: boolean; error?: string }> {
         this.loading.set(true);
         this.error.set(null);
         try {
@@ -290,8 +294,8 @@ export class CommoditiesController {
 
             // Get file location from selected commodity
             const current = get(this.selectedCommodity);
-            const filename = (current as any)?.filename;
-            const lineno = (current as any)?.lineno;
+            const filename = current?.filename;
+            const lineno = current?.lineno;
 
             if (!filename || !lineno) {
                 throw new Error('Commodity location not available. Please reload the commodity details.');
@@ -326,12 +330,12 @@ export class CommoditiesController {
      * @param {string} symbol - The commodity symbol.
      * @returns {Promise<any>} The validation result.
      */
-    public async testPriceSource(symbol: string): Promise<any> {
+    public async testPriceSource(symbol: string): Promise<{ success: boolean; output?: string; error?: string }> {
         this.loading.set(true);
         this.error.set(null);
         try {
             const current = get(this.selectedCommodity) || this.getCommodityBySymbol(symbol);
-            const priceMeta = current?.priceMetadata || (current?.fullMetadata || {})['price'];
+            const priceMeta = current?.priceMetadata || (current?.fullMetadata?.['price'] as string | undefined);
             Logger.log(`[CommoditiesController] testPriceSource: ${symbol}`);
 
             if (!priceMeta) {
@@ -358,7 +362,7 @@ export class CommoditiesController {
      * @param {string} url - The URL to test.
      * @returns {Promise<any>} The validation result.
      */
-    public async testLogoUrl(symbol: string, url: string): Promise<any> {
+    public async testLogoUrl(symbol: string, url: string): Promise<{ success: boolean; contentType?: string; error?: string }> {
         Logger.log(`[CommoditiesController] testLogoUrl: ${symbol}`);
         try {
             if (!url || url.trim() === '') {
@@ -483,8 +487,8 @@ export class CommoditiesController {
             // Ensure we have fresh file location data
             await this.loadCommodityDetails(symbol);
             const current = get(this.selectedCommodity);
-            const filename = (current as any)?.filename;
-            const lineno = (current as any)?.lineno;
+            const filename = current?.filename;
+            const lineno = current?.lineno;
 
             if (!filename || !lineno) {
                 throw new Error('Commodity location not available. Please reload the commodity details.');

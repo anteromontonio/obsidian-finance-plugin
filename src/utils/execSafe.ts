@@ -22,6 +22,21 @@ interface ExecSafeOptions {
     maxBuffer?: number;
 }
 
+/** Error thrown when a spawned command exits with a non-zero status code. */
+class SpawnError extends Error {
+    code: number | null;
+    stdout: string;
+    stderr: string;
+
+    constructor(message: string, code: number | null, stdout: string, stderr: string) {
+        super(message);
+        this.name = 'SpawnError';
+        this.code = code;
+        this.stdout = stdout;
+        this.stderr = stderr;
+    }
+}
+
 /**
  * Executes a command safely using child_process.spawn with shell: false.
  * Prevents shell injection by bypassing shell command parsing entirely.
@@ -100,11 +115,7 @@ export function execSafe(
                 return reject(new Error(`Command timed out after ${options.timeout}ms`));
             }
             if (code !== 0) {
-                const err = new Error(`Command failed with exit status ${code}`);
-                (err as any).code = code;
-                (err as any).stdout = stdout;
-                (err as any).stderr = stderr;
-                return reject(err);
+                return reject(new SpawnError(`Command failed with exit status ${code}`, code, stdout, stderr));
             }
             resolve({ stdout, stderr });
         });

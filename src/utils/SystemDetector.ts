@@ -150,7 +150,7 @@ export class SystemDetector {
             }
 
             return false;
-        } catch (error) {
+        } catch {
             return false;
         }
     }
@@ -173,12 +173,12 @@ export class SystemDetector {
             // If we get output without error, WSL is available
             // Even if no distributions are installed, the command should work
             return true;
-        } catch (error: any) {
+        } catch {
             try {
                 // Fallback: try simpler wsl command
                 await execSafe('wsl', ['--help'], { timeout: 3000 });
                 return true;
-            } catch (fallbackError) {
+            } catch {
                 // WSL not available
                 return false;
             }
@@ -249,7 +249,7 @@ export class SystemDetector {
             }
             return 'sh';
 
-        } catch (error) {
+        } catch {
             return platform() === 'win32' ? 'Unknown Windows Shell' : 'Unknown Unix Shell';
         }
     }
@@ -270,7 +270,7 @@ export class SystemDetector {
                     path: pathOutput.trim(),
                     version: versionOutput.trim()
                 };
-            } catch (error) {
+            } catch {
                 continue;
             }
         }
@@ -330,7 +330,7 @@ export class SystemDetector {
                     };
                 }
             }
-        } catch (error) {
+        } catch {
             // Executable not found in PATH
         }
 
@@ -469,11 +469,11 @@ export class SystemDetector {
         try {
             const { stdout, stderr } = await execSafe(command, args, { timeout });
             return { success: true, output: stdout, error: stderr };
-        } catch (error: any) {
+        } catch (error: unknown) {
             return { 
                 success: false, 
-                error: error.message || 'Command execution failed',
-                output: error.stdout || ''
+                error: error instanceof Error ? error.message : 'Command execution failed',
+                output: (error as { stdout?: string })?.stdout || ''
             };
         }
     }
@@ -537,7 +537,8 @@ export class SystemDetector {
                 break;
 
             } catch (error) {
-                result.errors.push(`${pythonCmd}: Unexpected error - ${error.message}`);
+                const errMsg = error instanceof Error ? error.message : String(error);
+                result.errors.push(`${pythonCmd}: Unexpected error - ${errMsg}`);
             }
         }
 
@@ -645,7 +646,8 @@ export class SystemDetector {
                 break;
 
             } catch (error) {
-                result.errors.push(`${beanQueryCmd}: Unexpected error - ${error.message}`);
+                const errMsg = error instanceof Error ? error.message : String(error);
+                result.errors.push(`${beanQueryCmd}: Unexpected error - ${errMsg}`);
             }
         }
 
@@ -729,7 +731,8 @@ export class SystemDetector {
                 break;
 
             } catch (error) {
-                result.errors.push(`${beanPriceCmd}: Unexpected error - ${error.message}`);
+                const errMsg = error instanceof Error ? error.message : String(error);
+                result.errors.push(`${beanPriceCmd}: Unexpected error - ${errMsg}`);
             }
         }
 

@@ -18,7 +18,7 @@ export interface JournalPosting {
     /** Optional cost basis information. */
     cost?: {
         number: string | null;
-        currency: string;
+        currency: string | null;
         date: string | null;
         label: string | null;
         /** If true, use {{}} (total cost) instead of {} (per-unit cost). */
@@ -43,7 +43,7 @@ export interface JournalBaseEntry {
     /** Date of the entry (YYYY-MM-DD). */
     date: string;
     /** Custom metadata associated with the entry. */
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
 }
 
 /**

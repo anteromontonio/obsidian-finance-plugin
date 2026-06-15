@@ -49,6 +49,9 @@ export {
 	createIndicatorDirective,
 	updateIndicatorDirective,
 	deleteIndicatorDirective,
+	type TransactionData,
+	type BalanceData,
+	type NoteData,
 } from './directives';
 
 // Re-export structuredLayout helpers that some callers pull from utils/index

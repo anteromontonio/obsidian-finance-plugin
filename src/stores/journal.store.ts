@@ -65,9 +65,9 @@ export function createJournalStore(service: JournalService) {
             }
             
             lastUpdated.set(new Date());
-        } catch (err: any) {
+        } catch (err: unknown) {
             Logger.error('Failed to load entries', err);
-            error.set(err.message || 'Failed to load entries');
+            error.set(err instanceof Error ? err.message : 'Failed to load entries');
         } finally {
             loading.set(false);
         }

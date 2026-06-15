@@ -108,7 +108,8 @@ export class OverviewController {
 
 		} catch (e) {
 			Logger.error("Error loading overview data:", e);
-			this.state.update(s => ({ ...s, isLoading: false, error: `Failed to load data: ${e.message}` }));
+			const errMsg = e instanceof Error ? e.message : String(e);
+			this.state.update(s => ({ ...s, isLoading: false, error: `Failed to load data: ${errMsg}` }));
 		}
 	}
 }

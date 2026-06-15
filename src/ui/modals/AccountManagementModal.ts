@@ -120,7 +120,7 @@ export class AccountManagementModal extends Modal {
             cls: 'mod-cta'
         });
         submitButton.addEventListener('click', () => {
-            this.handleSubmit();
+            void this.handleSubmit();
         });
     }
 
@@ -182,7 +182,8 @@ export class AccountManagementModal extends Modal {
 
             this.close();
         } catch (error) {
-            new Notice(`Failed to ${this.mode} account: ${error.message}`);
+            const errMsg = error instanceof Error ? error.message : String(error);
+            new Notice(`Failed to ${this.mode} account: ${errMsg}`);
             console.error(`Failed to ${this.mode} account:`, error);
         }
     }

@@ -227,7 +227,8 @@ export class IncomeStatementController {
 			this._processChartData(result, chartInterval, reportingCurrency, trendType);
 		} catch (e) {
 			Logger.error('Error loading income chart data:', e);
-			this.state.update(s => ({ ...s, chartLoading: false, chartError: `Failed to load chart: ${e.message}` }));
+			const errMsg = e instanceof Error ? e.message : String(e);
+			this.state.update(s => ({ ...s, chartLoading: false, chartError: `Failed to load chart: ${errMsg}` }));
 		}
 	}
 
@@ -244,7 +245,8 @@ export class IncomeStatementController {
 			this._processChartData(result, interval, reportingCurrency, chartTrendType);
 		} catch (e) {
 			Logger.error('Error loading income chart data:', e);
-			this.state.update(s => ({ ...s, chartLoading: false, chartError: `Failed to load chart: ${e.message}` }));
+			const errMsg = e instanceof Error ? e.message : String(e);
+			this.state.update(s => ({ ...s, chartLoading: false, chartError: `Failed to load chart: ${errMsg}` }));
 		}
 	}
 
@@ -318,7 +320,8 @@ export class IncomeStatementController {
 			}));
 		} catch (err) {
 			Logger.error('Error processing income chart data:', err);
-			this.state.update(s => ({ ...s, chartConfig: null, chartError: `Failed to process chart data: ${err.message}`, chartLoading: false }));
+			const errMsg = err instanceof Error ? err.message : String(err);
+			this.state.update(s => ({ ...s, chartConfig: null, chartError: `Failed to process chart data: ${errMsg}`, chartLoading: false }));
 		}
 	}
 
@@ -364,7 +367,7 @@ export class IncomeStatementController {
 						mode: 'index',
 						intersect: false,
 						callbacks: {
-							label: (context: any) => `${displayLabel}: ${context.parsed.y.toLocaleString()} ${currency}`,
+							label: (context: { parsed: { y: number | null } }) => `${displayLabel}: ${context.parsed.y !== null ? context.parsed.y.toLocaleString() : 0} ${currency}`,
 						},
 					},
 				},
@@ -378,7 +381,7 @@ export class IncomeStatementController {
 						display: true,
 						title: { display: true, text: `Amount (${currency})` },
 						grid: { display: true, color: 'rgba(0, 0, 0, 0.1)' },
-						ticks: { callback: (value: any) => value.toLocaleString() },
+						ticks: { callback: (value: number | string) => typeof value === 'number' ? value.toLocaleString() : value },
 					},
 				},
 				interaction: { mode: 'nearest', axis: 'x', intersect: false },
@@ -483,12 +486,13 @@ export class IncomeStatementController {
 				this._processChartData(chartResult, currentState.chartInterval, reportingCurrency, currentState.chartTrendType);
 			} catch (chartErr) {
 				Logger.error('Error loading income chart data in loadData:', chartErr);
-				this.state.update(s => ({ ...s, chartLoading: false, chartError: `Failed to load chart: ${chartErr.message}` }));
+				const errMsg = chartErr instanceof Error ? chartErr.message : String(chartErr);
+				this.state.update(s => ({ ...s, chartLoading: false, chartError: `Failed to load chart: ${errMsg}` }));
 			}
 
 		} catch (e) {
 			Logger.error('Error loading income statement:', e);
-			this.state.update(s => ({ ...s, isLoading: false, error: e.message }));
+			this.state.update(s => ({ ...s, isLoading: false, error: e instanceof Error ? e.message : String(e) }));
 		}
 	}
 }

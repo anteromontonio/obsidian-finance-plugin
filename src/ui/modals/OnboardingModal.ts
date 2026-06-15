@@ -2,10 +2,11 @@
 import { App, Modal } from 'obsidian';
 import type BeancountPlugin from '../../main';
 import OnboardingModalComponent from './OnboardingModal.svelte';
+import { SvelteComponent } from 'svelte';
 
 export class OnboardingModal extends Modal {
     plugin: BeancountPlugin;
-    private component: any;
+    private component: SvelteComponent | null = null;
 
     constructor(app: App, plugin: BeancountPlugin) {
         super(app);
@@ -18,7 +19,7 @@ export class OnboardingModal extends Modal {
         
         this.modalEl.setCssStyles({ maxWidth: '720px', width: '90vw' });
 
-        this.component = new (OnboardingModalComponent as any)({
+        this.component = new (OnboardingModalComponent)({
             target: contentEl,
             props: {
                 app: this.app,

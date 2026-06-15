@@ -245,7 +245,8 @@ export class BalanceSheetController {
 			this._processChartData(result, interval, reportingCurrency);
 		} catch (e) {
 			Logger.error('Error loading chart data:', e);
-			this.state.update(s => ({ ...s, chartLoading: false, chartError: `Failed to load chart: ${e.message}` }));
+			const errMsg = e instanceof Error ? e.message : String(e);
+			this.state.update(s => ({ ...s, chartLoading: false, chartError: `Failed to load chart: ${errMsg}` }));
 		}
 	}
 
@@ -308,7 +309,8 @@ export class BalanceSheetController {
 			this.state.update(s => ({ ...s, chartConfig: this._buildChartConfig(labels, dataPoints, reportingCurrency, xAxisTitle), chartError: null, chartLoading: false }));
 		} catch (err) {
 			Logger.error('Error processing chart data:', err);
-			this.state.update(s => ({ ...s, chartConfig: null, chartError: `Failed to process chart data: ${err.message}`, chartLoading: false }));
+			const errMsg = err instanceof Error ? err.message : String(err);
+			this.state.update(s => ({ ...s, chartConfig: null, chartError: `Failed to process chart data: ${errMsg}`, chartLoading: false }));
 		}
 	}
 
@@ -346,7 +348,7 @@ export class BalanceSheetController {
 						mode: 'index',
 						intersect: false,
 						callbacks: {
-							label: (context: any) => `Net Worth: ${context.parsed.y.toLocaleString()} ${currency}`
+							label: (context: { parsed: { y: number | null } }) => `Net Worth: ${context.parsed.y !== null ? context.parsed.y.toLocaleString() : 0} ${currency}`
 						}
 					}
 				},
@@ -360,7 +362,7 @@ export class BalanceSheetController {
 						display: true,
 						title: { display: true, text: `Amount (${currency})` },
 						grid: { display: true, color: 'rgba(0, 0, 0, 0.1)' },
-						ticks: { callback: (value: any) => value.toLocaleString() }
+						ticks: { callback: (value: number | string) => typeof value === 'number' ? value.toLocaleString() : value }
 					}
 				},
 				interaction: { mode: 'nearest', axis: 'x', intersect: false }
@@ -476,12 +478,13 @@ export class BalanceSheetController {
 				this._processChartData(chartResult, currentState.chartInterval, reportingCurrency);
 			} catch (chartErr) {
 				Logger.error('Error loading chart data in loadData:', chartErr);
-				this.state.update(s => ({ ...s, chartLoading: false, chartError: `Failed to load chart: ${chartErr.message}` }));
+				const errMsg = chartErr instanceof Error ? chartErr.message : String(chartErr);
+				this.state.update(s => ({ ...s, chartLoading: false, chartError: `Failed to load chart: ${errMsg}` }));
 			}
 
 		} catch (e) {
 			Logger.error('Error loading balance sheet:', e);
-			this.state.update(s => ({ ...s, isLoading: false, error: e.message }));
+			this.state.update(s => ({ ...s, isLoading: false, error: e instanceof Error ? e.message : String(e) }));
 		}
 	}
 }

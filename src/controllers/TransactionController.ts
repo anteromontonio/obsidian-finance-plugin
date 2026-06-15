@@ -135,7 +135,8 @@ export class TransactionController {
 			});
 		} catch (e) {
 			Logger.error('Error fetching transactions:', e);
-			newError = `Failed to load transactions: ${e.message}`;
+			const errMsg = e instanceof Error ? e.message : String(e);
+			newError = `Failed to load transactions: ${errMsg}`;
 			newTransactions = [];
 		} finally {
 			this.state.update(s => ({ ...s, isLoading: false, error: newError, currentTransactions: newTransactions }));

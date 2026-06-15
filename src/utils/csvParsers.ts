@@ -37,7 +37,7 @@ export function parseCommoditiesListCSV(csv: string): string[] {
 export function parseCommoditiesPriceDataCSV(
     csv: string
 ): Map<string, { price: string | null; logo: string | null; date: string | null; isLatest: boolean }> {
-    const priceDataMap = new Map();
+    const priceDataMap = new Map<string, { price: string | null; logo: string | null; date: string | null; isLatest: boolean }>();
 
     try {
         const cleanCsv = csv.replace(/\r/g, '').trim();
@@ -78,7 +78,7 @@ export function parseCommoditiesPriceDataCSV(
  */
 export function parseCommodityDetailsCSV(csv: string): {
     symbol: string;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
     logo: string | null;
     priceMetadata: string | null;
     filename: string | null;

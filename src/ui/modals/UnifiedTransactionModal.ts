@@ -6,11 +6,28 @@ import type { JournalTransaction, JournalEntry } from '../../models/journal';
 // Import the component statically to avoid dynamic import delay
 import TransactionEditModal from './TransactionEditModal.svelte';
 import { Logger } from '../../utils/logger';
-import { getOpenAccounts, getPayees, getTags, getCommodities, createTransaction, updateTransaction, deleteTransaction, createBalanceAssertion, saveOpenDirective, saveCloseDirective, createNote, updateBalance, deleteBalance, updateNote, deleteNote, createQueryDirective } from '../../utils';
+import { getOpenAccounts, getPayees, getTags, getCommodities, createTransaction, updateTransaction, deleteTransaction, createBalanceAssertion, saveOpenDirective, saveCloseDirective, createNote, updateBalance, deleteBalance, updateNote, deleteNote, createQueryDirective, type BalanceData, type NoteData } from '../../utils';
+import { SvelteComponent } from 'svelte';
+
+export interface EntryDataPayload {
+    type: string;
+    date: string;
+    account?: string;
+    amount?: string | number;
+    currency?: string;
+    tolerance?: number;
+    currencies?: string[];
+    booking?: string;
+    comment?: string;
+    tags?: string[];
+    links?: string[];
+    name?: string;
+    sql?: string;
+}
 
 export class UnifiedTransactionModal extends Modal {
     plugin: BeancountPlugin;
-    private component: any;
+    private component: SvelteComponent | null = null;
     private transaction: JournalTransaction | null;
     private entry: JournalEntry | null;
     private mode: 'add' | 'edit';
@@ -28,11 +45,11 @@ export class UnifiedTransactionModal extends Modal {
         
         // Handle both transaction (legacy) and entry (new) parameters
         if (entryOrTransaction?.type === 'transaction') {
-            this.transaction = entryOrTransaction as JournalTransaction;
-            this.entry = entryOrTransaction as JournalEntry;
+            this.transaction = entryOrTransaction;
+            this.entry = entryOrTransaction;
         } else if (entryOrTransaction) {
             this.transaction = null;
-            this.entry = entryOrTransaction as JournalEntry;
+            this.entry = entryOrTransaction;
         } else {
             this.transaction = null;
             this.entry = null;
@@ -59,7 +76,7 @@ export class UnifiedTransactionModal extends Modal {
         const currencies: string[] = ['INR', 'USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD']; // Default fallback
 
         // Create component immediately with static import
-        this.component = new (TransactionEditModal as any)({
+        this.component = new (TransactionEditModal)({
             target: contentEl,
             props: {
                 transaction: this.transaction,
@@ -75,14 +92,14 @@ export class UnifiedTransactionModal extends Modal {
         });
 
         // Handle events
-        this.component.$on('add', (e: any) => this.onAdd(e.detail));
-        this.component.$on('save', (e: any) => this.onSave(e.detail));
-        this.component.$on('delete', (e: any) => this.onDelete(e.detail));
+        this.component.$on('add', (e: CustomEvent<unknown>) => { void this.onAdd(e.detail as EntryDataPayload); });
+        this.component.$on('save', (e: CustomEvent<unknown>) => { void this.onSave(e.detail as EntryDataPayload); });
+        this.component.$on('delete', (e: CustomEvent<string>) => { void this.onDelete(e.detail); });
         this.component.$on('cancel', () => this.close());
-        this.component.$on('titleChange', (e: any) => this.setTitle(e.detail)); // Listen for title changes
+        this.component.$on('titleChange', (e: CustomEvent<string>) => this.setTitle(e.detail)); // Listen for title changes
 
         // Fetch data in background
-        this.fetchData();
+        void this.fetchData();
     }
 
     async fetchData() {
@@ -117,7 +134,7 @@ export class UnifiedTransactionModal extends Modal {
         }
     }
 
-    async onAdd(entryData: any) {
+    async onAdd(entryData: EntryDataPayload) {
         try {
             Logger.log('Adding entry', entryData);
             
@@ -150,10 +167,10 @@ export class UnifiedTransactionModal extends Modal {
                 const result = await createBalanceAssertion(
                     this.plugin,
                     entryData.date,
-                    entryData.account,
-                    entryData.amount,
-                    entryData.currency,
-                    entryData.tolerance,
+                    entryData.account!,
+                    String(entryData.amount),
+                    entryData.currency!,
+                    entryData.tolerance !== undefined ? String(entryData.tolerance) : undefined,
                     this.plugin.settings.createBackups ?? true
                 );
                 
@@ -181,7 +198,7 @@ export class UnifiedTransactionModal extends Modal {
                 const result = await saveOpenDirective(
                     this.plugin,
                     entryData.date,
-                    entryData.account,
+                    entryData.account!,
                     entryData.currencies || [],
                     entryData.booking,
                     this.plugin.settings.createBackups ?? true
@@ -211,7 +228,7 @@ export class UnifiedTransactionModal extends Modal {
                 const result = await saveCloseDirective(
                     this.plugin,
                     entryData.date,
-                    entryData.account,
+                    entryData.account!,
                     this.plugin.settings.createBackups ?? true
                 );
                 
@@ -239,8 +256,8 @@ export class UnifiedTransactionModal extends Modal {
                 const result = await createNote(
                     this.plugin,
                     entryData.date,
-                    entryData.account,
-                    entryData.comment,
+                    entryData.account!,
+                    entryData.comment!,
                     entryData.tags || [],
                     entryData.links || [],
                     this.plugin.settings.createBackups ?? true
@@ -269,8 +286,8 @@ export class UnifiedTransactionModal extends Modal {
                 const result = await createQueryDirective(
                     this.plugin,
                     entryData.date,
-                    entryData.name,
-                    entryData.sql,
+                    entryData.name!,
+                    entryData.sql!,
                     this.plugin.settings.createBackups ?? true
                 );
 
@@ -293,7 +310,7 @@ export class UnifiedTransactionModal extends Modal {
         }
     }
 
-    async onSave(entryData: any) {
+    async onSave(entryData: EntryDataPayload) {
         if (!this.transaction && !this.entry) return;
         
         try {
@@ -326,7 +343,7 @@ export class UnifiedTransactionModal extends Modal {
                 }
             } else if (entryData.type === 'balance') {
                 // Use direct file writing for balance updates
-                const result = await updateBalance(this.plugin, entryId!, entryData);
+                const result = await updateBalance(this.plugin, entryId!, entryData as unknown as BalanceData);
                 
                 if (result.success) {
                     new Notice('Balance updated successfully!');
@@ -349,7 +366,7 @@ export class UnifiedTransactionModal extends Modal {
                 }
             } else if (entryData.type === 'note') {
                 // Use direct file writing for note updates
-                const result = await updateNote(this.plugin, entryId!, entryData);
+                const result = await updateNote(this.plugin, entryId!, entryData as unknown as NoteData);
                 
                 if (result.success) {
                     new Notice('Note updated successfully!');

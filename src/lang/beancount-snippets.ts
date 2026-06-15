@@ -130,7 +130,7 @@ export function beancountSnippetSource(context: CompletionContext): CompletionRe
     const typed = matchAtStart[1];
     const snippets = makeSnippets();
     const options = snippets.filter((s) =>
-        (s.label as string).startsWith(typed)
+        (s.label).startsWith(typed)
     );
 
     if (options.length === 0) return null;
