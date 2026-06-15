@@ -346,7 +346,7 @@ export class BalanceSheetController {
 						mode: 'index',
 						intersect: false,
 						callbacks: {
-							label: (context: { parsed: { y: number } }) => `Net Worth: ${context.parsed.y.toLocaleString()} ${currency}`
+							label: (context: any) => `Net Worth: ${context.parsed.y.toLocaleString()} ${currency}`
 						}
 					}
 				},

@@ -118,7 +118,7 @@ export class UnifiedTransactionModal extends Modal {
         }
     }
 
-    async onAdd(entryData: Record<string, unknown>) {
+    async onAdd(entryData: any) {
         try {
             Logger.log('Adding entry', entryData);
             
