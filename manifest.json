@@ -1,7 +1,7 @@
 {
 	"id": "beancount-finance",
 	"name": "Beancount Ledger",
-	"version": "2.1.6",
+	"version": "2.1.7",
 	"minAppVersion": "1.7.2",
 	"description": "Manage your Beancount ledger from your vault. Supports live BQL queries, transaction management, net worth tracking, balance sheets, income statements, and automated price fetching.",
 	"author": "Mukund Shelake",
