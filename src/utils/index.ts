@@ -17,8 +17,6 @@ export { runQuery, type BQLFormat } from './queryRunner';
 export { splitCommandLine, execSafe } from './execSafe';
 export { convertWindowsPathToWsl, convertWslPathToWindows, atomicFileWrite, createBackupFile, readFileContent, getVaultRelativePath } from './fileEditor';
 export {
-	extractConvertedAmountNumber,
-	extractNonReportingCurrencies,
 	parseMetadataString,
 	debounce,
 } from './formatters';
