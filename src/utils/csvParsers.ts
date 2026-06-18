@@ -134,6 +134,9 @@ export function parseCommodityDetailsCSV(csv: string): {
  * directive exists), it returns the original inventory unchanged (e.g. "0.016 ETHW"
  * instead of "1234 INR"). We detect this by checking whether the currency token in
  * valueOp_ matches the operating currency; if not, valueOp is set to 0.
+ *
+ * `holdings` and `valueOp` keep their sign so short/closed residual positions do
+ * not pass UI filters that only include positive holdings.
  */
 export function parseCombinedCommodityDataCSV(
     csv: string,
@@ -175,14 +178,14 @@ export function parseCombinedCommodityDataCSV(
             const priceCell = row[3]?.trim() || null;
             const logoCell = row[4]?.trim() || null;
 
-            const holdings = Math.abs(extractNumber(unitsCell));
+            const holdings = extractNumber(unitsCell);
 
             // If convert() couldn't convert, valueCell still contains the original
             // currency unit. Detect this and zero out the value to avoid mislabeling.
             const valueCurrencyToken = extractCurrencyToken(valueCell);
             const valueOp = (valueCurrencyToken && valueCurrencyToken !== operatingCurrency)
                 ? 0
-                : Math.abs(extractNumber(valueCell));
+                : extractNumber(valueCell);
 
             const holdingsRaw = unitsCell
                 .split(',')
@@ -201,4 +204,3 @@ export function parseCombinedCommodityDataCSV(
         return map;
     }
 }
-
