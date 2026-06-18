@@ -447,7 +447,7 @@ export class BalanceSheetController {
 			// Create warning message
 			let unconvertedWarning = null;
 			if (hasUnconvertedCommodities) {
-				unconvertedWarning = `Multi-currency accounts detected. ${reportingCurrency} amounts are shown in the first column, other currencies are displayed separately in the second column. Only ${reportingCurrency} amounts are included in totals.`;
+				unconvertedWarning = `Multi-currency accounts detected. ${reportingCurrency} amounts are shown in the ${reportingCurrency} column; other currencies are displayed separately. Only ${reportingCurrency} amounts are included in totals.`;
 			}
 
 			const currentState = get(this.state);
