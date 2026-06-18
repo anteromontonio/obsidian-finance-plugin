@@ -134,7 +134,7 @@
 
 		<div class="card-body">
 			<!-- Value (primary) -->
-			{#if (commodity?.valueInOperatingCurrency ?? 0) > 0}
+			{#if (commodity?.valueInOperatingCurrency ?? 0) !== 0}
 				<div class="value-container">
 					<span class="value-main">{formatValue(commodity.valueInOperatingCurrency ?? 0)}</span>
 					<span class="value-currency">{operatingCurrency}</span>

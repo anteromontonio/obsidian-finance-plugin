@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## In-progress
 
+- **Commodity Dashboard: Support negative commodity holdings and correct UI rendering** — Updated parser to preserve negative signs from BQL units/values queries (allowing short/residual positions). Fixed `CommodityCard` value rendering to correctly display negative operating currency values instead of falling back to raw units, and updated `CommoditiesTab` filters (`has_holding` / `has_both`) to check for non-zero holdings (`!== 0`) so short positions are not hidden. Merged PR #229.
+
 ## 2.1.8 - 2026-06-15
 
 ## 2.1.7 - 2026-06-15
