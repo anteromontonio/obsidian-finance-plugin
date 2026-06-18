@@ -4,8 +4,24 @@ import { writable, type Writable, get } from 'svelte/store';
 import type BeancountPlugin from '../main';
 import * as queries from '../queries/index';
 import { parse as parseCsv } from 'csv-parse/sync';
-import { extractConvertedAmountNumber, extractNonReportingCurrencies } from '../utils/index';
 import type { ChartConfiguration } from 'chart.js/auto';
+
+/**
+ * Helper to clean other currencies output from BQL subst() function.
+ */
+function cleanOtherCurrencies(bqlOtherCurrencies: string): string {
+	if (!bqlOtherCurrencies) return '';
+	const trimmed = bqlOtherCurrencies.trim();
+	if (trimmed === '()' || trimmed === '') return '';
+	let content = trimmed;
+	if (content.startsWith('(') && content.endsWith(')')) {
+		content = content.slice(1, -1).trim();
+	}
+	return content.split(',')
+		.map(c => c.trim())
+		.filter(c => c !== '')
+		.join('\n');
+}
 import { Logger } from '../utils/logger';
 
 /**
@@ -107,21 +123,19 @@ export class BalanceSheetController {
 
 	/**
 	 * Builds a hierarchical structure from flat account entries.
-	 * @param {[string, string][]} accounts - List of [accountName, rawAmount] tuples.
+	 * @param {[string, number, string][]} accounts - List of [accountName, amountNumber, otherCurrencies] tuples.
 	 * @param {string} accountType - The root account type (e.g. 'Assets').
 	 * @param {'convert' | 'cost' | 'units'} [valuationMethod='convert'] - The valuation method.
 	 * @returns {AccountItem[]} The list of root account items.
 	 */
-	private buildAccountHierarchy(accounts: [string, string][], accountType: string, valuationMethod: 'convert' | 'cost' | 'units' = 'convert'): AccountItem[] {
+	private buildAccountHierarchy(accounts: [string, number, string][], accountType: string, valuationMethod: 'convert' | 'cost' | 'units' = 'convert'): AccountItem[] {
 		const reportingCurrency = this.plugin.settings.operatingCurrency;
 		const accountMap = new Map<string, AccountItem>();
 		const rootAccounts: AccountItem[] = [];
 
 		// Group accounts by their hierarchy levels
-		for (const [fullAccount, rawAmount] of accounts) {
-			const amountNumber = extractConvertedAmountNumber(rawAmount, reportingCurrency);
+		for (const [fullAccount, amountNumber, otherCurrencies] of accounts) {
 			const convertedAmount = `${amountNumber.toFixed(2)} ${reportingCurrency}`;
-			const otherCurrencies = extractNonReportingCurrencies(rawAmount, reportingCurrency);
 
 			const parts = fullAccount.split(':');
 			let currentPath = '';
@@ -270,7 +284,7 @@ export class BalanceSheetController {
 					if (row.length < 3) continue;
 					const year = parseInt(row[0].trim());
 					const monthNum = parseInt(row[1].trim());
-					const nw = extractConvertedAmountNumber(row[2].trim(), reportingCurrency);
+					const nw = parseFloat(row[2]?.trim() || '0') || 0;
 					dataMap.set(`${year}-${monthNum.toString().padStart(2, '0')}`, nw);
 					if (year < minYear || (year === minYear && monthNum < minMonth)) { minYear = year; minMonth = monthNum; }
 					if (year > maxYear || (year === maxYear && monthNum > maxMonth)) { maxYear = year; maxMonth = monthNum; }
@@ -289,7 +303,7 @@ export class BalanceSheetController {
 					const dateStr = row[0].trim();
 					const d = new Date(dateStr + 'T00:00:00');
 					if (isNaN(d.getTime())) continue;
-					const nw = extractConvertedAmountNumber(row[1].trim(), reportingCurrency);
+					const nw = parseFloat(row[1]?.trim() || '0') || 0;
 					dataMap.set(dateStr, nw);
 					dates.push(d);
 				}
@@ -391,10 +405,10 @@ export class BalanceSheetController {
 					query = queries.getBalanceSheetQuery(reportingCurrency);
 					break;
 				case 'cost':
-					query = queries.getBalanceSheetQueryByCost();
+					query = queries.getBalanceSheetQueryByCost(reportingCurrency);
 					break;
 				case 'units':
-					query = queries.getBalanceSheetQueryByUnits();
+					query = queries.getBalanceSheetQueryByUnits(reportingCurrency);
 					break;
 			}
 
@@ -405,9 +419,9 @@ export class BalanceSheetController {
 			const firstRowIsHeader = records[0]?.[0]?.toLowerCase().includes('account');
 			const rows = firstRowIsHeader ? records.slice(1) : records;
 
-			const tempAssets: [string, string][] = [];
-			const tempLiab: [string, string][] = [];
-			const tempEquity: [string, string][] = [];
+			const tempAssets: [string, number, string][] = [];
+			const tempLiab: [string, number, string][] = [];
+			const tempEquity: [string, number, string][] = [];
 			let hasUnconvertedCommodities = false;
 			const unconvertedAccounts: string[] = [];
 
@@ -417,20 +431,22 @@ export class BalanceSheetController {
 				const row = rows[i];
 				if (row.length < 2) continue;
 				const account = row[0];
-				const amountStr = row[1];
+				const amountVal = parseFloat(row[1]?.trim() || '0') || 0;
+				const otherCurrenciesRaw = row[2] || '';
+				const otherCurrenciesClean = cleanOtherCurrencies(otherCurrenciesRaw);
 
 				// Check for multi-currency results (only relevant for convert method)
-				if (isConvert && amountStr.indexOf(',') !== -1) {
+				if (isConvert && otherCurrenciesClean !== '') {
 					hasUnconvertedCommodities = true;
 					unconvertedAccounts.push(account);
 				}
 
 				if (account.startsWith('Assets')) {
-					tempAssets.push([account, amountStr]);
+					tempAssets.push([account, amountVal, otherCurrenciesClean]);
 				} else if (account.startsWith('Liabilities')) {
-					tempLiab.push([account, amountStr]);
+					tempLiab.push([account, amountVal, otherCurrenciesClean]);
 				} else if (account.startsWith('Equity')) {
-					tempEquity.push([account, amountStr]);
+					tempEquity.push([account, amountVal, otherCurrenciesClean]);
 				}
 			}
 
