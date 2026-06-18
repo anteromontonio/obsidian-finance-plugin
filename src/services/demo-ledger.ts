@@ -36,6 +36,12 @@ option "operating_currency" "USD"
   price: "USD:yahoo/MSFT"
   logo: "https://logos.hunter.io/microsoft.com"
   asset-class: "stock"
+2020-01-01 commodity CAD
+  name: "Canadian Dollar"
+  asset-class: "cash"
+2020-01-01 commodity BTC
+  name: "Bitcoin"
+  asset-class: "crypto"
 
 ;; ============================================================================
 ;; Accounts
@@ -45,8 +51,12 @@ option "operating_currency" "USD"
   description: "Primary checking account"
 2020-01-01 open Assets:Savings                                  USD
   description: "High-yield savings account"
+2020-01-01 open Assets:Savings:CAD                              USD, CAD
+  description: "CAD Savings account"
 2020-01-01 open Assets:Investments                              USD, MSFT, GOOGL, AAPL
   description: "Investment brokerage account"
+2020-01-01 open Assets:Investments:Crypto                       USD, BTC
+  description: "Crypto portfolio account"
 2020-01-01 open Liabilities:CreditCard                          USD
   description: "Credit card account"
 2020-01-01 open Income:Salary                                   USD
@@ -148,6 +158,11 @@ option "operating_currency" "USD"
   Assets:Savings            10000.00 USD
   Liabilities:CreditCard     -500.00 USD
   Equity:Opening-Balances  -14500.00 USD
+
+2026-01-02 * "Opening Balance CAD and BTC"
+  Assets:Savings:CAD          200.00 CAD {0.80 USD}
+  Assets:Investments:Crypto    0.05 BTC {40000.00 USD}
+  Equity:Opening-Balances   -2160.00 USD
 
 2026-01-03 * "Broker" "Purchase Apple Stock"
   Assets:Investments          10 AAPL {185.50 USD, 2026-01-03}
