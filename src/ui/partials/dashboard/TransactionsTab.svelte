@@ -6,6 +6,7 @@
 	import SkeletonLoader from '../../common/SkeletonLoader.svelte';
 	import ErrorBanner from '../../common/ErrorBanner.svelte';
 	import EmptyState from '../../common/EmptyState.svelte';
+	import { nativeDatePicker } from '../../actions/nativeDatePicker';
 
 	// --- PROPS ---
 	// Receive the controller
@@ -129,9 +130,9 @@
 			</div>
 			<div class="date-range">
 				<label for="start-date">From:</label>
-				<input type="date" id="start-date" bind:value={startDate} disabled={state.isLoading} />
+				<input type="date" id="start-date" bind:value={startDate} disabled={state.isLoading} use:nativeDatePicker />
 				<label for="end-date">To:</label>
-				<input type="date" id="end-date" bind:value={endDate} disabled={state.isLoading} />
+				<input type="date" id="end-date" bind:value={endDate} disabled={state.isLoading} use:nativeDatePicker />
 			</div>
 			<div>
 				<label for="payee-filter">Payee:</label>

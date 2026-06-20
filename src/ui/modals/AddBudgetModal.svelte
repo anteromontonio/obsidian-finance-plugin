@@ -1,6 +1,7 @@
 <!-- src/ui/modals/AddBudgetModal.svelte -->
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
+	import { nativeDatePicker } from '../actions/nativeDatePicker';
 
 	const dispatch = createEventDispatcher();
 
@@ -180,7 +181,7 @@
 		{#if isRollover}
 			<div class="form-group full-width">
 				<label for="budget-start">Start Date</label>
-				<input id="budget-start" type="date" bind:value={startDate} />
+				<input id="budget-start" type="date" bind:value={startDate} use:nativeDatePicker />
 			</div>
 		{/if}
 

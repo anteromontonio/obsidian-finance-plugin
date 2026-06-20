@@ -12,6 +12,7 @@
     import { Notice } from 'obsidian';
     import type { JournalEntry } from '../../../models/journal';
     import { Logger } from '../../../utils/logger';
+    import { nativeDatePicker } from '../../actions/nativeDatePicker';
 
     // Instead of importing Controller, we receive the Store
     export let store: any;
@@ -280,11 +281,11 @@
         <div class="filter-row">
              <div class="filter-group">
                 <label for="start">From</label>
-                <input type="date" id="start" bind:value={startDate} on:change={applyFilters} disabled={isLoading} />
+                <input type="date" id="start" bind:value={startDate} on:change={applyFilters} disabled={isLoading} use:nativeDatePicker />
             </div>
              <div class="filter-group">
                 <label for="end">To</label>
-                <input type="date" id="end" bind:value={endDate} on:change={applyFilters} disabled={isLoading} />
+                <input type="date" id="end" bind:value={endDate} on:change={applyFilters} disabled={isLoading} use:nativeDatePicker />
             </div>
             <div class="filter-group">
                 <label for="payee">Payee</label>
