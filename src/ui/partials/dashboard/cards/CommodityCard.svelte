@@ -118,9 +118,6 @@
 					<span class="symbol-text"
 						>{commodity?.symbol || `UNKNOWN_${index}`}</span
 					>
-					{#if displayName}
-						<span class="display-name-text">{displayName}</span>
-					{/if}
 				</div>
 			</div>
 
@@ -158,6 +155,10 @@
 					<span class="value-main no-price">0.00</span>
 					<span class="value-currency">{operatingCurrency}</span>
 				</div>
+			{/if}
+
+			{#if displayName}
+				<div class="card-display-name">{displayName}</div>
 			{/if}
 
 			{#if commodity?.isOperatingCurrency}
@@ -338,6 +339,17 @@
 		white-space: nowrap;
 	}
 
+	.card-display-name {
+		color: var(--text-muted);
+		font-size: 12px;
+		font-weight: 500;
+		line-height: 1.35;
+		margin: -1px 0 6px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
 	/* STATUS PILL */
 	.status-pill {
 		display: flex;
@@ -441,6 +453,7 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: baseline;
+		gap: 10px;
 		padding: 6px 0;
 		border-top: 1px dashed var(--background-modifier-border-hover);
 		font-size: 11px;
@@ -481,6 +494,11 @@
 		color: var(--text-normal);
 		font-weight: 600;
 		font-variant-numeric: tabular-nums;
+		min-width: 0;
+		text-align: right;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.data-value.unavailable {

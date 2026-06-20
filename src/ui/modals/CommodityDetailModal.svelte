@@ -86,12 +86,21 @@
 		return sym ? sym.slice(0, 2).toUpperCase() : "??";
 	}
 
+	function formatPriceAmount(value: number | string | null | undefined) {
+		if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+		return value.toLocaleString(undefined, {
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 4,
+		});
+	}
+
 	function buildPriceHistoryChart(
 		history: Array<{ date: string; amount: number; currency: string }>,
 	): ChartConfiguration | null {
 		if (!history.length) return null;
 
-		const latestCurrency = history[history.length - 1]?.currency || "";
+		const currencies = Array.from(new Set(history.map((point) => point.currency).filter(Boolean)));
+		const labelCurrency = currencies.length === 1 ? currencies[0] : "mixed";
 
 		return {
 			type: "line",
@@ -99,7 +108,7 @@
 				labels: history.map((point) => point.date),
 				datasets: [
 					{
-						label: latestCurrency ? `Price (${latestCurrency})` : "Price",
+						label: labelCurrency ? `Price (${labelCurrency})` : "Price",
 						data: history.map((point) => point.amount),
 						borderColor: "rgb(75, 192, 192)",
 						backgroundColor: "rgba(75, 192, 192, 0.12)",
@@ -121,7 +130,8 @@
 						callbacks: {
 							label: (context) => {
 								const value = context.parsed.y;
-								return `Price: ${typeof value === "number" ? value.toLocaleString() : value} ${latestCurrency}`;
+								const currency = history[context.dataIndex]?.currency || "";
+								return `Price: ${formatPriceAmount(value)} ${currency}`.trim();
 							},
 						},
 					},
@@ -136,7 +146,7 @@
 						display: true,
 						ticks: {
 							callback: (value) =>
-								typeof value === "number" ? value.toLocaleString() : value,
+								typeof value === "number" ? formatPriceAmount(value) : value,
 						},
 					},
 				},
@@ -215,7 +225,7 @@
 							{#each priceHistory.slice().reverse() as point}
 								<tr>
 									<td>{point.date}</td>
-									<td>{point.amount.toLocaleString()}</td>
+									<td>{formatPriceAmount(point.amount)}</td>
 									<td>{point.currency}</td>
 								</tr>
 							{/each}
