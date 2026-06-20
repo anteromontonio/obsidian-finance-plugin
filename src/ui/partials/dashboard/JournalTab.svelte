@@ -65,6 +65,8 @@
     let payeeFilter = '';
     let tagFilter = '';
     let typeFilter = 'all';
+    let activeSuggestionField: 'account' | 'payee' | 'tag' | null = null;
+    let closeSuggestionsTimer: ReturnType<typeof setTimeout> | null = null;
     
     // Flag to prevent filter application during initialization
     let isInitialized = false;
@@ -73,6 +75,28 @@
     let availableAccounts: string[] = [];
     let availablePayees: string[] = [];
     let availableTags: string[] = [];
+    let filteredAccountSuggestions: string[] = [];
+    let filteredPayeeSuggestions: string[] = [];
+    let filteredTagSuggestions: string[] = [];
+
+    function getFilteredSuggestions(options: string[], value: string): string[] {
+        const query = value.trim().toLowerCase();
+        const matches = query
+            ? options.filter((option) => option.toLowerCase().includes(query))
+            : options;
+
+        return matches.slice(0, 50);
+    }
+
+    $: filteredAccountSuggestions = activeSuggestionField === 'account'
+        ? getFilteredSuggestions(availableAccounts, selectedAccount)
+        : [];
+    $: filteredPayeeSuggestions = activeSuggestionField === 'payee'
+        ? getFilteredSuggestions(availablePayees, payeeFilter)
+        : [];
+    $: filteredTagSuggestions = activeSuggestionField === 'tag'
+        ? getFilteredSuggestions(availableTags, tagFilter)
+        : [];
 
     const updateFiltersDebounced = debounce(() => {
         // Prevent filter updates if not initialized or already loading
@@ -92,20 +116,14 @@
                 getTags(plugin)
             ]);
 
-            // Limit suggestions to avoid DOM freezing with large datasets
-            // Reduced to 200 to ensure responsiveness even on slower devices
-            const MAX_SUGGESTIONS = 200;
-
             if (accountsRes.status === 'fulfilled') {
-                availableAccounts = accountsRes.value.slice(0, MAX_SUGGESTIONS);
+                availableAccounts = accountsRes.value || [];
             }
             if (payeesRes.status === 'fulfilled') {
-                const payees = payeesRes.value || [];
-                availablePayees = payees.slice(0, MAX_SUGGESTIONS);
+                availablePayees = payeesRes.value || [];
             }
             if (tagsRes.status === 'fulfilled') {
-                const tags = tagsRes.value || [];
-                availableTags = tags.slice(0, MAX_SUGGESTIONS);
+                availableTags = tagsRes.value || [];
             }
 
         } catch (err) {
@@ -129,6 +147,36 @@
         });
     }
 
+    function openSuggestions(field: 'account' | 'payee' | 'tag') {
+        if (closeSuggestionsTimer) {
+            clearTimeout(closeSuggestionsTimer);
+            closeSuggestionsTimer = null;
+        }
+        activeSuggestionField = field;
+    }
+
+    function closeSuggestionsSoon() {
+        closeSuggestionsTimer = setTimeout(() => {
+            activeSuggestionField = null;
+            closeSuggestionsTimer = null;
+        }, 150);
+    }
+
+    function selectSuggestion(field: 'account' | 'payee' | 'tag', value: string) {
+        if (field === 'account') selectedAccount = value;
+        if (field === 'payee') payeeFilter = value;
+        if (field === 'tag') tagFilter = value;
+
+        activeSuggestionField = null;
+        applyFilters();
+    }
+
+    function handleSuggestionKeydown(event: KeyboardEvent) {
+        if (event.key === 'Escape') {
+            activeSuggestionField = null;
+        }
+    }
+
     function handleClear() {
         searchTerm = '';
         selectedAccount = '';
@@ -137,6 +185,7 @@
         payeeFilter = '';
         tagFilter = '';
         typeFilter = 'all';
+        activeSuggestionField = null;
         clearFilters();
     }
 
@@ -240,6 +289,7 @@
     
     // Cleanup subscriptions
     onDestroy(() => {
+        if (closeSuggestionsTimer) clearTimeout(closeSuggestionsTimer);
         unsubEntries();
         unsubLoading();
         unsubTotalCount();
@@ -268,12 +318,29 @@
             </div>
              <div class="filter-group">
                 <label for="account">Account</label>
-                <input type="text" id="account" bind:value={selectedAccount} on:input={updateFiltersDebounced} list="account-suggestions" placeholder="Account..." disabled={isLoading} />
-                <datalist id="account-suggestions">
-                    {#each availableAccounts as account}
-                        <option value={account} />
-                    {/each}
-                </datalist>
+                <div class="suggestion-wrapper">
+                    <input
+                        type="text"
+                        id="account"
+                        bind:value={selectedAccount}
+                        on:input={updateFiltersDebounced}
+                        on:focus={() => openSuggestions('account')}
+                        on:blur={closeSuggestionsSoon}
+                        on:keydown={handleSuggestionKeydown}
+                        placeholder="Account..."
+                        autocomplete="off"
+                        disabled={isLoading}
+                    />
+                    {#if filteredAccountSuggestions.length > 0}
+                        <ul class="suggestions-list" role="listbox">
+                            {#each filteredAccountSuggestions as account}
+                                <li role="option" aria-selected="false" title={account} on:mousedown|preventDefault={() => selectSuggestion('account', account)}>
+                                    {account}
+                                </li>
+                            {/each}
+                        </ul>
+                    {/if}
+                </div>
             </div>
         </div>
 
@@ -288,22 +355,55 @@
             </div>
             <div class="filter-group">
                 <label for="payee">Payee</label>
-                <input type="text" id="payee" bind:value={payeeFilter} on:input={updateFiltersDebounced} list="payee-suggestions" placeholder="Payee..." disabled={isLoading} />
-                <datalist id="payee-suggestions">
-                    {#each availablePayees as payee}
-                        <option value={payee} />
-                    {/each}
-                </datalist>
+                <div class="suggestion-wrapper">
+                    <input
+                        type="text"
+                        id="payee"
+                        bind:value={payeeFilter}
+                        on:input={updateFiltersDebounced}
+                        on:focus={() => openSuggestions('payee')}
+                        on:blur={closeSuggestionsSoon}
+                        on:keydown={handleSuggestionKeydown}
+                        placeholder="Payee..."
+                        autocomplete="off"
+                        disabled={isLoading}
+                    />
+                    {#if filteredPayeeSuggestions.length > 0}
+                        <ul class="suggestions-list" role="listbox">
+                            {#each filteredPayeeSuggestions as payee}
+                                <li role="option" aria-selected="false" title={payee} on:mousedown|preventDefault={() => selectSuggestion('payee', payee)}>
+                                    {payee}
+                                </li>
+                            {/each}
+                        </ul>
+                    {/if}
+                </div>
             </div>
             <div class="filter-group">
                 <label for="tag">Tag</label>
-                <input type="text" id="tag" bind:value={tagFilter} on:input={updateFiltersDebounced} list="tag-suggestions" placeholder="Tag..." disabled={isLoading} />
-                <datalist id="tag-suggestions">
-                    {#each availableTags as tag}
-                        <option value={tag} />
-                    {/each}
-                </datalist>
-                <!-- Datalist temporarily removed for debugging -->
+                <div class="suggestion-wrapper">
+                    <input
+                        type="text"
+                        id="tag"
+                        bind:value={tagFilter}
+                        on:input={updateFiltersDebounced}
+                        on:focus={() => openSuggestions('tag')}
+                        on:blur={closeSuggestionsSoon}
+                        on:keydown={handleSuggestionKeydown}
+                        placeholder="Tag..."
+                        autocomplete="off"
+                        disabled={isLoading}
+                    />
+                    {#if filteredTagSuggestions.length > 0}
+                        <ul class="suggestions-list" role="listbox">
+                            {#each filteredTagSuggestions as tag}
+                                <li role="option" aria-selected="false" title={tag} on:mousedown|preventDefault={() => selectSuggestion('tag', tag)}>
+                                    {tag}
+                                </li>
+                            {/each}
+                        </ul>
+                    {/if}
+                </div>
             </div>
             <div class="filter-actions">
                  <button class="btn" on:click={handleClear} disabled={isLoading}>Clear</button>
@@ -411,12 +511,49 @@
     }
 
     .filter-group input, .filter-group select {
+        width: 100%;
         padding: 0.4rem;
         border: 1px solid var(--background-modifier-border);
         border-radius: 4px;
         background: var(--background-primary);
         color: var(--text-normal);
         font-size: 0.9rem;
+    }
+
+    .suggestion-wrapper {
+        position: relative;
+    }
+
+    .suggestions-list {
+        position: absolute;
+        z-index: 100;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        max-height: min(16rem, 40vh);
+        margin: 0;
+        padding: 0.25rem 0;
+        overflow-y: auto;
+        list-style: none;
+        border: 1px solid var(--background-modifier-border);
+        border-radius: 4px;
+        background: var(--background-primary);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+    }
+
+    .suggestions-list li {
+        padding: 0.35rem 0.5rem;
+        overflow: hidden;
+        color: var(--text-normal);
+        cursor: pointer;
+        font-size: 0.9rem;
+        line-height: 1.3;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .suggestions-list li:hover {
+        background: var(--background-modifier-hover);
     }
 
     .filter-actions {
