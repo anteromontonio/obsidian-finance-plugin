@@ -565,9 +565,11 @@
 
 	/* ── Key-value rows ───────────────────────────────── */
 	.kv-row {
-		display: flex;
-		align-items: center;
-		gap: 12px;
+		display: grid;
+		grid-template-columns: minmax(150px, 0.28fr) minmax(0, 1fr) auto;
+		align-items: start;
+		column-gap: 14px;
+		row-gap: 8px;
 		padding: 9px 14px;
 		border-bottom: 1px solid var(--background-modifier-border);
 		font-size: 13px;
@@ -578,24 +580,38 @@
 	}
 
 	.kv-key {
-		width: 100px;
-		flex-shrink: 0;
 		color: var(--text-muted);
 		font-size: 12px;
+		line-height: 1.45;
+		overflow-wrap: anywhere;
 	}
 
 	.kv-value {
-		flex: 1;
+		min-width: 0;
 		color: var(--text-normal);
-		word-break: break-all;
+		overflow-wrap: anywhere;
+		word-break: normal;
+		white-space: pre-wrap;
 		font-family: var(--font-monospace);
 		font-size: 12px;
+		line-height: 1.45;
 	}
 
 	.kv-actions {
 		display: flex;
 		gap: 6px;
-		flex-shrink: 0;
+		justify-content: flex-end;
+	}
+
+	@media (max-width: 520px) {
+		.kv-row {
+			grid-template-columns: 1fr;
+		}
+
+		.kv-actions {
+			justify-content: flex-start;
+			flex-wrap: wrap;
+		}
 	}
 
 	/* ── Inline edit ──────────────────────────────────── */
