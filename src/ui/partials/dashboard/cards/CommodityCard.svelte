@@ -84,13 +84,18 @@
 			return dateStr;
 		}
 	}
+
+	$: displayName = commodity?.displayName || commodity?.metadata?.name || "";
+	$: ariaLabel = displayName
+		? `View details for ${commodity?.symbol || `UNKNOWN_${index}`} (${displayName})`
+		: `View details for ${commodity?.symbol || `UNKNOWN_${index}`}`;
 </script>
 
 <div class="commodity-card-wrapper" class:is-operating={commodity?.isOperatingCurrency}>
 	<button
 		class="commodity-card"
 		on:click={handleClick}
-		aria-label="View details for {commodity?.symbol || `UNKNOWN_${index}`}"
+		aria-label={ariaLabel}
 		type="button"
 	>
 		<div class="card-header">
@@ -113,6 +118,9 @@
 					<span class="symbol-text"
 						>{commodity?.symbol || `UNKNOWN_${index}`}</span
 					>
+					{#if displayName}
+						<span class="display-name-text">{displayName}</span>
+					{/if}
 				</div>
 			</div>
 
@@ -266,6 +274,7 @@
 		display: flex;
 		align-items: center;
 		gap: 12px;
+		min-width: 0;
 	}
 
 	.logo-box {
@@ -303,10 +312,30 @@
 	}
 
 	.symbol-text {
+		display: block;
 		font-weight: 700;
 		font-size: 15px;
 		color: var(--text-normal);
 		letter-spacing: 0.5px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.name-box {
+		min-width: 0;
+	}
+
+	.display-name-text {
+		display: block;
+		margin-top: 2px;
+		color: var(--text-muted);
+		font-size: 12px;
+		font-weight: 500;
+		line-height: 1.25;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	/* STATUS PILL */

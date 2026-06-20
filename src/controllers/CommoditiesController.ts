@@ -8,6 +8,7 @@ import {
     parseCommoditiesPriceDataCSV,
     parseCommodityDetailsCSV,
     parseCombinedCommodityDataCSV,
+    parseCommodityPriceHistoryCSV,
     validatePriceSource,
     validateLogoUrl,
     saveCommodityMetadata
@@ -23,6 +24,8 @@ export interface CommodityInfo {
     symbol: string;
     /** Alias for symbol (for compatibility with services). */
     name?: string;
+    /** Human-readable display name from commodity metadata. */
+    displayName?: string | null;
     /** Whether explicit price metadata exists for this commodity. */
     hasPriceMetadata: boolean;
     /** The price metadata string (e.g. "yahoo/AAPL") if exists. */
@@ -53,6 +56,18 @@ export interface CommodityInfo {
     filename?: string;
     /** The line number in the file where this commodity is defined. */
     lineno?: number;
+    /** Price directive history for this commodity. */
+    priceHistory?: CommodityPricePoint[];
+}
+
+/**
+ * A single dated price directive for a commodity.
+ */
+export interface CommodityPricePoint {
+    date: string;
+    amount: number;
+    currency: string;
+    amountRaw: string;
 }
 
 /**
@@ -153,8 +168,10 @@ export class CommoditiesController {
             return;
         }
 
+        const normalizedSearch = searchTerm.toLowerCase();
         const filtered = commodities.filter(commodity =>
-            commodity.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+            commodity.symbol.toLowerCase().includes(normalizedSearch) ||
+            (commodity.displayName || '').toLowerCase().includes(normalizedSearch)
         );
         this.filteredCommodities.set(filtered);
     }
@@ -204,15 +221,20 @@ export class CommoditiesController {
                 // Prefer combined query values; fall back to priceDataMap for price/logo
                 const logoUrl = combined?.logo || priceData?.logo || null;
                 const price = combined?.price ?? priceData?.price ?? null;
+                const displayName = combined?.displayName || priceData?.displayName || null;
 
                 return {
                     symbol,
+                    name: symbol,
+                    displayName,
                     hasPriceMetadata: !!(logoUrl || price),
                     priceMetadata: logoUrl || undefined,
                     fullMetadata: {
+                        ...(displayName ? { name: displayName } : {}),
                         ...(logoUrl ? { logo: logoUrl } : {}),
                     },
                     metadata: {
+                        ...(displayName ? { name: displayName } : {}),
                         ...(logoUrl ? { logo: logoUrl } : {}),
                     },
                     currentPrice: price ? `${price} ${operatingCurrency}` : undefined,
@@ -259,20 +281,38 @@ export class CommoditiesController {
     public async loadCommodityDetails(symbol: string): Promise<void> {
         Logger.log('[CommoditiesController] loadCommodityDetails:', symbol);
         try {
-            const detailsCSV = await this.plugin.runQuery(queries.getCommodityDetailsQuery(symbol));
+            const [detailsCSV, priceHistoryCSV] = await Promise.all([
+                this.plugin.runQuery(queries.getCommodityDetailsQuery(symbol)),
+                this.plugin.runQuery(queries.getCommodityPriceHistoryQuery(symbol))
+            ]);
             const details = parseCommodityDetailsCSV(detailsCSV);
+            const priceHistory = parseCommodityPriceHistoryCSV(priceHistoryCSV);
 
             Logger.log('[CommoditiesController] loadCommodityDetails: parsed ->', details);
 
+            const existing = get(this.selectedCommodity) || this.getCommodityBySymbol(symbol);
+            const metadata = {
+                ...(existing?.metadata || {}),
+                ...details.metadata,
+                ...(details.displayName ? { name: details.displayName } : {}),
+                ...(details.logo ? { logo: details.logo } : {}),
+                ...(details.priceMetadata ? { price: details.priceMetadata } : {}),
+            };
+
             this.selectedCommodity.set({
+                ...(existing || {}),
                 symbol: details.symbol || symbol,
-                hasPriceMetadata: !!details.priceMetadata,
+                name: details.symbol || symbol,
+                displayName: details.displayName || existing?.displayName || null,
+                hasPriceMetadata: !!details.priceMetadata || !!existing?.hasPriceMetadata,
                 priceMetadata: details.priceMetadata || undefined,
-                fullMetadata: details.metadata,
-                metadata: details.metadata,
-                currentPrice: undefined,  // Detail query doesn't include current price
+                pricemetadata: details.priceMetadata || undefined,
+                fullMetadata: metadata,
+                metadata,
+                logoUrl: details.logo || existing?.logoUrl || null,
                 filename: details.filename || undefined,
-                lineno: details.lineno || undefined
+                lineno: details.lineno || undefined,
+                priceHistory
             });
 
         } catch (error) {
