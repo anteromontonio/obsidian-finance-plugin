@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount, tick } from "svelte";
+	import type { ChartConfiguration } from "chart.js/auto";
+	import ChartComponent from "../common/ChartComponent.svelte";
 	export let symbol: string;
 	export let commodity: any = {
 		symbol: "",
@@ -15,6 +17,7 @@
 	let editingPrice = false;
 	let logoInput = "";
 	let priceInput = "";
+	let priceHistoryView: "chart" | "table" = "chart";
 
 	let priceInputRef: HTMLInputElement | null = null;
 	let logoInputRef: HTMLInputElement | null = null;
@@ -71,13 +74,85 @@
 	$: logoUrl = commodity?.metadata?.logo || commodity?.logo_url;
 	$: priceSource = commodity?.metadata?.price || commodity?.price_meta;
 	$: currentPrice = commodity?.currentPrice;
+	$: displayName = commodity?.displayName || commodity?.metadata?.name || "";
+	$: priceHistory = commodity?.priceHistory || [];
+	$: priceHistoryChartConfig = buildPriceHistoryChart(priceHistory);
 	$: otherMeta = Object.entries(commodity?.metadata || {}).filter(
-		([k]) => k !== "logo" && k !== "price",
+		([k]) => k !== "logo" && k !== "price" && k !== "name",
 	);
 
 	// Generate initials + color for fallback avatar
 	function getInitials(sym: string) {
 		return sym ? sym.slice(0, 2).toUpperCase() : "??";
+	}
+
+	function formatPriceAmount(value: number | string | null | undefined) {
+		if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+		return value.toLocaleString(undefined, {
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 4,
+		});
+	}
+
+	function buildPriceHistoryChart(
+		history: Array<{ date: string; amount: number; currency: string }>,
+	): ChartConfiguration | null {
+		if (!history.length) return null;
+
+		const currencies = Array.from(new Set(history.map((point) => point.currency).filter(Boolean)));
+		const labelCurrency = currencies.length === 1 ? currencies[0] : "mixed";
+
+		return {
+			type: "line",
+			data: {
+				labels: history.map((point) => point.date),
+				datasets: [
+					{
+						label: labelCurrency ? `Price (${labelCurrency})` : "Price",
+						data: history.map((point) => point.amount),
+						borderColor: "rgb(75, 192, 192)",
+						backgroundColor: "rgba(75, 192, 192, 0.12)",
+						tension: 0.25,
+						fill: true,
+						pointRadius: history.length > 60 ? 0 : 3,
+						pointHoverRadius: 5,
+					},
+				],
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: {
+					legend: { display: true, position: "top" },
+					tooltip: {
+						mode: "index",
+						intersect: false,
+						callbacks: {
+							label: (context) => {
+								const value = context.parsed.y;
+								const currency = history[context.dataIndex]?.currency || "";
+								return `Price: ${formatPriceAmount(value)} ${currency}`.trim();
+							},
+						},
+					},
+				},
+				scales: {
+					x: {
+						display: true,
+						ticks: { maxTicksLimit: 8 },
+						grid: { display: false },
+					},
+					y: {
+						display: true,
+						ticks: {
+							callback: (value) =>
+								typeof value === "number" ? formatPriceAmount(value) : value,
+						},
+					},
+				},
+				interaction: { mode: "nearest", axis: "x", intersect: false },
+			},
+		};
 	}
 </script>
 
@@ -99,9 +174,63 @@
 		</div>
 		<div class="identity-info">
 			<div class="symbol-name">{symbol}</div>
+			{#if displayName}
+				<div class="display-name">{displayName}</div>
+			{/if}
 			{#if currentPrice}
 				<div class="current-price">
 					Current price: <strong>{currentPrice}</strong>
+				</div>
+			{/if}
+		</div>
+	</div>
+
+	<!-- Price History -->
+	<div class="section">
+		<div class="section-heading">
+			<p class="section-title">Price History</p>
+			{#if priceHistory.length > 0}
+				<div class="segmented-control" role="group" aria-label="Price history view">
+					<button
+						type="button"
+						class:active={priceHistoryView === "chart"}
+						on:click={() => (priceHistoryView = "chart")}
+					>Chart</button>
+					<button
+						type="button"
+						class:active={priceHistoryView === "table"}
+						on:click={() => (priceHistoryView = "table")}
+					>Table</button>
+				</div>
+			{/if}
+		</div>
+		<div class="section-card history-card">
+			{#if priceHistory.length === 0}
+				<div class="empty-history">No price directives found for this commodity.</div>
+			{:else if priceHistoryView === "chart" && priceHistoryChartConfig}
+				<div class="price-history-chart">
+					<ChartComponent config={priceHistoryChartConfig} height="240px" />
+				</div>
+			{:else}
+				<div class="price-history-table-wrap">
+					<table class="price-history-table">
+						<thead>
+							<tr>
+								<th>Date</th>
+								<th>Price</th>
+								<th>Currency</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each priceHistory.slice().reverse() as point}
+								<tr>
+									<td>{point.date}</td>
+									<td>{formatPriceAmount(point.amount)}</td>
+									<td>{point.currency}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
 				</div>
 			{/if}
 		</div>
@@ -323,11 +452,25 @@
 		font-size: 16px;
 	}
 
+	.display-name {
+		margin-top: 4px;
+		color: var(--text-muted);
+		font-size: 14px;
+		line-height: 1.35;
+	}
+
 	/* ── Section ──────────────────────────────────────── */
 	.section {
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
+	}
+
+	.section-heading {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
 	}
 
 	.section-title {
@@ -346,11 +489,87 @@
 		overflow: hidden;
 	}
 
+	.history-card {
+		min-height: 72px;
+	}
+
+	.segmented-control {
+		display: inline-flex;
+		align-items: center;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		overflow: hidden;
+		background: var(--background-secondary);
+	}
+
+	.segmented-control button {
+		border: 0;
+		border-right: 1px solid var(--background-modifier-border);
+		background: transparent;
+		color: var(--text-muted);
+		padding: 4px 10px;
+		font-size: 12px;
+		cursor: pointer;
+	}
+
+	.segmented-control button:last-child {
+		border-right: 0;
+	}
+
+	.segmented-control button.active {
+		background: var(--interactive-accent);
+		color: var(--text-on-accent);
+	}
+
+	.price-history-chart {
+		height: 240px;
+		padding: 12px;
+	}
+
+	.price-history-table-wrap {
+		max-height: 280px;
+		overflow: auto;
+	}
+
+	.price-history-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 12px;
+	}
+
+	.price-history-table th,
+	.price-history-table td {
+		padding: 8px 12px;
+		border-bottom: 1px solid var(--background-modifier-border);
+		text-align: left;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.price-history-table th {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+		background: var(--background-secondary);
+		color: var(--text-muted);
+		font-size: 11px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+	}
+
+	.empty-history {
+		padding: 16px;
+		color: var(--text-muted);
+		font-size: 13px;
+	}
+
 	/* ── Key-value rows ───────────────────────────────── */
 	.kv-row {
-		display: flex;
-		align-items: center;
-		gap: 12px;
+		display: grid;
+		grid-template-columns: minmax(150px, 0.28fr) minmax(0, 1fr) auto;
+		align-items: start;
+		column-gap: 14px;
+		row-gap: 8px;
 		padding: 9px 14px;
 		border-bottom: 1px solid var(--background-modifier-border);
 		font-size: 13px;
@@ -361,24 +580,38 @@
 	}
 
 	.kv-key {
-		width: 100px;
-		flex-shrink: 0;
 		color: var(--text-muted);
 		font-size: 12px;
+		line-height: 1.45;
+		overflow-wrap: anywhere;
 	}
 
 	.kv-value {
-		flex: 1;
+		min-width: 0;
 		color: var(--text-normal);
-		word-break: break-all;
+		overflow-wrap: anywhere;
+		word-break: normal;
+		white-space: pre-wrap;
 		font-family: var(--font-monospace);
 		font-size: 12px;
+		line-height: 1.45;
 	}
 
 	.kv-actions {
 		display: flex;
 		gap: 6px;
-		flex-shrink: 0;
+		justify-content: flex-end;
+	}
+
+	@media (max-width: 520px) {
+		.kv-row {
+			grid-template-columns: 1fr;
+		}
+
+		.kv-actions {
+			justify-content: flex-start;
+			flex-wrap: wrap;
+		}
 	}
 
 	/* ── Inline edit ──────────────────────────────────── */

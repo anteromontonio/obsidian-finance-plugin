@@ -84,13 +84,18 @@
 			return dateStr;
 		}
 	}
+
+	$: displayName = commodity?.displayName || commodity?.metadata?.name || "";
+	$: ariaLabel = displayName
+		? `View details for ${commodity?.symbol || `UNKNOWN_${index}`} (${displayName})`
+		: `View details for ${commodity?.symbol || `UNKNOWN_${index}`}`;
 </script>
 
 <div class="commodity-card-wrapper" class:is-operating={commodity?.isOperatingCurrency}>
 	<button
 		class="commodity-card"
 		on:click={handleClick}
-		aria-label="View details for {commodity?.symbol || `UNKNOWN_${index}`}"
+		aria-label={ariaLabel}
 		type="button"
 	>
 		<div class="card-header">
@@ -110,7 +115,7 @@
 					{/if}
 				</div>
 				<div class="name-box">
-					<span class="symbol-text"
+					<span class="symbol-text" title={commodity?.symbol || `UNKNOWN_${index}`}
 						>{commodity?.symbol || `UNKNOWN_${index}`}</span
 					>
 				</div>
@@ -135,13 +140,13 @@
 		<div class="card-body">
 			<!-- Value (primary) -->
 			{#if (commodity?.valueInOperatingCurrency ?? 0) !== 0}
-				<div class="value-container">
+				<div class="value-container" title={`${(commodity.valueInOperatingCurrency ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${operatingCurrency}`}>
 					<span class="value-main">{formatValue(commodity.valueInOperatingCurrency ?? 0)}</span>
 					<span class="value-currency">{operatingCurrency}</span>
 				</div>
 			{:else if commodity?.holdingsRaw && !commodity?.isOperatingCurrency}
 				<!-- Has holdings but no price to convert — show raw units -->
-				<div class="value-container">
+				<div class="value-container" title={commodity.holdingsRaw}>
 					<span class="value-main no-price">{commodity.holdingsRaw.split(' ')[0]}</span>
 					<span class="value-currency">{commodity.symbol}</span>
 				</div>
@@ -150,6 +155,10 @@
 					<span class="value-main no-price">0.00</span>
 					<span class="value-currency">{operatingCurrency}</span>
 				</div>
+			{/if}
+
+			{#if displayName}
+				<div class="card-display-name" title={displayName}>{displayName}</div>
 			{/if}
 
 			{#if commodity?.isOperatingCurrency}
@@ -163,7 +172,7 @@
 				<div class="data-row">
 					<span class="data-label">Price</span>
 					{#if commodity?.currentPrice}
-						<span class="data-value">{commodity.currentPrice}</span>
+						<span class="data-value" title={commodity.currentPrice}>{commodity.currentPrice}</span>
 					{:else}
 						<span class="data-value unavailable">No price available</span>
 					{/if}
@@ -173,7 +182,7 @@
 				<div class="data-row">
 					<span class="data-label">Holdings</span>
 					{#if commodity?.holdingsRaw}
-						<span class="data-value">{commodity.holdingsRaw}</span>
+						<span class="data-value" title={commodity.holdingsRaw}>{commodity.holdingsRaw}</span>
 					{:else}
 						<span class="data-value unavailable">0 {commodity?.symbol}</span>
 					{/if}
@@ -239,6 +248,8 @@
 		height: 100%;
 		display: flex;
 		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-start;
 		padding: var(--size-4-3);
 		gap: var(--size-4-3);
 		background: transparent;
@@ -247,6 +258,9 @@
 		text-align: left;
 		color: inherit;
 		font-family: inherit;
+		appearance: none;
+		box-sizing: border-box;
+		min-width: 0;
 	}
 
 	.commodity-card:focus-visible {
@@ -259,13 +273,17 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: flex-start;
+		gap: 10px;
 		width: 100%;
+		min-width: 0;
 	}
 
 	.identity {
 		display: flex;
 		align-items: center;
 		gap: 12px;
+		flex: 1 1 auto;
+		min-width: 0;
 	}
 
 	.logo-box {
@@ -303,10 +321,42 @@
 	}
 
 	.symbol-text {
+		display: block;
 		font-weight: 700;
 		font-size: 15px;
 		color: var(--text-normal);
 		letter-spacing: 0.5px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.name-box {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	.display-name-text {
+		display: block;
+		margin-top: 2px;
+		color: var(--text-muted);
+		font-size: 12px;
+		font-weight: 500;
+		line-height: 1.25;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.card-display-name {
+		color: var(--text-muted);
+		font-size: 12px;
+		font-weight: 500;
+		line-height: 1.35;
+		margin: -1px 0 6px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	/* STATUS PILL */
@@ -314,6 +364,7 @@
 		display: flex;
 		align-items: center;
 		gap: 6px;
+		flex: 0 0 auto;
 		padding: 4px 10px;
 		border-radius: 20px;
 		font-size: 10px;
@@ -336,10 +387,15 @@
 	}
 
 	.status-dot {
+		flex: 0 0 auto;
 		width: 6px;
 		height: 6px;
 		border-radius: 50%;
 		background: currentColor;
+	}
+
+	.status-label {
+		white-space: nowrap;
 	}
 
 	.live .status-dot {
@@ -367,17 +423,25 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0;
+		min-width: 0;
 	}
 
 	/* Total value — primary display */
 	.value-container {
 		display: flex;
 		align-items: baseline;
+		justify-content: flex-start;
 		gap: 4px;
 		margin-bottom: 6px;
+		min-width: 0;
 	}
 
 	.value-main {
+		display: block;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 		font-size: 22px;
 		font-weight: 700;
 		color: var(--text-accent);
@@ -392,6 +456,7 @@
 	}
 
 	.value-currency {
+		flex: 0 0 auto;
 		font-size: 11px;
 		font-weight: 600;
 		color: var(--text-muted);
@@ -409,9 +474,10 @@
 
 	/* Price + Holdings rows */
 	.data-row {
-		display: flex;
-		justify-content: space-between;
+		display: grid;
+		grid-template-columns: 78px minmax(0, 1fr);
 		align-items: baseline;
+		gap: 10px;
 		padding: 6px 0;
 		border-top: 1px dashed var(--background-modifier-border-hover);
 		font-size: 11px;
@@ -446,12 +512,21 @@
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		font-weight: 600;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.data-value {
 		color: var(--text-normal);
 		font-weight: 600;
 		font-variant-numeric: tabular-nums;
+		min-width: 0;
+		text-align: right;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.data-value.unavailable {
@@ -505,11 +580,6 @@
 	.commodity-card-wrapper.is-operating::after {
 		opacity: 1;
 	}
-
-	.commodity-card-wrapper.is-operating .value-container {
-		justify-content: center;
-	}
-
 	.operating-badge {
 		display: inline-block;
 		margin-left: 8px;
