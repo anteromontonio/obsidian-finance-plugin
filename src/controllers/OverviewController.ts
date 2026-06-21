@@ -60,17 +60,19 @@ export class OverviewController {
 	constructor(plugin: BeancountPlugin) {
 		this.plugin = plugin;
 		const now = new Date();
+		const defaultPreset = this.getDefaultPeriodPreset();
+		const defaultPeriod = this.resolvePresetDate(defaultPreset, now);
 		// Initialize the store with default values
 		this.state = writable({
 			isLoading: true,
 			error: null,
 			netWorth: '0.00 USD',
 			currency: plugin.settings.operatingCurrency || 'USD',
-			periodPreset: 'this-month',
-			periodMode: 'month',
-			periodYear: now.getFullYear(),
-			periodMonth: now.getMonth() + 1,
-			periodLabel: this.formatPeriodLabel('month', now.getFullYear(), now.getMonth() + 1),
+			periodPreset: defaultPreset,
+			periodMode: defaultPeriod.mode,
+			periodYear: defaultPeriod.year,
+			periodMonth: defaultPeriod.month,
+			periodLabel: this.formatPeriodLabel(defaultPeriod.mode, defaultPeriod.year, defaultPeriod.month),
 			periodIncome: '0.00 USD',
 			periodExpenses: '0.00 USD',
 			periodNetIncome: '0.00 USD',
@@ -215,7 +217,7 @@ export class OverviewController {
 	private resolvePresetDate(preset: OverviewPeriodPreset, now: Date) {
 		const year = now.getFullYear();
 		const month = now.getMonth() + 1;
-		const current = get(this.state);
+		const current = this.state ? get(this.state) : { periodYear: year, periodMonth: month };
 
 		switch (preset) {
 			case 'last-month': {
@@ -242,5 +244,13 @@ export class OverviewController {
 
 	private pad2(value: number): string {
 		return String(value).padStart(2, '0');
+	}
+
+	private getDefaultPeriodPreset(): OverviewPeriodPreset {
+		const preset = this.plugin.settings.dashboardDefaultPeriod;
+		if (preset === 'last-month' || preset === 'this-year' || preset === 'last-year') {
+			return preset;
+		}
+		return 'this-month';
 	}
 }
