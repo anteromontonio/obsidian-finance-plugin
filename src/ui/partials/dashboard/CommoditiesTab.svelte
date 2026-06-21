@@ -31,9 +31,9 @@
 
 	$: displayCommodities = (() => {
 		const list = $filteredCommoditiesStore;
-		if (filterMode === 'has_holding') return list.filter(c => c.isOperatingCurrency || (c.holdings ?? 0) > 0);
+		if (filterMode === 'has_holding') return list.filter(c => c.isOperatingCurrency || (c.holdings ?? 0) !== 0);
 		if (filterMode === 'has_price')   return list.filter(c => c.isOperatingCurrency || !!c.currentPrice);
-		if (filterMode === 'has_both')    return list.filter(c => c.isOperatingCurrency || ((c.holdings ?? 0) > 0 && !!c.currentPrice));
+		if (filterMode === 'has_both')    return list.filter(c => c.isOperatingCurrency || ((c.holdings ?? 0) !== 0 && !!c.currentPrice));
 		return list;
 	})();
 

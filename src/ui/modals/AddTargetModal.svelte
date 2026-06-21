@@ -1,6 +1,7 @@
 <!-- src/ui/modals/AddTargetModal.svelte -->
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
+	import { nativeDatePicker } from '../actions/nativeDatePicker';
 
 	const dispatch = createEventDispatcher();
 
@@ -31,6 +32,9 @@
 	$: filteredAccounts = accountQuery
 		? assetAccounts.filter(a => a.toLowerCase().includes(accountQuery.toLowerCase()))
 		: assetAccounts;
+	$: accountSummary = accountQuery
+		? `${filteredAccounts.length} matching asset account${filteredAccounts.length === 1 ? '' : 's'}`
+		: `${assetAccounts.length} asset account${assetAccounts.length === 1 ? '' : 's'} available. Type to filter.`;
 	let showDropdown = false;
 
 	onMount(() => {
@@ -124,13 +128,18 @@
 					on:focus={() => (showDropdown = true)}
 					on:blur={() => setTimeout(() => (showDropdown = false), 150)}
 				/>
-				{#if showDropdown && filteredAccounts.length > 0}
+				{#if showDropdown}
 					<ul class="autocomplete-dropdown">
-						{#each filteredAccounts.slice(0, 8) as acc}
-							<!-- svelte-ignore a11y-click-events-have-key-events -->
-							<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-							<li on:click={() => selectAccount(acc)}>{acc}</li>
-						{/each}
+						<li class="autocomplete-summary">{accountSummary}</li>
+						{#if filteredAccounts.length > 0}
+							{#each filteredAccounts as acc}
+								<!-- svelte-ignore a11y-click-events-have-key-events -->
+								<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+								<li on:click={() => selectAccount(acc)}>{acc}</li>
+							{/each}
+						{:else}
+							<li class="autocomplete-empty">No asset accounts match your filter.</li>
+						{/if}
 					</ul>
 				{/if}
 			</div>
@@ -180,7 +189,7 @@
 		{#if isRollover}
 			<div class="form-group full-width">
 				<label for="target-start">Start Date</label>
-				<input id="target-start" type="date" bind:value={startDate} />
+				<input id="target-start" type="date" bind:value={startDate} use:nativeDatePicker />
 			</div>
 		{/if}
 
@@ -275,7 +284,7 @@
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
 		border-radius: var(--radius-s);
-		max-height: 120px;
+		max-height: 240px;
 		overflow-y: auto;
 		list-style: none;
 		margin: 2px 0 0;
@@ -284,12 +293,22 @@
 
 	.autocomplete-dropdown li {
 		padding: var(--size-4-1) var(--size-4-2);
-		cursor: pointer;
 		font-size: var(--font-ui-small);
 	}
 
-	.autocomplete-dropdown li:hover {
+	.autocomplete-dropdown li:not(.autocomplete-summary, .autocomplete-empty) {
+		cursor: pointer;
+	}
+
+	.autocomplete-dropdown li:not(.autocomplete-summary, .autocomplete-empty):hover {
 		background: var(--background-modifier-hover);
+	}
+
+	.autocomplete-summary,
+	.autocomplete-empty {
+		color: var(--text-muted);
+		cursor: default;
+		font-size: var(--font-ui-smaller);
 	}
 
 	.rollover-row {

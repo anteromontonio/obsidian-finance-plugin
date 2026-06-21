@@ -4,9 +4,25 @@ import { writable, type Writable, get } from 'svelte/store';
 import type BeancountPlugin from '../main';
 import * as queries from '../queries/index';
 import { parse as parseCsv } from 'csv-parse/sync';
-import { extractConvertedAmountNumber, extractNonReportingCurrencies } from '../utils/index';
 import type { ChartConfiguration } from 'chart.js/auto';
 import { Logger } from '../utils/logger';
+
+/**
+ * Helper to clean other currencies output from BQL subst() function.
+ */
+function cleanOtherCurrencies(bqlOtherCurrencies: string): string {
+	if (!bqlOtherCurrencies) return '';
+	const trimmed = bqlOtherCurrencies.trim();
+	if (trimmed === '()' || trimmed === '') return '';
+	let content = trimmed;
+	if (content.startsWith('(') && content.endsWith(')')) {
+		content = content.slice(1, -1).trim();
+	}
+	return content.split(',')
+		.map(c => c.trim())
+		.filter(c => c !== '')
+		.join('\n');
+}
 // Re-export AccountItem so IncomeStatementTab can import from here
 export type { AccountItem } from './BalanceSheetController';
 import type { AccountItem } from './BalanceSheetController';
@@ -87,7 +103,7 @@ export class IncomeStatementController {
 	 * Income account amounts are negated for display (they are stored as negative in beancount).
 	 */
 	private buildAccountHierarchy(
-		accounts: [string, string][],
+		accounts: [string, number, string][],
 		accountType: 'Income' | 'Expenses',
 		valuationMethod: 'convert' | 'cost' | 'units' = 'convert'
 	): AccountItem[] {
@@ -95,9 +111,7 @@ export class IncomeStatementController {
 		const accountMap = new Map<string, AccountItem>();
 		const rootAccounts: AccountItem[] = [];
 
-		for (const [fullAccount, rawAmount] of accounts) {
-			const amountNumber = extractConvertedAmountNumber(rawAmount, reportingCurrency);
-			const otherCurrencies = extractNonReportingCurrencies(rawAmount, reportingCurrency);
+		for (const [fullAccount, amountNumber, otherCurrencies] of accounts) {
 
 			const parts = fullAccount.split(':');
 			let currentPath = '';
@@ -272,7 +286,7 @@ export class IncomeStatementController {
 					if (row.length < 3) continue;
 					const year = parseInt(row[0].trim());
 					const monthNum = parseInt(row[1].trim());
-					const rawVal = extractConvertedAmountNumber(row[2].trim(), reportingCurrency);
+					const rawVal = parseFloat(row[2]?.trim() || '0') || 0;
 					// Income is stored negative in beancount; negate for positive display
 					const displayVal = trendType === 'income' ? -rawVal : rawVal;
 					dataMap.set(`${year}-${monthNum.toString().padStart(2, '0')}`, displayVal);
@@ -293,7 +307,7 @@ export class IncomeStatementController {
 					const dateStr = row[0].trim();
 					const d = new Date(dateStr + 'T00:00:00');
 					if (isNaN(d.getTime())) continue;
-					const rawVal = extractConvertedAmountNumber(row[1].trim(), reportingCurrency);
+					const rawVal = parseFloat(row[1]?.trim() || '0') || 0;
 					// Income is stored negative in beancount; negate for positive display
 					const displayVal = trendType === 'income' ? -rawVal : rawVal;
 					dataMap.set(dateStr, displayVal);
@@ -409,10 +423,10 @@ export class IncomeStatementController {
 					query = queries.getIncomeStatementQuery(reportingCurrency);
 					break;
 				case 'cost':
-					query = queries.getIncomeStatementQueryByCost();
+					query = queries.getIncomeStatementQueryByCost(reportingCurrency);
 					break;
 				case 'units':
-					query = queries.getIncomeStatementQueryByUnits();
+					query = queries.getIncomeStatementQueryByUnits(reportingCurrency);
 					break;
 			}
 
@@ -423,24 +437,27 @@ export class IncomeStatementController {
 			const firstRowIsHeader = records[0]?.[0]?.toLowerCase().includes('account');
 			const rows = firstRowIsHeader ? records.slice(1) : records;
 
-			const tempIncome: [string, string][] = [];
-			const tempExpenses: [string, string][] = [];
+			const tempIncome: [string, number, string][] = [];
+			const tempExpenses: [string, number, string][] = [];
 			let hasUnconvertedCommodities = false;
 			const unconvertedAccounts: string[] = [];
 
 			for (const row of rows) {
 				if (row.length < 2) continue;
-				const [account, amountStr] = row;
+				const account = row[0];
+				const amountVal = parseFloat(row[1]?.trim() || '0') || 0;
+				const otherCurrenciesRaw = row[2] || '';
+				const otherCurrenciesClean = cleanOtherCurrencies(otherCurrenciesRaw);
 
-				if (valuationMethod === 'convert' && amountStr.includes(',')) {
+				if (valuationMethod === 'convert' && otherCurrenciesClean !== '') {
 					hasUnconvertedCommodities = true;
 					unconvertedAccounts.push(account);
 				}
 
 				if (account.startsWith('Income')) {
-					tempIncome.push([account, amountStr]);
+					tempIncome.push([account, amountVal, otherCurrenciesClean]);
 				} else if (account.startsWith('Expenses')) {
-					tempExpenses.push([account, amountStr]);
+					tempExpenses.push([account, amountVal, otherCurrenciesClean]);
 				}
 			}
 

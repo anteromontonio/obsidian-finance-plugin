@@ -9,6 +9,7 @@
 	} from "../../models/journal";
 	import { runQuery } from "../../utils/queryRunner";
 	import { getQueryDirectives } from "../../utils";
+	import { nativeDatePicker } from "../actions/nativeDatePicker";
 
 	export let transaction: JournalTransaction | null = null; // Now optional for Add mode
 	export let entry: JournalEntry | null = null; // Support for any entry type
@@ -813,7 +814,7 @@
 			<div class="transaction-header-row">
 				<div class="form-group header-date">
 					<label for="date">Date *</label>
-					<input type="date" id="date" bind:value={date} required />
+					<input type="date" id="date" bind:value={date} required use:nativeDatePicker />
 				</div>
 
 				<div class="form-group header-flag">
@@ -1041,6 +1042,7 @@
 										type="date"
 										bind:value={posting.cost.date}
 										max={date}
+										use:nativeDatePicker
 									/>
 								</div>
 
@@ -1268,6 +1270,7 @@
 						type="date"
 						id="balance-date"
 						bind:value={date}
+						use:nativeDatePicker
 						required
 					/>
 				</div>
@@ -1320,6 +1323,7 @@
 						type="date"
 						id="note-date"
 						bind:value={date}
+						use:nativeDatePicker
 						required
 					/>
 				</div>
@@ -1358,6 +1362,7 @@
 						type="date"
 						id="query-date"
 						bind:value={date}
+						use:nativeDatePicker
 						required
 					/>
 				</div>

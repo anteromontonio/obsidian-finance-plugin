@@ -20,8 +20,8 @@ Read relevant source files before making any changes.
 - Follow existing patterns: TypeScript + Svelte, atomic file writes, SystemDetector for env, `runQuery` for BQL.
 - Key paths: `src/utils/`, `src/controllers/`, `src/services/`, `src/ui/`.
 
-### 3. Verify Build
-Run `npm run build` from the repo root.
+### 3. Verify Build and lint
+Run `npm run build` and `npm run eslint` from the repo root.
 - If there are **any TypeScript errors or warnings**, fix them before proceeding.
 - Re-run build until it exits with code 0 and no warnings.
 

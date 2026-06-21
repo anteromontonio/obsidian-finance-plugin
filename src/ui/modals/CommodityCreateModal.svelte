@@ -1,6 +1,7 @@
 <!-- src/ui/modals/CommodityCreateModal.svelte -->
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
+    import { nativeDatePicker } from '../actions/nativeDatePicker';
 
     const dispatch = createEventDispatcher();
 
@@ -135,6 +136,7 @@
                 id="date"
                 type="date"
                 bind:value={date}
+                use:nativeDatePicker
                 required
             />
             <div class="hint">Date when the commodity was first introduced</div>
