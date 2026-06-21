@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## In-progress
 
+- **Income Statement: Fix Net Profit trend signs and show income as positive** — Updated the income statement and net profit trend charts to display conventional signs (positive values for profit and negative values for loss), negating credit accounts at the source so income balances render as positive. Adjusted chart colors (green for profit, red for loss) and fixed the anomalous stripes rendering on the Income Sunburst Chart. Merged PR #238.
+
 - **Financial Overview: Selectable reporting periods** — Added a period selector to the Overview dashboard to filter income, expenses, and savings rate KPI cards. Supports presets (This Month, Last Month, This Year, Last Year) as well as custom months and years. Updates the total balance query to compute historical period-end net worth correctly based on the selected period end date. Merged PR #234.
 
 - **Budget & Target Suggestions: Improve account autocomplete** — Removed the arbitrary 8-item hard limit from the Add Budget and Add Target account autocomplete lists. Added matching result counts, default/empty state notes, and increased dropdown heights with full scrollbar support. Merged PR #239.
