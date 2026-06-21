@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## In-progress
 
+- **Financial Overview: Selectable reporting periods** — Added a period selector to the Overview dashboard to filter income, expenses, and savings rate KPI cards. Supports presets (This Month, Last Month, This Year, Last Year) as well as custom months and years. Updates the total balance query to compute historical period-end net worth correctly based on the selected period end date. Merged PR #234.
+
 - **Budget & Target Suggestions: Improve account autocomplete** — Removed the arbitrary 8-item hard limit from the Add Budget and Add Target account autocomplete lists. Added matching result counts, default/empty state notes, and increased dropdown heights with full scrollbar support. Merged PR #239.
 
 - **Commodity Dashboard: Display names and price history** — Added support for retrieving and displaying human-readable display names from Beancount commodity metadata. Introduced interactive price history chart and table views in the commodity details modal. Restructured card grids and key-value details layout with overflow-wrap/ellipsis rules to handle long text fields without UI clipping or overlap. Merged PR #237.
