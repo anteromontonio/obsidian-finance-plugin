@@ -235,10 +235,10 @@ export class BeancountSettingTab extends PluginSettingTab {
             .setName('Default dashboard period')
             .setDesc('Choose the period shown by dashboard summaries when the dashboard first loads.')
             .addDropdown(dropdown => dropdown
-                .addOption('this-month', 'This Month')
-                .addOption('last-month', 'Last Month')
-                .addOption('this-year', 'This Year')
-                .addOption('last-year', 'Last Year')
+                .addOption('this-month', 'This month')
+                .addOption('last-month', 'Last month')
+                .addOption('this-year', 'This year')
+                .addOption('last-year', 'Last year')
                 .setValue(this.plugin.settings.dashboardDefaultPeriod || 'this-month')
                 .onChange(async (value) => {
                     this.plugin.settings.dashboardDefaultPeriod = value as DashboardDefaultPeriod;
