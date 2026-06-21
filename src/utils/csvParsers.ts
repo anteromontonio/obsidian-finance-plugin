@@ -32,12 +32,12 @@ export function parseCommoditiesListCSV(csv: string): string[] {
 
 /**
  * Parses CSV from getCommoditiesPriceDataQuery into a Map of price data keyed by symbol.
- * Format: [date_, currency_, price_, logo_, islatest_]
+ * Format: [date_, currency_, displayname_, price_, logo_, islatest_]
  */
 export function parseCommoditiesPriceDataCSV(
     csv: string
-): Map<string, { price: string | null; logo: string | null; date: string | null; isLatest: boolean }> {
-    const priceDataMap = new Map<string, { price: string | null; logo: string | null; date: string | null; isLatest: boolean }>();
+): Map<string, { displayName: string | null; price: string | null; logo: string | null; date: string | null; isLatest: boolean }> {
+    const priceDataMap = new Map<string, { displayName: string | null; price: string | null; logo: string | null; date: string | null; isLatest: boolean }>();
 
     try {
         const cleanCsv = csv.replace(/\r/g, '').trim();
@@ -51,17 +51,18 @@ export function parseCommoditiesPriceDataCSV(
 
         for (let i = 1; i < records.length; i++) {
             const row = records[i];
-            if (row.length < 5) continue;
+            if (row.length < 6) continue;
 
             const date = row[0]?.trim() || null;
             const currency = row[1]?.trim() || null;
-            const price = row[2]?.trim() || null;
-            const logo = row[3]?.trim() || null;
-            const isLatestStr = row[4]?.trim().toLowerCase() || 'false';
+            const displayName = row[2]?.trim() || null;
+            const price = row[3]?.trim() || null;
+            const logo = row[4]?.trim() || null;
+            const isLatestStr = row[5]?.trim().toLowerCase() || 'false';
             const isLatest = isLatestStr === 'true' || isLatestStr === '1';
 
             if (currency) {
-                priceDataMap.set(currency, { price, logo, date, isLatest });
+                priceDataMap.set(currency, { displayName, price, logo, date, isLatest });
             }
         }
 
@@ -74,10 +75,11 @@ export function parseCommoditiesPriceDataCSV(
 
 /**
  * Parses CSV from getCommodityDetailsQuery into a single commodity detail object.
- * Format: [name_, meta_, logo_, pricemetadata_, filename_, lineno_]
+ * Format: [name_, displayname_, meta_, logo_, pricemetadata_, filename_, lineno_]
  */
 export function parseCommodityDetailsCSV(csv: string): {
     symbol: string;
+    displayName: string | null;
     metadata: Record<string, unknown>;
     logo: string | null;
     priceMetadata: string | null;
@@ -86,6 +88,7 @@ export function parseCommodityDetailsCSV(csv: string): {
 } {
     const defaultResult = {
         symbol: '',
+        displayName: null,
         metadata: {},
         logo: null,
         priceMetadata: null,
@@ -106,20 +109,21 @@ export function parseCommodityDetailsCSV(csv: string): {
         if (records.length < 2) return defaultResult;
 
         const row = records[1];
-        if (row.length < 6) return defaultResult;
+        if (row.length < 7) return defaultResult;
 
         const symbol = row[0]?.trim() || '';
-        const metaStr = row[1]?.trim() || '{}';
-        const logo = row[2]?.trim() || null;
-        const priceMetadata = row[3]?.trim() || null;
-        const filename = row[4]?.trim() || null;
-        const linenoStr = row[5]?.trim() || null;
+        const displayName = row[1]?.trim() || null;
+        const metaStr = row[2]?.trim() || '{}';
+        const logo = row[3]?.trim() || null;
+        const priceMetadata = row[4]?.trim() || null;
+        const filename = row[5]?.trim() || null;
+        const linenoStr = row[6]?.trim() || null;
 
         const metadata = parseMetadataString(metaStr);
         const parsedLineno = linenoStr ? parseInt(linenoStr, 10) : NaN;
         const lineno = isNaN(parsedLineno) ? null : parsedLineno;
 
-        return { symbol, metadata, logo, priceMetadata, filename, lineno };
+        return { symbol, displayName, metadata, logo, priceMetadata, filename, lineno };
     } catch (e) {
         Logger.error('Error parsing commodity details CSV:', e, 'CSV:', csv);
         return defaultResult;
@@ -128,18 +132,21 @@ export function parseCommodityDetailsCSV(csv: string): {
 
 /**
  * Parses CSV from getCombinedCommodityDataQuery into a Map keyed by currency symbol.
- * Format: [currency_, units_, valueOp_, price_, logo_]
+ * Format: [currency_, displayname_, units_, valueOp_, price_, logo_]
  *
  * When bean-query's convert() cannot convert to the operating currency (no price
  * directive exists), it returns the original inventory unchanged (e.g. "0.016 ETHW"
  * instead of "1234 INR"). We detect this by checking whether the currency token in
  * valueOp_ matches the operating currency; if not, valueOp is set to 0.
+ *
+ * `holdings` and `valueOp` keep their sign so short/closed residual positions do
+ * not pass UI filters that only include positive holdings.
  */
 export function parseCombinedCommodityDataCSV(
     csv: string,
     operatingCurrency: string
-): Map<string, { holdings: number; holdingsRaw: string; valueOp: number; price: string | null; logo: string | null }> {
-    const map = new Map<string, { holdings: number; holdingsRaw: string; valueOp: number; price: string | null; logo: string | null }>();
+): Map<string, { displayName: string | null; holdings: number; holdingsRaw: string; valueOp: number; price: string | null; logo: string | null }> {
+    const map = new Map<string, { displayName: string | null; holdings: number; holdingsRaw: string; valueOp: number; price: string | null; logo: string | null }>();
 
     const extractNumber = (cell: string | undefined): number => {
         if (!cell) return 0;
@@ -165,24 +172,25 @@ export function parseCombinedCommodityDataCSV(
 
         for (let i = 1; i < records.length; i++) {
             const row = records[i];
-            if (row.length < 5) continue;
+            if (row.length < 6) continue;
 
             const currency = row[0]?.trim();
             if (!currency) continue;
 
-            const unitsCell = row[1]?.trim() || '';
-            const valueCell = row[2]?.trim() || '';
-            const priceCell = row[3]?.trim() || null;
-            const logoCell = row[4]?.trim() || null;
+            const displayName = row[1]?.trim() || null;
+            const unitsCell = row[2]?.trim() || '';
+            const valueCell = row[3]?.trim() || '';
+            const priceCell = row[4]?.trim() || null;
+            const logoCell = row[5]?.trim() || null;
 
-            const holdings = Math.abs(extractNumber(unitsCell));
+            const holdings = extractNumber(unitsCell);
 
             // If convert() couldn't convert, valueCell still contains the original
             // currency unit. Detect this and zero out the value to avoid mislabeling.
             const valueCurrencyToken = extractCurrencyToken(valueCell);
             const valueOp = (valueCurrencyToken && valueCurrencyToken !== operatingCurrency)
                 ? 0
-                : Math.abs(extractNumber(valueCell));
+                : extractNumber(valueCell);
 
             const holdingsRaw = unitsCell
                 .split(',')
@@ -192,7 +200,7 @@ export function parseCombinedCommodityDataCSV(
             const price = priceCell && priceCell !== 'None' ? priceCell : null;
             const logo = logoCell && logoCell !== 'None' ? logoCell : null;
 
-            map.set(currency, { holdings, holdingsRaw, valueOp, price, logo });
+            map.set(currency, { displayName, holdings, holdingsRaw, valueOp, price, logo });
         }
 
         return map;
@@ -202,3 +210,43 @@ export function parseCombinedCommodityDataCSV(
     }
 }
 
+/**
+ * Parses CSV from getCommodityPriceHistoryQuery into dated price points.
+ * Format: [date_, amount_], where amount_ is typically "123.45 CNY".
+ */
+export function parseCommodityPriceHistoryCSV(csv: string): Array<{ date: string; amount: number; currency: string; amountRaw: string }> {
+    const rows: Array<{ date: string; amount: number; currency: string; amountRaw: string }> = [];
+
+    try {
+        const cleanCsv = csv.replace(/\r/g, '').trim();
+        if (!cleanCsv) return rows;
+
+        const records: string[][] = parseCsv(cleanCsv, {
+            columns: false,
+            skip_empty_lines: true,
+            relax_column_count: true,
+        });
+
+        for (let i = 1; i < records.length; i++) {
+            const row = records[i];
+            if (row.length < 2) continue;
+
+            const date = row[0]?.trim();
+            const amountRaw = row[1]?.trim() || '';
+            const amountMatch = amountRaw.match(/(-?[\d,]+(?:\.\d+)?)\s+([A-Z][A-Z0-9'._-]*)/);
+            if (!date || !amountMatch) continue;
+
+            rows.push({
+                date,
+                amount: parseFloat(amountMatch[1].replace(/,/g, '')),
+                currency: amountMatch[2],
+                amountRaw,
+            });
+        }
+
+        return rows;
+    } catch (e) {
+        Logger.error('Error parsing commodity price history CSV:', e, 'CSV:', csv);
+        return rows;
+    }
+}

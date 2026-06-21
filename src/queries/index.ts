@@ -20,16 +20,24 @@ export interface TransactionFilters {
 // --- Query Functions ---
 
 
-export function getTotalAssetsQuery(currency: string, rounding: number): string {
-	return `SELECT round(number(only('${currency}', convert(sum(position), '${currency}'))), ${rounding}) AS _totalAssets WHERE account ~ '^Assets'`;
+function valuationDateArgument(asOfDate?: string): string {
+	return asOfDate ? `, ${asOfDate}` : '';
 }
 
-export function getTotalLiabilitiesQuery(currency: string, rounding: number): string {
-	return `SELECT neg(round(number(only('${currency}', convert(sum(position), '${currency}'))), ${rounding})) AS _totalLiabilities WHERE account ~ '^Liabilities'`;
+function asOfDateClause(asOfDate?: string): string {
+	return asOfDate ? ` AND date < ${asOfDate}` : '';
 }
 
-export function getTotalWorthQuery(currency: string, rounding: number): string {
-	return `SELECT round(number(only('${currency}', convert(sum(position), '${currency}'))), ${rounding}) AS _totalWorth WHERE account ~ '^(Assets|Liabilities)'`;
+export function getTotalAssetsQuery(currency: string, rounding: number, asOfDate?: string): string {
+	return `SELECT round(number(only('${currency}', convert(sum(position), '${currency}'${valuationDateArgument(asOfDate)}))), ${rounding}) AS _totalAssets WHERE account ~ '^Assets'${asOfDateClause(asOfDate)}`;
+}
+
+export function getTotalLiabilitiesQuery(currency: string, rounding: number, asOfDate?: string): string {
+	return `SELECT neg(round(number(only('${currency}', convert(sum(position), '${currency}'${valuationDateArgument(asOfDate)}))), ${rounding})) AS _totalLiabilities WHERE account ~ '^Liabilities'${asOfDateClause(asOfDate)}`;
+}
+
+export function getTotalWorthQuery(currency: string, rounding: number, asOfDate?: string): string {
+	return `SELECT round(number(only('${currency}', convert(sum(position), '${currency}'${valuationDateArgument(asOfDate)}))), ${rounding}) AS _totalWorth WHERE account ~ '^(Assets|Liabilities)'${asOfDateClause(asOfDate)}`;
 }
 
 // This Month Queries
@@ -45,29 +53,41 @@ export function getThisMonthSavingsQuery(currency: string, rounding: number): st
 	return `SELECT neg(round(number(only('${currency}', convert(sum(position), '${currency}'))), ${rounding})) AS _thisMonthNetWorthChange WHERE account ~ '^(Income|Expenses)' AND month=month(today()) AND year=year(today())`;
 }
 
+export function getPeriodIncomeQuery(currency: string, rounding: number, startDate: string, endDate: string): string {
+	return `SELECT neg(round(number(only('${currency}', convert(sum(position), '${currency}'))), ${rounding})) AS _periodIncome WHERE account ~ '^Income' AND date >= ${startDate} AND date < ${endDate}`;
+}
+
+export function getPeriodExpensesQuery(currency: string, rounding: number, startDate: string, endDate: string): string {
+	return `SELECT round(number(only('${currency}', convert(sum(position), '${currency}'))), ${rounding}) AS _periodExpenses WHERE account ~ '^Expenses' AND date >= ${startDate} AND date < ${endDate}`;
+}
+
+export function getPeriodSavingsQuery(currency: string, rounding: number, startDate: string, endDate: string): string {
+	return `SELECT neg(round(number(only('${currency}', convert(sum(position), '${currency}'))), ${rounding})) AS _periodNetIncome WHERE account ~ '^(Income|Expenses)' AND date >= ${startDate} AND date < ${endDate}`;
+}
+
 export function getBalanceSheetQuery(currency: string): string {
-	return `SELECT account, convert(sum(position), '${currency}') WHERE account ~ '^(Assets|Liabilities|Equity)' AND NOT close_date(account) GROUP BY account ORDER BY account`;
+	return `SELECT account, number(only('${currency}', convert(sum(position), '${currency}'))) as operating_currency, subst('^\\([ ,]*', '(', subst('[ ,]*\\)$', ')', subst(', *[-.0-9]+ ${currency}|[-.0-9]+ ${currency} *,?', '', str(convert(sum(position), '${currency}'))))) as other_currencies WHERE account ~ '^(Assets|Liabilities|Equity)' AND NOT close_date(account) GROUP BY account ORDER BY account`;
 }
 
-export function getBalanceSheetQueryByCost(): string {
-	return `SELECT account, cost(sum(position)) WHERE account ~ '^(Assets|Liabilities|Equity)' AND NOT close_date(account) GROUP BY account ORDER BY account`;
+export function getBalanceSheetQueryByCost(currency: string): string {
+	return `SELECT account, number(only('${currency}', cost(sum(position)))) as operating_currency, subst('^\\([ ,]*', '(', subst('[ ,]*\\)$', ')', subst(', *[-.0-9]+ ${currency}|[-.0-9]+ ${currency} *,?', '', str(cost(sum(position)))))) as other_currencies WHERE account ~ '^(Assets|Liabilities|Equity)' AND NOT close_date(account) GROUP BY account ORDER BY account`;
 }
 
-export function getBalanceSheetQueryByUnits(): string {
-	return `SELECT account, units(sum(position)) WHERE account ~ '^(Assets|Liabilities|Equity)' AND NOT close_date(account) GROUP BY account ORDER BY account`;
+export function getBalanceSheetQueryByUnits(currency: string): string {
+	return `SELECT account, number(only('${currency}', units(sum(position)))) as operating_currency, subst('^\\([ ,]*', '(', subst('[ ,]*\\)$', ')', subst(', *[-.0-9]+ ${currency}|[-.0-9]+ ${currency} *,?', '', str(units(sum(position)))))) as other_currencies WHERE account ~ '^(Assets|Liabilities|Equity)' AND NOT close_date(account) GROUP BY account ORDER BY account`;
 }
 
 
 export function getIncomeStatementQuery(currency: string): string {
-	return `SELECT account, convert(sum(position), '${currency}') WHERE account ~ '^(Income|Expenses)' AND NOT close_date(account) GROUP BY account ORDER BY account`;
+	return `SELECT account, number(only('${currency}', convert(sum(position), '${currency}'))) as operating_currency, subst('^\\([ ,]*', '(', subst('[ ,]*\\)$', ')', subst(', *[-.0-9]+ ${currency}|[-.0-9]+ ${currency} *,?', '', str(convert(sum(position), '${currency}'))))) as other_currencies WHERE account ~ '^(Income|Expenses)' AND NOT close_date(account) GROUP BY account ORDER BY account`;
 }
 
-export function getIncomeStatementQueryByCost(): string {
-	return `SELECT account, cost(sum(position)) WHERE account ~ '^(Income|Expenses)' AND NOT close_date(account) GROUP BY account ORDER BY account`;
+export function getIncomeStatementQueryByCost(currency: string): string {
+	return `SELECT account, number(only('${currency}', cost(sum(position)))) as operating_currency, subst('^\\([ ,]*', '(', subst('[ ,]*\\)$', ')', subst(', *[-.0-9]+ ${currency}|[-.0-9]+ ${currency} *,?', '', str(cost(sum(position)))))) as other_currencies WHERE account ~ '^(Income|Expenses)' AND NOT close_date(account) GROUP BY account ORDER BY account`;
 }
 
-export function getIncomeStatementQueryByUnits(): string {
-	return `SELECT account, units(sum(position)) WHERE account ~ '^(Income|Expenses)' AND NOT close_date(account) GROUP BY account ORDER BY account`;
+export function getIncomeStatementQueryByUnits(currency: string): string {
+	return `SELECT account, number(only('${currency}', units(sum(position)))) as operating_currency, subst('^\\([ ,]*', '(', subst('[ ,]*\\)$', ')', subst(', *[-.0-9]+ ${currency}|[-.0-9]+ ${currency} *,?', '', str(units(sum(position)))))) as other_currencies WHERE account ~ '^(Income|Expenses)' AND NOT close_date(account) GROUP BY account ORDER BY account`;
 }
 
 export function getTransactionsQuery(filters: TransactionFilters, limit = 1000): string {
@@ -113,31 +133,31 @@ export function getBeanCheckCommand(filePath: string, commandBase: string): stri
 
 export function getHistoricalNetWorthDataQuery(interval: 'month' | 'week' = 'month', currency: string): string {
 	if (interval === 'week') {
-		return `SELECT last(date_add(date_trunc('week', date), 6)) AS week_end, only('${currency}', convert(last(balance), '${currency}', last(date_add(date_trunc('week', date), 6)))) WHERE account ~ '^(Assets|Liabilities)' GROUP BY date_trunc('week', date) ORDER BY week_end`;
+		return `SELECT last(date_add(date_trunc('week', date), 6)) AS week_end, number(only('${currency}', convert(last(balance), '${currency}', last(date_add(date_trunc('week', date), 6))))) WHERE account ~ '^(Assets|Liabilities)' GROUP BY date_trunc('week', date) ORDER BY week_end`;
 	}
-	return `SELECT year, month, only('${currency}', convert(last(balance), '${currency}', last(date_add(date(year + int(month/12), (month%12+1), 1), -1)))) WHERE account ~ '^(Assets|Liabilities)' GROUP BY year, month ORDER BY year, month`;
+	return `SELECT year, month, number(only('${currency}', convert(last(balance), '${currency}', last(date_add(date(year + int(month/12), (month%12+1), 1), -1))))) WHERE account ~ '^(Assets|Liabilities)' GROUP BY year, month ORDER BY year, month`;
 }
 
 
 export function getHistoricalNetProfitDataQuery(interval: 'month' | 'week' = 'month', currency: string): string {
 	if (interval === 'week') {
-		return `SELECT last(date_add(date_trunc('week', date), 6)) AS week_end, only('${currency}', convert(sum(position), '${currency}', last(date_add(date_trunc('week', date), 6)))) WHERE account ~ '^(Income|Expenses)' GROUP BY date_trunc('week', date) ORDER BY week_end`;
+		return `SELECT last(date_add(date_trunc('week', date), 6)) AS week_end, number(only('${currency}', convert(sum(position), '${currency}', last(date_add(date_trunc('week', date), 6))))) WHERE account ~ '^(Income|Expenses)' GROUP BY date_trunc('week', date) ORDER BY week_end`;
 	}
-	return `SELECT year, month, only('${currency}', convert(sum(position), '${currency}', last(date_add(date(year + int(month/12), (month%12+1), 1), -1)))) AS _worth WHERE account ~ '^(Income|Expenses)' GROUP BY year, month ORDER BY year, month`;
+	return `SELECT year, month, number(only('${currency}', convert(sum(position), '${currency}', last(date_add(date(year + int(month/12), (month%12+1), 1), -1))))) AS _worth WHERE account ~ '^(Income|Expenses)' GROUP BY year, month ORDER BY year, month`;
 }
 
 export function getHistoricalExpenseDataQuery(interval: 'month' | 'week' = 'month', currency: string): string {
 	if (interval === 'week') {
-		return `SELECT last(date_add(date_trunc('week', date), 6)) AS week_end, only('${currency}', convert(sum(position), '${currency}', last(date_add(date_trunc('week', date), 6)))) WHERE account ~ '^(Expenses)' GROUP BY date_trunc('week', date) ORDER BY week_end`;
+		return `SELECT last(date_add(date_trunc('week', date), 6)) AS week_end, number(only('${currency}', convert(sum(position), '${currency}', last(date_add(date_trunc('week', date), 6))))) WHERE account ~ '^(Expenses)' GROUP BY date_trunc('week', date) ORDER BY week_end`;
 	}
-	return `SELECT year, month, only('${currency}', convert(sum(position), '${currency}', last(date_add(date(year + int(month/12), (month%12+1), 1), -1)))) AS _worth WHERE account ~ '^(Expenses)' GROUP BY year, month ORDER BY year, month`;
+	return `SELECT year, month, number(only('${currency}', convert(sum(position), '${currency}', last(date_add(date(year + int(month/12), (month%12+1), 1), -1))))) AS _worth WHERE account ~ '^(Expenses)' GROUP BY year, month ORDER BY year, month`;
 }
 
 export function getHistoricalIncomeDataQuery(interval: 'month' | 'week' = 'month', currency: string): string {
 	if (interval === 'week') {
-		return `SELECT last(date_add(date_trunc('week', date), 6)) AS week_end, only('${currency}', convert(sum(position), '${currency}', last(date_add(date_trunc('week', date), 6)))) WHERE account ~ '^(Income)' GROUP BY date_trunc('week', date) ORDER BY week_end`;
+		return `SELECT last(date_add(date_trunc('week', date), 6)) AS week_end, number(only('${currency}', convert(sum(position), '${currency}', last(date_add(date_trunc('week', date), 6))))) WHERE account ~ '^(Income)' GROUP BY date_trunc('week', date) ORDER BY week_end`;
 	}
-	return `SELECT year, month, only('${currency}', convert(sum(position), '${currency}', last(date_add(date(year + int(month/12), (month%12+1), 1), -1)))) AS _worth WHERE account ~ '^(Income)' GROUP BY year, month ORDER BY year, month`;
+	return `SELECT year, month, number(only('${currency}', convert(sum(position), '${currency}', last(date_add(date(year + int(month/12), (month%12+1), 1), -1))))) AS _worth WHERE account ~ '^(Income)' GROUP BY year, month ORDER BY year, month`;
 }
 // --- List Budget/Target Quries ---	
 export function getBudgetListQuery(): string {
@@ -218,12 +238,17 @@ export function getIndicatorBalanceQuery(currency: string, accountString: string
 
 // --- Commodities Queries ---
 
+function escapeBqlString(value: string): string {
+	return value.replace(/'/g, "''");
+}
+
 export function getAllCommoditiesQuery(): string {
 	return `SELECT name AS name_ FROM #commodities GROUP BY name`;
 }
 
 export function getCommoditiesPriceDataQuery(currency: string): string {
-	return `SELECT last(date) AS date_, last(currency) AS currency_, round(getprice(last(currency), '${currency}'),2) AS price_, currency_meta(last(currency), 'logo') AS logo_, bool(today()-1<last(date)) AS islatest_ FROM #prices GROUP BY currency`;
+	const safeCurrency = escapeBqlString(currency);
+	return `SELECT last(date) AS date_, last(currency) AS currency_, currency_meta(last(currency), 'name') AS displayname_, round(getprice(last(currency), '${safeCurrency}'),2) AS price_, currency_meta(last(currency), 'logo') AS logo_, bool(today()-1<last(date)) AS islatest_ FROM #prices GROUP BY currency`;
 }
 
 
@@ -232,18 +257,26 @@ export function getCommoditiesPriceDataQuery(currency: string): string {
  * Combined holdings query: all data needed to populate the commodity tab in one pass.
  * For each currency held in Asset accounts, returns:
  *   - currency_  : commodity symbol (e.g. "DOGE")
+ *   - displayname_: human-readable display name from commodity metadata
  *   - units_     : raw inventory string (e.g. "65.64 DOGE")
  *   - valueOp_   : holdings converted to operating currency (e.g. "658.37 INR")
  *   - price_     : latest price in operating currency (e.g. 10.03)
  *   - logo_      : logo URL from commodity metadata
  */
 export function getCombinedCommodityDataQuery(operatingCurrency: string): string {
-	return `SELECT currency AS currency_, units(sum(position)) AS units_, convert(sum(position), '${operatingCurrency}') AS valueOp_, round(getprice(last(currency), '${operatingCurrency}'), 2) AS price_, currency_meta(last(currency), 'logo') AS logo_ WHERE account ~ '^Assets' GROUP BY currency`;
+	const safeOperatingCurrency = escapeBqlString(operatingCurrency);
+	return `SELECT currency AS currency_, currency_meta(last(currency), 'name') AS displayname_, units(sum(position)) AS units_, convert(sum(position), '${safeOperatingCurrency}') AS valueOp_, round(getprice(last(currency), '${safeOperatingCurrency}'), 2) AS price_, currency_meta(last(currency), 'logo') AS logo_ WHERE account ~ '^Assets' GROUP BY currency`;
 }
 
 
 export function getCommodityDetailsQuery(symbol: string): string {
-	return `SELECT name AS name_, last(meta) AS meta_, currency_meta(last(name),'logo') AS logo_, currency_meta(last(name), 'price') AS pricemetadata_, meta('filename') AS filename_, meta('lineno') AS lineno_ FROM #commodities WHERE name='${symbol}'`;
+	const safeSymbol = escapeBqlString(symbol);
+	return `SELECT name AS name_, currency_meta(last(name), 'name') AS displayname_, last(meta) AS meta_, currency_meta(last(name),'logo') AS logo_, currency_meta(last(name), 'price') AS pricemetadata_, meta('filename') AS filename_, meta('lineno') AS lineno_ FROM #commodities WHERE name='${safeSymbol}'`;
+}
+
+export function getCommodityPriceHistoryQuery(symbol: string): string {
+	const safeSymbol = escapeBqlString(symbol);
+	return `SELECT date AS date_, amount AS amount_ FROM #prices WHERE currency='${safeSymbol}' ORDER BY date`;
 }
 
 // --- Price Queries ---

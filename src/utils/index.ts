@@ -17,12 +17,10 @@ export { runQuery, type BQLFormat } from './queryRunner';
 export { splitCommandLine, execSafe } from './execSafe';
 export { convertWindowsPathToWsl, convertWslPathToWindows, atomicFileWrite, createBackupFile, readFileContent, getVaultRelativePath } from './fileEditor';
 export {
-	extractConvertedAmountNumber,
-	extractNonReportingCurrencies,
 	parseMetadataString,
 	debounce,
 } from './formatters';
-export { parseCommoditiesListCSV, parseCommoditiesPriceDataCSV, parseCommodityDetailsCSV, parseCombinedCommodityDataCSV } from './csvParsers';
+export { parseCommoditiesListCSV, parseCommoditiesPriceDataCSV, parseCommodityDetailsCSV, parseCombinedCommodityDataCSV, parseCommodityPriceHistoryCSV } from './csvParsers';
 export { buildAccountTree, getOpenAccounts, getPayees, getTags, getCommodities } from './accounts';
 export { getTransactionEntries, getBalanceEntries, getNoteEntries } from './journal';
 export {

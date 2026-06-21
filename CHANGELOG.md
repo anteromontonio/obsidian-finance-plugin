@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## In-progress
 
+- **Multi-Currency Warning: Clarify warning column wording** — Updated the multi-currency warnings on the Balance Sheet and Income Statement to reference the specific reporting currency name instead of positional column descriptions like 'first column' and 'second column' to prevent user confusion. Merged PR #230.
+
+- **Income Statement: Fix Net Profit trend signs and show income as positive** — Updated the income statement and net profit trend charts to display conventional signs (positive values for profit and negative values for loss), negating credit accounts at the source so income balances render as positive. Adjusted chart colors (green for profit, red for loss) and fixed the anomalous stripes rendering on the Income Sunburst Chart. Merged PR #238.
+
+- **Financial Overview: Selectable reporting periods** — Added a period selector to the Overview dashboard to filter income, expenses, and savings rate KPI cards. Supports presets (This Month, Last Month, This Year, Last Year) as well as custom months and years. Updates the total balance query to compute historical period-end net worth correctly based on the selected period end date. Merged PR #234.
+
+- **Budget & Target Suggestions: Improve account autocomplete** — Removed the arbitrary 8-item hard limit from the Add Budget and Add Target account autocomplete lists. Added matching result counts, default/empty state notes, and increased dropdown heights with full scrollbar support. Merged PR #239.
+
+- **Commodity Dashboard: Display names and price history** — Added support for retrieving and displaying human-readable display names from Beancount commodity metadata. Introduced interactive price history chart and table views in the commodity details modal. Restructured card grids and key-value details layout with overflow-wrap/ellipsis rules to handle long text fields without UI clipping or overlap. Merged PR #237.
+
+- **Journal Filter Autocomplete: Custom suggestion menus** — Replaced native HTML `<datalist>` inputs with custom, scrollable dropdown menus for Account, Payee, and Tag filters in the Journal view. Truncates rendering to the top 50 matches to prevent Electron/Obsidian DOM lag, while preserving full search capabilities. Adds keydown handlers (Escape to close) and click-safe blur timers. Merged PR #236.
+
+- **Performance: Optimize Balance Sheet and Income Statement queries using BQL native position filtering** — Shipped native position splitting via `only()` and regex substitutions via `subst()` inside `bean-query`, moving heavy parsing out of the Svelte frontend. This reduces processing steps, simplifies the controllers, and speeds up dashboard load times. Closes [#211](https://github.com/mkshp-dev/obsidian-finance-plugin/issues/211).
+
+- **Commodity Dashboard: Support negative commodity holdings and correct UI rendering** — Updated parser to preserve negative signs from BQL units/values queries (allowing short/residual positions). Fixed `CommodityCard` value rendering to correctly display negative operating currency values instead of falling back to raw units, and updated `CommoditiesTab` filters (`has_holding` / `has_both`) to check for non-zero holdings (`!== 0`) so short positions are not hidden. Merged PR #229.
+
+## 2.1.8 - 2026-06-15
+
 ## 2.1.7 - 2026-06-15
 
 ## 2.1.6 - 2026-06-14

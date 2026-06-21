@@ -3,40 +3,6 @@
 
 import { Logger } from './logger';
 
-// --- AMOUNT PARSERS ---
-
-/**
- * Extracts the numeric amount for a specific currency from a multi-currency inventory string.
- */
-export function extractConvertedAmountNumber(inventoryString: string, targetCurrency: string): number {
-    const regex = new RegExp(`(-?[\\d,]+\\.?\\d*)\\s*${targetCurrency}`);
-    const match = inventoryString.match(regex);
-    if (match) {
-        return parseFloat(match[1].replace(/,/g, '')) || 0;
-    }
-    return 0;
-}
-
-/**
- * Extracts amounts for all currencies EXCEPT the operating currency.
- */
-export function extractNonReportingCurrencies(inventoryString: string, operatingCurrency: string): string {
-    const currencyRegex = /(-?[\d,]+\.?\d*)\s*([A-Z]{3,4})/g;
-    const matches: string[] = [];
-    let match;
-
-    while ((match = currencyRegex.exec(inventoryString)) !== null) {
-        const amount = match[1];
-        const currency = match[2];
-        if (currency !== operatingCurrency) {
-            const numAmount = parseFloat(amount.replace(/,/g, ''));
-            if (numAmount !== 0) {
-                matches.push(`${amount} ${currency}`);
-            }
-        }
-    }
-    return matches.join('\n');
-}
 
 
 // --- METADATA PARSER ---
