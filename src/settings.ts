@@ -12,6 +12,7 @@ import type { LintMode } from './lang/beancount-lint';
 
  */
 export type FileOrganization = "yearly" | "monthly";
+export type DashboardDefaultPeriod = "this-month" | "last-month" | "this-year" | "last-year";
 
 export interface BeancountPluginSettings {
     /** Path to the main Beancount file. */
@@ -24,6 +25,8 @@ export interface BeancountPluginSettings {
     maxTransactionResults: number;
     /** Max entries to fetch in the journal. */
     maxJournalResults: number;
+    /** Default period shown by dashboard period summaries. */
+    dashboardDefaultPeriod: DashboardDefaultPeriod;
     // BQL Code Block Settings
     /** Whether to show tool buttons (copy, refresh) on query blocks. */
     bqlShowTools: boolean;
@@ -69,6 +72,7 @@ export const DEFAULT_SETTINGS: BeancountPluginSettings = {
     operatingCurrency: 'USD',
     maxTransactionResults: 2000,
     maxJournalResults: 1000,
+    dashboardDefaultPeriod: 'this-month',
     // BQL Code Block Settings
     bqlShowTools: true,
     bqlShowQuery: false,
@@ -226,6 +230,20 @@ export class BeancountSettingTab extends PluginSettingTab {
                     }
                 })
             );
+
+        new Setting(containerEl)
+            .setName('Default dashboard period')
+            .setDesc('Choose the period shown by dashboard summaries when the dashboard first loads.')
+            .addDropdown(dropdown => dropdown
+                .addOption('this-month', 'This month')
+                .addOption('last-month', 'Last month')
+                .addOption('this-year', 'This year')
+                .addOption('last-year', 'Last year')
+                .setValue(this.plugin.settings.dashboardDefaultPeriod || 'this-month')
+                .onChange(async (value) => {
+                    this.plugin.settings.dashboardDefaultPeriod = value as DashboardDefaultPeriod;
+                    await this.plugin.saveSettings();
+                }));
 
         new Setting(containerEl)
             .setName('Debug mode')
