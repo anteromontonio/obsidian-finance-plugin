@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## In-progress
 
+- **Budget & Target Suggestions: Improve account autocomplete** — Removed the arbitrary 8-item hard limit from the Add Budget and Add Target account autocomplete lists. Added matching result counts, default/empty state notes, and increased dropdown heights with full scrollbar support. Merged PR #239.
+
 - **Commodity Dashboard: Display names and price history** — Added support for retrieving and displaying human-readable display names from Beancount commodity metadata. Introduced interactive price history chart and table views in the commodity details modal. Restructured card grids and key-value details layout with overflow-wrap/ellipsis rules to handle long text fields without UI clipping or overlap. Merged PR #237.
 
 - **Journal Filter Autocomplete: Custom suggestion menus** — Replaced native HTML `<datalist>` inputs with custom, scrollable dropdown menus for Account, Payee, and Tag filters in the Journal view. Truncates rendering to the top 50 matches to prevent Electron/Obsidian DOM lag, while preserving full search capabilities. Adds keydown handlers (Escape to close) and click-safe blur timers. Merged PR #236.
