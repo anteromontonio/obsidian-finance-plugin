@@ -111,7 +111,8 @@ export class IncomeStatementController {
 		const accountMap = new Map<string, AccountItem>();
 		const rootAccounts: AccountItem[] = [];
 
-		for (const [fullAccount, amountNumber, otherCurrencies] of accounts) {
+		for (const [fullAccount, rawAmountNumber, otherCurrencies] of accounts) {
+			const amountNumber = accountType === 'Income' ? -rawAmountNumber : rawAmountNumber;
 
 			const parts = fullAccount.split(':');
 			let currentPath = '';
@@ -267,8 +268,9 @@ export class IncomeStatementController {
 	/**
 	 * Parses raw BQL result into a bar chart config and updates the store.
 	 * Handles both monthly (3-col) and weekly (2-col) formats.
-	 * Net profit = raw sign (negative when profitable). Income is negated (stored negative → show positive).
-	 * Expenses are kept as-is (positive).
+	 * Income is negated (stored negative → show positive), expenses are kept as-is,
+	 * and net profit is shown using the same conventional sign as the summary:
+	 * positive means profit, negative means loss.
 	 */
 	private _processChartData(rawResult: string, interval: 'month' | 'week', reportingCurrency: string, trendType: 'netprofit' | 'income' | 'expense' = 'netprofit') {
 		try {
@@ -287,8 +289,7 @@ export class IncomeStatementController {
 					const year = parseInt(row[0].trim());
 					const monthNum = parseInt(row[1].trim());
 					const rawVal = parseFloat(row[2]?.trim() || '0') || 0;
-					// Income is stored negative in beancount; negate for positive display
-					const displayVal = trendType === 'income' ? -rawVal : rawVal;
+					const displayVal = this.displayChartValue(rawVal, trendType);
 					dataMap.set(`${year}-${monthNum.toString().padStart(2, '0')}`, displayVal);
 					if (year < minYear || (year === minYear && monthNum < minMonth)) { minYear = year; minMonth = monthNum; }
 					if (year > maxYear || (year === maxYear && monthNum > maxMonth)) { maxYear = year; maxMonth = monthNum; }
@@ -308,8 +309,7 @@ export class IncomeStatementController {
 					const d = new Date(dateStr + 'T00:00:00');
 					if (isNaN(d.getTime())) continue;
 					const rawVal = parseFloat(row[1]?.trim() || '0') || 0;
-					// Income is stored negative in beancount; negate for positive display
-					const displayVal = trendType === 'income' ? -rawVal : rawVal;
+					const displayVal = this.displayChartValue(rawVal, trendType);
 					dataMap.set(dateStr, displayVal);
 					dates.push(d);
 				}
@@ -349,12 +349,12 @@ export class IncomeStatementController {
 			? (v: number | null) => v === null ? 'rgba(180,180,180,0.4)' : 'rgba(75, 192, 130, 0.7)'
 			: trendType === 'expense'
 			? (v: number | null) => v === null ? 'rgba(180,180,180,0.4)' : 'rgba(255, 99, 99, 0.7)'
-			: (v: number | null) => v === null ? 'rgba(180,180,180,0.4)' : v <= 0 ? 'rgba(75, 192, 130, 0.7)' : 'rgba(255, 99, 99, 0.7)';
+			: (v: number | null) => v === null ? 'rgba(180,180,180,0.4)' : v >= 0 ? 'rgba(75, 192, 130, 0.7)' : 'rgba(255, 99, 99, 0.7)';
 		const borderColor = trendType === 'income'
 			? (v: number | null) => v === null ? 'rgba(180,180,180,0.6)' : 'rgba(75, 192, 130, 1)'
 			: trendType === 'expense'
 			? (v: number | null) => v === null ? 'rgba(180,180,180,0.6)' : 'rgba(255, 99, 99, 1)'
-			: (v: number | null) => v === null ? 'rgba(180,180,180,0.6)' : v <= 0 ? 'rgba(75, 192, 130, 1)' : 'rgba(255, 99, 99, 1)';
+			: (v: number | null) => v === null ? 'rgba(180,180,180,0.6)' : v >= 0 ? 'rgba(75, 192, 130, 1)' : 'rgba(255, 99, 99, 1)';
 		return {
 			type: 'bar',
 			data: {
@@ -401,6 +401,10 @@ export class IncomeStatementController {
 				interaction: { mode: 'nearest', axis: 'x', intersect: false },
 			},
 		};
+	}
+
+	private displayChartValue(rawValue: number, trendType: 'netprofit' | 'income' | 'expense'): number {
+		return trendType === 'expense' ? rawValue : -rawValue;
 	}
 
 	/**
@@ -466,8 +470,7 @@ export class IncomeStatementController {
 
 			const totalIncome = this.calculateCategoryTotals(incomeHierarchy, reportingCurrency);
 			const totalExpenses = this.calculateCategoryTotals(expensesHierarchy, reportingCurrency);
-			// totalIncome is negative in beancount (credit accounts); compute conventional profit
-			const netProfit = -(totalIncome + totalExpenses);
+			const netProfit = totalIncome - totalExpenses;
 
 			let unconvertedWarning: string | null = null;
 			if (hasUnconvertedCommodities) {
