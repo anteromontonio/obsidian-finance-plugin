@@ -217,7 +217,7 @@
 				</div>
 			{:else if selectedChart === 'total'}
 				{#if selectedTotalSection === 'income'}
-					<!-- Income: expect negative (credit accounts). Pass as assets→green, with assetsExpectNegative -->
+					<!-- Income: expect positive (credit accounts). Pass as assets→green, with assetsExpectNegative -->
 					<SunburstChart
 						title="Income"
 						assets={state.income}
@@ -228,7 +228,7 @@
 						totalLiabilities={0}
 						totalEquity={0}
 						assetsLabel="Income"
-						assetsExpectNegative={true}
+						assetsExpectNegative={false}
 					/>
 				{:else}
 					<!-- Expenses: expect positive (debit accounts). Pass as liabilities→red, with liabilitiesExpectNegative=false -->
