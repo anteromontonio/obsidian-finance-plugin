@@ -53,6 +53,17 @@ export function execSafe(
     options: ExecSafeOptions = {}
 ): Promise<{ stdout: string; stderr: string }> {
     return new Promise((resolve, reject) => {
+        // Guard against a non-array being passed in the args position (a common
+        // mistake is passing a timeout number here). Spreading a non-iterable
+        // would otherwise throw an opaque "x is not iterable" TypeError that
+        // callers surface as a misleading generic failure.
+        if (!Array.isArray(additionalArgs)) {
+            return reject(new Error(
+                `Invalid arguments: expected a string[] of additional args but received ${typeof additionalArgs}. ` +
+                `Did you mean to pass options? Use execSafe(command, [], { timeout }).`
+            ));
+        }
+
         const parts = splitCommandLine(commandLine.trim());
         const command = parts[0];
         const args = [...parts.slice(1), ...additionalArgs];

@@ -184,6 +184,7 @@
 			const systemDetector = SystemDetector.getInstance();
 			const testResult = await systemDetector.testCommand(
 				commandTests.beanQuery.command,
+				[],
 				15000,
 			);
 
@@ -214,6 +215,7 @@
 			const systemDetector = SystemDetector.getInstance();
 			const testResult = await systemDetector.testCommand(
 				commandTests.beanQueryCsv.command,
+				[],
 				15000,
 			);
 
@@ -389,7 +391,7 @@
 		try {
 			const systemDetector = SystemDetector.getInstance();
 			const command = `${commandToVerify.trim()} -f csv "${plugin.settings.beancountFilePath}" "SELECT TRUE LIMIT 1"`;
-			const result = await systemDetector.testCommand(command, 15000);
+			const result = await systemDetector.testCommand(command, [], 15000);
 			if (result.success) {
 				commandVerificationStatus = "success";
 				commandVerificationMessage = "✅ Command verified successfully";
@@ -423,6 +425,7 @@
 			const systemDetector = SystemDetector.getInstance();
 			const result = await systemDetector.testCommand(
 				`${cmd.trim()} --help`,
+				[],
 				10000,
 			);
 			if (result.success) {
